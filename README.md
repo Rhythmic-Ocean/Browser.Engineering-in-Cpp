@@ -1,4 +1,4 @@
-## An attempt at implementing the book [Web Browser Engineering](https://browser.engineering/) ***by Pavel Panchekha & Chris Harrelson*** in C++29
+## An attempt at implementing the book [Web Browser Engineering](https://browser.engineering/) ***by Pavel Panchekha & Chris Harrelson*** in C++20
 
 The original book's implemented in python.
 
