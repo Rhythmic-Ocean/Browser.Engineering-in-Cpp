@@ -19,7 +19,7 @@ The original book's implemented in python.
     cmake -B build
     cmake --build build
     cd build
-    ./Browser
+    ./Browser https://example.org/
     ```
 
 ### Next Step: Gonna try and implement Chp-2 with SDL2, let's gooo!
