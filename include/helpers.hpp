@@ -1,14 +1,44 @@
 #pragma once
 
+#include <SDL3_ttf/SDL_ttf.h>
 #include <climits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
 
+struct TextDeleter {
+  void operator()(TTF_Text *text) const {
+    if (text)
+      TTF_DestroyText(text);
+  }
+};
+
+struct DisplayItem {
+  std::unique_ptr<TTF_Text, TextDeleter> text_obj;
+  float x;
+  float y;
+  float width;
+  float height;
+};
+
+struct EngineDeleter {
+  void operator()(TTF_TextEngine *engine) const {
+    if (engine)
+      TTF_DestroyRendererTextEngine(engine);
+  }
+};
+
 class NetworkException : public std::runtime_error {
 public:
   explicit NetworkException(const std::string &message)
+      : std::runtime_error(message) {}
+};
+
+class WindowException : public std::runtime_error {
+public:
+  explicit WindowException(const std::string &message)
       : std::runtime_error(message) {}
 };
 

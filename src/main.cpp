@@ -1,5 +1,7 @@
 
 #include "url.hpp"
+#include "window.hpp"
+#include <SDL3/SDL_render.h>
 #include <iostream>
 #include <netdb.h>
 #include <string>
@@ -9,7 +11,12 @@
 
 void load(URL &url) {
   std::string response = url.request();
-  url.show(response);
+  Window window{"Browser", 800, 600};
+  window.lex(response);
+  while (window.is_Running) {
+    window.start_event();
+    window.draw_text();
+  }
 }
 
 int main() {

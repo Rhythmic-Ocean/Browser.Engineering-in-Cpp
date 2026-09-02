@@ -2,6 +2,7 @@
 #include "url.hpp"
 #include "helpers.hpp"
 #include "rio.hpp"
+#include <SDL3_ttf/SDL_ttf.h>
 #include <cassert>
 #include <iostream>
 #include <ostream>
@@ -87,27 +88,6 @@ void URL::get_response(std::string &response) {
   while ((n = rio::readn(m_client.get_ssl_client(),
                          std::span(chunk, sizeof(chunk)))) > 0) {
     response.append(chunk, n);
-  }
-}
-
-void URL::show(const std::string &body) {
-  bool in_tag = false;
-  for (size_t c = 0; c < body.size(); ++c) {
-    if (body[c] == '<') {
-      in_tag = true;
-    } else if (body[c] == '>') {
-      in_tag = false;
-    } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
-               body.compare(c, 4, "&lt;") == 0) {
-      std::cout << '<';
-      c += 3; // skip past "lt;" (loop's ++c handles the last +1)
-    } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
-               body.compare(c, 4, "&gt;") == 0) {
-      std::cout << '>';
-      c += 3;
-    } else if (!in_tag) {
-      std::cout << body[c];
-    }
   }
 }
 

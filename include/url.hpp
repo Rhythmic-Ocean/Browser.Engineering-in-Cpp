@@ -25,7 +25,6 @@ public:
   explicit URL(const std::string &url);
   ~URL() = default;
   std::string request();
-  void show(const std::string &body);
   friend std::ostream &operator<<(std::ostream &out, const URL &url);
 };
 
