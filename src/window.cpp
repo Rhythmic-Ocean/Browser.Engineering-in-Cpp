@@ -6,7 +6,6 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <iostream>
 #include <memory>
 
 Window::Window(const std::string &title, int width, int height)
@@ -66,6 +65,18 @@ void Window::start_event() {
       m_height = event.window.data2;
       calculate_position(*this);
       break;
+    case SDL_EVENT_MOUSE_WHEEL: {
+      scroll_y -= event.wheel.y * 40.0f;
+      if (scroll_y < 0.0f)
+        scroll_y = 0.0f;
+      float max_scroll = max_y - m_height;
+      if (max_scroll < 0.0f)
+        max_scroll = 0.0f;
+      if (scroll_y > max_scroll) {
+        scroll_y = max_scroll;
+      }
+      break;
+    }
     default:
       break;
     }
@@ -142,9 +153,7 @@ void Window::lex(const std::string &body) {
   bool in_tag = false;
   bool in_char = false;
   for (size_t c = 0; c < body.size(); ++c) {
-    if (!in_char && std::isspace(body[c])) {
-
-    } else if (body[c] == '<') {
+    if (body[c] == '<') {
       in_tag = true;
     } else if (body[c] == '>') {
       in_tag = false;
@@ -158,31 +167,34 @@ void Window::lex(const std::string &body) {
       word += '>';
       items.push_back(std::move(make_display(word)));
       c += 3;
-    } else if (!in_tag && char_length <= count_char) {
-      items.push_back(std::move(make_display(word)));
-      count_char = 0;
-      word.clear();
-      in_char = false;
-      --c;
-    } else if (!in_tag && !in_char) {
-      in_char = true;
-      char_length = 1;
+    } else if (!in_tag) {
+      if (std::isspace(body[c])) {
+        if (!word.empty()) {
+          items.push_back(std::move(make_display(word)));
+          word.clear();
+        }
+        std::string space_str = " ";
+        items.push_back(std::move(make_display(space_str)));
+        continue;
+      }
+
       unsigned char first_byte = static_cast<unsigned char>(body[c]);
       if ((first_byte & 0x80) == 0x00) {
-        char_length = 1;
-      } else if ((first_byte & 0xE0) == 0xC0) {
-        char_length = 2;
-
-      } else if ((first_byte & 0xF0) == 0xE0) {
-        char_length = 3;
-      } else if ((first_byte & 0xF8) == 0xF0) {
-        char_length = 4;
+        word += body[c]; // Add to the word, but DON'T push it yet!
+      } else {
+        if (!word.empty()) {
+          items.push_back(std::move(make_display(word)));
+          word.clear();
+        }
+        int char_length = 2;
+        if ((first_byte & 0xF0) == 0xE0)
+          char_length = 3;
+        else if ((first_byte & 0xF8) == 0xF0)
+          char_length = 4;
+        std::string cjk_char = body.substr(c, char_length);
+        items.push_back(std::move(make_display(cjk_char)));
+        c += (char_length - 1);
       }
-      word += body[c];
-      ++count_char;
-    } else if (!in_tag) {
-      word += body[c];
-      ++count_char;
     }
   }
   if (!word.empty())
@@ -208,15 +220,19 @@ void calculate_position(Window &window) {
     window.m_items[i].y = cursor_y;
     cursor_x += window.m_items[i].width;
   }
+  window.max_y = cursor_y + line_skip;
 }
 
 void Window::draw_text() {
   SDL_SetRenderDrawColor(m_renderer.get(), 0, 0, 0, 255);
   SDL_RenderClear(m_renderer.get());
   for (int i{}; i < m_items.size(); ++i) {
-    if (m_items[i].y > m_height)
+    float cur_scroll_y{m_items[i].y - scroll_y};
+    if (cur_scroll_y + m_items[i].height < 0.0f)
+      continue;
+    if (cur_scroll_y > m_height)
       break;
-    TTF_DrawRendererText(m_items[i].text_obj.get(), m_items[i].x, m_items[i].y);
+    TTF_DrawRendererText(m_items[i].text_obj.get(), m_items[i].x, cur_scroll_y);
   }
   SDL_RenderPresent(m_renderer.get());
 }

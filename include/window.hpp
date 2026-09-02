@@ -12,6 +12,8 @@ class Window {
   std::string m_title{};
   int m_width{};
   int m_height{};
+  float scroll_y{0.0f};
+  float max_y{0.0f};
   std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> m_window{
       nullptr, &SDL_DestroyWindow};
   std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> m_renderer{
