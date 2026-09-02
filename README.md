@@ -4,10 +4,12 @@ The original book's implemented in python.
 
 ### Current Status (Latest Sept 2)
 
-#### Chapter 2 - Almost there, just the scrolling functionality is left (Sept 2 2026)
+#### Chapter 2 - Completed (Sept 2 2026)
 
 - Used SDL3 for GUI purposes, **_[Mike Shah](https://www.youtube.com/watch?v=kyD5H6w1x-o&list=PLvv0ScY6vfd-RZSmGbLkZvkgec6lJ0BfX&index=1)'s tutorial helped a lot! Also [TTF_TextEngine](https://github.com/libsdl-org/SDL_ttf/blob/055f4bbcc9882320c9ec9ef5329875ed6a8b98bd/docs/hello-textengine.c) was good!_**
-  
+- Renders upto 4 byte characters with screen resizing, but only supports space wrapping for English words.
+- Can scroll, with no character overflow over the window borders.
+
   ![Chp-2-Mid](assets/image/chp-2-mid.png)
 
 #### Chapter 1 completed (Date: Sept 1 2026)
@@ -34,4 +36,4 @@ The original book's implemented in python.
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Next Step: Gonna try and implement Chp-2 with SDL3, let's gooo
+### Next Step: Chapter 3
