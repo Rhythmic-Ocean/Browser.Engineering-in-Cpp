@@ -7,7 +7,8 @@ The original book's implemented in python.
 #### Chapter 2 - Almost there, just the scrolling functionality is left (Sept 2 2026)
 
 - Used SDL3 for GUI purposes, **_[Mike Shah](https://www.youtube.com/watch?v=kyD5H6w1x-o&list=PLvv0ScY6vfd-RZSmGbLkZvkgec6lJ0BfX&index=1)'s tutorial helped a lot! Also [TTF_TextEngine](https://github.com/libsdl-org/SDL_ttf/blob/055f4bbcc9882320c9ec9ef5329875ed6a8b98bd/docs/hello-textengine.c) was good!_**
-  [Chp-2-Mid](assets/image/chp-2-mid.png)
+  
+  ![Chp-2-Mid](assets/image/chp-2-mid.png)
 
 #### Chapter 1 completed (Date: Sept 1 2026)
 
@@ -15,7 +16,7 @@ The original book's implemented in python.
 - TLS 1.2/1.3 implemented through <openssl/libssl> _Basically C++ implementation of [this](https://docs.openssl.org/master/man7/ossl-guide-tls-client-block/#creating-the-socket-and-bio)_
 - HTTP/1.1 headings are configured
 
-[Chp-1](assets/image/chp-1.png)
+![Chp-1](assets/image/chp-1.png)
 
 ### Requirements for anybody wanting to run it
 
