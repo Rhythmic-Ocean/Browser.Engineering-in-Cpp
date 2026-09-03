@@ -1,6 +1,13 @@
 #include "helpers.hpp"
+#include <SDL3_ttf/SDL_ttf.h>
 #include <algorithm>
 #include <string_view>
+
+void FontDeleter::operator()(TTF_Font *font) const {
+  if (font) {
+    TTF_CloseFont(font);
+  }
+}
 
 std::vector<std::string_view> hlp::split(std::string_view str,
                                          std::string delim, size_t nums) {

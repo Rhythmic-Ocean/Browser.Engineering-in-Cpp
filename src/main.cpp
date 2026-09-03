@@ -2,6 +2,7 @@
 #include "url.hpp"
 #include "window.hpp"
 #include <SDL3/SDL_render.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <iostream>
 #include <netdb.h>
 #include <string>
@@ -22,9 +23,10 @@ void load(URL &url) {
 int main() {
   std::string url_str{};
   std::getline(std::cin, url_str);
-  // std::string url_str{
-  //     "https://browser.engineering/examples/example1-simple.html"};
+  // std::string url_str{"https://browser.engineering/text.html"};
   URL url{url_str};
   load(url);
+  TTF_Quit();
+  SDL_Quit();
   return 0;
 }

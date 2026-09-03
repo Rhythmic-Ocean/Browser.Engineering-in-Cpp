@@ -10,6 +10,12 @@
 
 Window::Window(const std::string &title, int width, int height)
     : m_title{title}, m_width{width}, m_height{height} {
+  init();
+  load_media();
+  load_engine();
+}
+
+void Window::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     SDL_Log("SDL could not initialize! SDL error: %s\n", SDL_GetError());
     throw WindowException("SDL Initialization failed: " +
@@ -32,19 +38,45 @@ Window::Window(const std::string &title, int width, int height)
   }
   m_window.reset(raw_window);
   m_renderer.reset(raw_renderer);
+}
+void Window::load_media() {
+  const std::string fontPath{"../assets/fonts/OpenSans-Regular.ttf"};
+  const std::string fallbackPath{"../assets/fonts/NotoSansSC-Regular.ttf"};
+  const std::string fontPath3{"../assets/fonts/OpenSans-Italic.ttf"};
+  const std::string fontPath4{"../assets/fonts/OpenSans-Bold.ttf"};
+  const std::string fontPath5{"../assets/fonts/OpenSans-BoldItalic.ttf"};
 
-  std::string fontPath{"../assets/fonts/OpenSans-Regular.ttf"};
-  std::string fontPath2{"../assets/fonts/NotoSansSC-Regular.ttf"};
-  TTF_Font *raw_font{TTF_OpenFont(fontPath.c_str(), 16.0f)};
-  TTF_Font *raw_font2{TTF_OpenFont(fontPath2.c_str(), 16.0f)};
-  if (!raw_font || !raw_font2) {
+  auto load_font_with_fallback = [&](const std::string &path) -> TTF_Font * {
+    TTF_Font *font = TTF_OpenFont(path.c_str(), 16.0f);
+    if (!font) {
+      return nullptr;
+    }
+    TTF_Font *fallback = TTF_OpenFont(fallbackPath.c_str(), 16.0f);
+    if (!fallback) {
+      TTF_CloseFont(font);
+      return nullptr;
+    }
+    if (!TTF_AddFallbackFont(font, fallback)) {
+      TTF_CloseFont(fallback);
+      TTF_CloseFont(font);
+      return nullptr;
+    }
+    return font;
+  };
+
+  m_font.reset(load_font_with_fallback(fontPath));
+  m_italics.reset(load_font_with_fallback(fontPath3));
+  m_bold.reset(load_font_with_fallback(fontPath4));
+  m_boldItalics.reset(load_font_with_fallback(fontPath5));
+
+  if (!m_font || !m_italics || !m_bold || !m_boldItalics) {
     SDL_Log("TTF_OpenFont Error: %s", SDL_GetError());
     throw WindowException("TTF_OpenFont Error: " + std::string(SDL_GetError()));
   }
-  TTF_AddFallbackFont(raw_font, raw_font2);
-  m_font.reset(raw_font);
+}
 
-  TTF_TextEngine *raw_engine{TTF_CreateRendererTextEngine(raw_renderer)};
+void Window::load_engine() {
+  TTF_TextEngine *raw_engine{TTF_CreateRendererTextEngine(m_renderer.get())};
   if (!raw_engine) {
     SDL_Log("Couldn't create text engine: %s\n", SDL_GetError());
     throw WindowException(
@@ -83,55 +115,33 @@ void Window::start_event() {
   }
 }
 
-SDL_Texture *Window::create_texture(std::string &load) {
-  SDL_Color textColour{255, 255, 255};
-  std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> surface{
-      TTF_RenderText_Blended_Wrapped(m_font.get(), load.c_str(), load.size(),
-                                     textColour, 760),
-      &SDL_DestroySurface};
-  if (!surface.get()) {
-    SDL_Log("TTF_RenderText_Blended_Wrapped Error: %s", SDL_GetError());
-    throw WindowException("TTF_RenderText_Blended_Wrapped Error: " +
-                          std::string(SDL_GetError()));
+TTF_Font *Window::choose_font() {
+  switch (style) {
+  case BOLD:
+    return m_bold.get();
+  case ITALICS:
+    return m_italics.get();
+  case BOLD_ITALICS:
+    return m_boldItalics.get();
+  default:
+    return m_font.get();
   }
-  std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> texture{
-      SDL_CreateTextureFromSurface(m_renderer.get(), surface.get()),
-      &SDL_DestroyTexture};
-  if (!texture.get()) {
-    SDL_Log("SDL_CreateTextureFromSurface Error: %s", SDL_GetError());
-    throw WindowException("SDL_CreateTextureFromSurface Error: " +
-                          std::string(SDL_GetError()));
-  }
-  return texture.release();
-}
-
-void Window::clear() { SDL_RenderClear(m_renderer.get()); }
-void Window::presentTexture(SDL_Texture *texture) {
-  float texW = 0.0f, texH = 0.0f;
-  SDL_GetTextureSize(texture, &texW, &texH);
-
-  SDL_FRect dstRect = {.x = (800.0f - texW) / 2.0f, // Centered
-                       .y = 20.0f,
-                       .w = texW,
-                       .h = texH};
-  SDL_SetRenderDrawColor(m_renderer.get(), 24, 24, 30, 255);
-  SDL_RenderClear(m_renderer.get());
-  SDL_RenderTexture(m_renderer.get(), texture, nullptr, &dstRect);
-  SDL_RenderPresent(m_renderer.get());
 }
 
 DisplayItem Window::make_display(std::string &word) {
   int h{};
   int w{};
   DisplayItem item{};
-  auto *txt{
-      TTF_CreateText(m_engine.get(), m_font.get(), word.c_str(), word.size())};
+  auto *font = choose_font();
+  auto *txt{TTF_CreateText(m_engine.get(), font, word.c_str(), word.size())};
+
   if (!txt) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
     throw WindowException("Couldn't create text: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
+  TTF_SetTextColor(txt, 255, 255, 255, 255);
   item.text_obj.reset(txt);
   if (!TTF_GetTextSize(txt, &w, &h)) {
     SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
@@ -146,59 +156,91 @@ DisplayItem Window::make_display(std::string &word) {
 }
 
 void Window::lex(const std::string &body) {
-  std::vector<DisplayItem> items{};
+  std::vector<Item> out{};
   std::string word{};
-  int char_length{1};
-  int count_char{};
   bool in_tag = false;
-  bool in_char = false;
   for (size_t c = 0; c < body.size(); ++c) {
     if (body[c] == '<') {
       in_tag = true;
+      out.push_back({word, false}); // pushinig in actual content
+      word.clear();
     } else if (body[c] == '>') {
       in_tag = false;
+      out.push_back({word, true}); // pushing in html stuffs
+      word.clear();
     } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
                body.compare(c, 4, "&lt;") == 0) {
       word += "<";
-      items.push_back(std::move(make_display(word)));
       c += 3; // skip past "lt;" (loop's ++c handles the last +1)
     } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
                body.compare(c, 4, "&gt;") == 0) {
       word += '>';
-      items.push_back(std::move(make_display(word)));
       c += 3;
-    } else if (!in_tag) {
-      if (std::isspace(body[c])) {
-        if (!word.empty()) {
-          items.push_back(std::move(make_display(word)));
-          word.clear();
-        }
-        std::string space_str = " ";
-        items.push_back(std::move(make_display(space_str)));
-        continue;
-      }
+    } else
+      word += body[c];
+  }
+  if (!word.empty())
+    out.push_back({word, false});
+  process_layout(out);
+}
 
-      unsigned char first_byte = static_cast<unsigned char>(body[c]);
-      if ((first_byte & 0x80) == 0x00) {
-        word += body[c]; // Add to the word, but DON'T push it yet!
-      } else {
-        if (!word.empty()) {
+void Window::get_font(std::string &str) {
+  if (str == "i") {
+    if (style == BOLD) {
+      style = BOLD_ITALICS;
+    } else
+      style = ITALICS;
+  } else if (str == "b") {
+    if (style == ITALICS) {
+      style = BOLD_ITALICS;
+    } else
+      style = BOLD;
+  } else
+    style = REGULAR;
+  return;
+}
+
+void Window::process_layout(std::vector<Item> &tokens) {
+  std::vector<DisplayItem> items{};
+  std::string word{};
+  for (auto &token : tokens) {
+    if (token.m_tag) {
+      get_font(token.m_text);
+    } else {
+      auto &str = token.m_text;
+      for (int c{}; c < str.size(); ++c) {
+        if (std::isspace(str[c])) {
+          if (!word.empty()) {
+            items.push_back(std::move(make_display(word)));
+            word.clear();
+          }
+          word += ' ';
           items.push_back(std::move(make_display(word)));
-          word.clear();
+          continue;
         }
-        int char_length = 2;
-        if ((first_byte & 0xF0) == 0xE0)
-          char_length = 3;
-        else if ((first_byte & 0xF8) == 0xF0)
-          char_length = 4;
-        std::string cjk_char = body.substr(c, char_length);
-        items.push_back(std::move(make_display(cjk_char)));
-        c += (char_length - 1);
+        unsigned char first_byte{static_cast<unsigned char>(str[c])};
+        if ((first_byte & 0x80) == 0x00) {
+          word += str[c];
+        } else {
+          if (!word.empty()) {
+            items.push_back(std::move(make_display(word)));
+            word.clear();
+          }
+          int char_length = 2;
+          if ((first_byte & 0xF0) == 0xE0)
+            char_length = 3;
+          else if ((first_byte & 0xF8) == 0xF0)
+            char_length = 4;
+          std::string cjk_char = str.substr(c, char_length);
+          items.push_back(std::move(make_display(cjk_char)));
+          c += (char_length - 1);
+        }
+      }
+      if (!word.empty()) {
+        items.push_back(std::move(make_display(word)));
       }
     }
   }
-  if (!word.empty())
-    items.push_back(std::move(make_display(word)));
   m_items = std::move(items);
   calculate_position(*this);
 }
@@ -232,7 +274,10 @@ void Window::draw_text() {
       continue;
     if (cur_scroll_y > m_height)
       break;
-    TTF_DrawRendererText(m_items[i].text_obj.get(), m_items[i].x, cur_scroll_y);
+    if (!TTF_DrawRendererText(m_items[i].text_obj.get(), m_items[i].x,
+                              cur_scroll_y)) {
+      SDL_Log("Failed to draw text at item %d: %s\n", i, SDL_GetError());
+    }
   }
   SDL_RenderPresent(m_renderer.get());
 }

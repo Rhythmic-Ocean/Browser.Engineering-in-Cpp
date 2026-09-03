@@ -8,6 +8,8 @@
 #include <memory>
 
 class Window {
+  enum text { BOLD, ITALICS, BOLD_ITALICS, REGULAR } text_style;
+  text style = REGULAR;
   static constexpr float DEFAULT_MARGIN = 20.0f;
   std::string m_title{};
   int m_width{};
@@ -18,11 +20,19 @@ class Window {
       nullptr, &SDL_DestroyWindow};
   std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> m_renderer{
       nullptr, &SDL_DestroyRenderer};
-  std::unique_ptr<TTF_Font, decltype(&TTF_CloseFont)> m_font{nullptr,
-                                                             &TTF_CloseFont};
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine;
+  std::unique_ptr<TTF_Font, FontDeleter> m_font;
+  std::unique_ptr<TTF_Font, FontDeleter> m_bold;
+  std::unique_ptr<TTF_Font, FontDeleter> m_italics;
+  std::unique_ptr<TTF_Font, FontDeleter> m_boldItalics;
 
   std::vector<DisplayItem> m_items{};
+  void init();
+  void load_media();
+  void load_engine();
+  void get_font(std::string &str);
+  void process_layout(std::vector<Item> &tokens);
+  TTF_Font *choose_font();
 
   DisplayItem make_display(std::string &word);
 
@@ -37,21 +47,11 @@ public:
   Window &operator=(const Window &) = delete;
   Window(Window &&other) = default;
   Window &operator=(Window &&other) = default;
-  ~Window() {
-    m_font.reset();
-    m_renderer.reset();
-    m_window.reset();
-    TTF_Quit();
-    SDL_Quit();
-  }
+  ~Window() = default;
 
   void start_event();
-  SDL_Texture *create_texture(std::string &load);
-  void clear();
   static TTF_TextEngine *get_engine();
-  void presentTexture(SDL_Texture *texture);
   void lex(const std::string &body);
-
   friend void calculate_position(Window &window);
   void draw_text();
 };

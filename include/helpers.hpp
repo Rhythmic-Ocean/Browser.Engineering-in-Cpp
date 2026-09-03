@@ -23,11 +23,22 @@ struct DisplayItem {
   float height;
 };
 
+struct Item {
+  std::string m_text{};
+  bool m_tag;
+  Item(std::string &text, bool tag) : m_text{text}, m_tag{tag} {}
+};
+
 struct EngineDeleter {
   void operator()(TTF_TextEngine *engine) const {
     if (engine)
       TTF_DestroyRendererTextEngine(engine);
+    engine = nullptr;
   }
+};
+
+struct FontDeleter {
+  void operator()(TTF_Font *font) const;
 };
 
 class NetworkException : public std::runtime_error {
