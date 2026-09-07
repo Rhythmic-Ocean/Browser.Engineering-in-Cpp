@@ -21,7 +21,8 @@ set(_SOURCE_DIR
     src/rio.cpp
     src/url.cpp
     src/helpers.cpp
-    src/window.cpp)
+    src/window.cpp
+    src/fonts.cpp)
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 

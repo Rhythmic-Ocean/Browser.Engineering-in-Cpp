@@ -1,11 +1,13 @@
 #include "window.hpp"
 #include "helpers.hpp"
+#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <cstddef>
 #include <memory>
 
 Window::Window(const std::string &title, int width, int height)
@@ -47,11 +49,11 @@ void Window::load_media() {
   const std::string fontPath5{"../assets/fonts/OpenSans-BoldItalic.ttf"};
 
   auto load_font_with_fallback = [&](const std::string &path) -> TTF_Font * {
-    TTF_Font *font = TTF_OpenFont(path.c_str(), 16.0f);
+    TTF_Font *font = TTF_OpenFont(path.c_str(), BASE_FONT_SIZE);
     if (!font) {
       return nullptr;
     }
-    TTF_Font *fallback = TTF_OpenFont(fallbackPath.c_str(), 16.0f);
+    TTF_Font *fallback = TTF_OpenFont(fallbackPath.c_str(), BASE_FONT_SIZE);
     if (!fallback) {
       TTF_CloseFont(font);
       return nullptr;
@@ -133,6 +135,11 @@ DisplayItem Window::make_display(std::string &word) {
   int w{};
   DisplayItem item{};
   auto *font = choose_font();
+  if (!TTF_SetFontSize(font, font_size)) {
+    SDL_Log("Non-terminating error. Cound't set font_size for some text. "
+            "Error: %s\n",
+            SDL_GetError());
+  }
   auto *txt{TTF_CreateText(m_engine.get(), font, word.c_str(), word.size())};
 
   if (!txt) {
@@ -195,9 +202,22 @@ void Window::get_font(std::string &str) {
       style = BOLD_ITALICS;
     } else
       style = BOLD;
-  } else
+  } else {
     style = REGULAR;
+    set_size(str);
+  }
   return;
+}
+
+void Window::set_size(std::string &str) {
+  if (str == "small")
+    font_size -= 10;
+  else if (str == "/small")
+    font_size += 10;
+  else if (str == "big")
+    font_size += 20;
+  else if (str == "/big")
+    font_size -= 20;
 }
 
 void Window::process_layout(std::vector<Item> &tokens) {

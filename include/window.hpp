@@ -9,8 +9,10 @@
 
 class Window {
   enum text { BOLD, ITALICS, BOLD_ITALICS, REGULAR } text_style;
-  text style = REGULAR;
   static constexpr float DEFAULT_MARGIN = 20.0f;
+  static constexpr float BASE_FONT_SIZE = 16.0f;
+  text m_style = REGULAR;
+  float font_size = BASE_FONT_SIZE;
   std::string m_title{};
   int m_width{};
   int m_height{};
@@ -21,16 +23,17 @@ class Window {
   std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> m_renderer{
       nullptr, &SDL_DestroyRenderer};
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine;
-  std::unique_ptr<TTF_Font, FontDeleter> m_font;
-  std::unique_ptr<TTF_Font, FontDeleter> m_bold;
-  std::unique_ptr<TTF_Font, FontDeleter> m_italics;
-  std::unique_ptr<TTF_Font, FontDeleter> m_boldItalics;
+  typedef std::unique_ptr<TTF_Font, FontDeleter> Normal;
+  typedef std::unique_ptr<TTF_Font, FontDeleter> Bold;
+  typedef std::unique_ptr<TTF_Font, FontDeleter> Italics;
+  typedef std::unique_ptr<TTF_Font, FontDeleter> BoldItalics;
 
   std::vector<DisplayItem> m_items{};
   void init();
   void load_media();
   void load_engine();
   void get_font(std::string &str);
+  void set_size(std::string &str);
   void process_layout(std::vector<Item> &tokens);
   TTF_Font *choose_font();
 

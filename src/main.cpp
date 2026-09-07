@@ -2,6 +2,7 @@
 #include "url.hpp"
 #include "window.hpp"
 #include <SDL3/SDL_render.h>
+#include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <iostream>
 #include <netdb.h>
