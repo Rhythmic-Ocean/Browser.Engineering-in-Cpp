@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_video.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <climits>
 #include <memory>
@@ -10,15 +11,37 @@
 #include <string_view>
 #include <vector>
 
+enum class FontStyle { BOLD, ITALICS, BOLD_ITALICS, REGULAR, COUNT };
+static constexpr float BASE_FONT_SIZE = 16.0f;
+typedef int FontSize;
+
 struct TextDeleter {
   void operator()(TTF_Text *text) const {
     if (text)
       TTF_DestroyText(text);
+    text = nullptr;
+  }
+};
+
+struct WindowDeleter {
+  void operator()(SDL_Window *window) const {
+    if (window)
+      SDL_DestroyWindow(window);
+    window = nullptr;
+  }
+};
+
+struct RendererDeleter {
+  void operator()(SDL_Renderer *renderer) const {
+    if (renderer)
+      SDL_DestroyRenderer(renderer);
+    renderer = nullptr;
   }
 };
 
 struct DisplayItem {
   std::unique_ptr<TTF_Text, TextDeleter> text_obj;
+  TTF_Font *font{nullptr};
   float x;
   float y;
   float width;
@@ -45,11 +68,17 @@ struct EngineDeleter {
 };
 
 struct FileDeleter {
-  void operator()(myFile *file) { SDL_free(file->fontFile); }
+  void operator()(myFile *file) {
+    SDL_free(file->fontFile);
+    file = nullptr;
+  }
 };
 
 struct FontDeleter {
-  void operator()(TTF_Font *font) const { TTF_CloseFont(font); }
+  void operator()(TTF_Font *font) const {
+    TTF_CloseFont(font);
+    font = nullptr;
+  }
 };
 
 class NetworkException : public std::runtime_error {

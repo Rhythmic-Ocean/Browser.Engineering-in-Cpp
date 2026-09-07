@@ -14,10 +14,10 @@
 void load(URL &url) {
   std::string response = url.request();
   Window window{"Browser", 800, 600};
-  window.lex(response);
+  window.layout.lex(response);
   while (window.is_Running) {
     window.start_event();
-    window.draw_text();
+    window.draw_text(window.layout.m_items);
   }
 }
 

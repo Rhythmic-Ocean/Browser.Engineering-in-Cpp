@@ -11,22 +11,22 @@ void FontCache::init_fontFiles() {
   const std::string fontPath3{"../assets/fonts/OpenSans-Bold.ttf"};
   const std::string fontPath4{"../assets/fonts/OpenSans-BoldItalic.ttf"};
   const std::string fallbackPath2{"../assets/fonts/NotoSansSC-Bold.ttf"};
-  load_fontFiles(fontStyle::REGULAR, fontPath1, fallbackPath1);
-  load_fontFiles(fontStyle::ITALICS, fontPath2, fallbackPath1);
-  load_fontFiles(fontStyle::BOLD, fontPath3, fallbackPath2);
-  load_fontFiles(fontStyle::REGULAR, fontPath1, fallbackPath2);
+  load_fontFiles(FontStyle::REGULAR, fontPath1, fallbackPath1);
+  load_fontFiles(FontStyle::ITALICS, fontPath2, fallbackPath1);
+  load_fontFiles(FontStyle::BOLD, fontPath3, fallbackPath2);
+  load_fontFiles(FontStyle::BOLD_ITALICS, fontPath4, fallbackPath2);
   return;
 }
 
 void FontCache::init_normalFonts() {
-  load_font(fontStyle::REGULAR);
-  load_font(fontStyle::BOLD);
-  load_font(fontStyle::ITALICS);
-  load_font(fontStyle::BOLD_ITALICS);
+  load_font(FontStyle::REGULAR, BASE_FONT_SIZE);
+  load_font(FontStyle::BOLD, BASE_FONT_SIZE);
+  load_font(FontStyle::ITALICS, BASE_FONT_SIZE);
+  load_font(FontStyle::BOLD_ITALICS, BASE_FONT_SIZE);
   return;
 }
 
-void FontCache::load_fontFiles(fontStyle style, const std::string &primary,
+void FontCache::load_fontFiles(FontStyle style, const std::string &primary,
                                const std::string &fallback) {
   FontFile Fontfile1{};
   FontFile Fontfile2{};
@@ -47,7 +47,7 @@ void FontCache::load_fontFiles(fontStyle style, const std::string &primary,
   return;
 }
 
-void FontCache::load_font(fontStyle style) {
+void FontCache::load_font(FontStyle style, FontSize size) {
   Font myFont1{};
   Font myFont2{};
   auto &[fontFile1, fontFile2] = fontFile_map[style];
@@ -60,8 +60,8 @@ void FontCache::load_font(fontStyle style) {
     throw FontCacheException(
         "Failed to create IOStream: " + C_SDL_GetStrError() + "\n");
   }
-  auto *font1 = TTF_OpenFontIO(fileStream1, true, globalSize);
-  auto *font2 = TTF_OpenFontIO(fileStream1, true, globalSize);
+  auto *font1 = TTF_OpenFontIO(fileStream1, false, size);
+  auto *font2 = TTF_OpenFontIO(fileStream2, false, size);
   if (!font1 || !font2) {
     SDL_Log("Failed to open font: %s\n", SDL_GetError());
     throw FontCacheException("Failed to open font: " + C_SDL_GetStrError() +
@@ -74,20 +74,20 @@ void FontCache::load_font(fontStyle style) {
     throw FontCacheException("Failed to set fallback " + C_SDL_GetStrError() +
                              "\n");
   }
-  font_vec[static_cast<int>(style)][globalSize] = std::move(myFont1);
+  font_vec[static_cast<int>(style)][size] = std::move(myFont1);
   return;
 }
 
-FontCache::FontCache() {
+FontCache::FontCache() {}
+
+void FontCache::init() {
   init_fontFiles();
   init_normalFonts();
 }
-
-TTF_Font *FontCache::get_font(fontStyle style) {
-  int g_size = static_cast<int>(globalSize);
+TTF_Font *FontCache::get_font(FontStyle style, FontSize size) {
   auto &font_map = font_vec[static_cast<int>(style)];
-  if (font_map.find(g_size) == font_map.end()) {
-    load_font(style);
+  if (font_map.find(size) == font_map.end()) {
+    load_font(style, size);
   }
-  return font_map[g_size].get();
+  return font_map[size].get();
 }

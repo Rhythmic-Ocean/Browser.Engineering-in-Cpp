@@ -1,4 +1,7 @@
+#pragma once
+
 #include "helpers.hpp"
+#include "layout.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_init.h>
@@ -8,53 +11,29 @@
 #include <memory>
 
 class Window {
-  enum text { BOLD, ITALICS, BOLD_ITALICS, REGULAR } text_style;
-  static constexpr float DEFAULT_MARGIN = 20.0f;
-  static constexpr float BASE_FONT_SIZE = 16.0f;
-  text m_style = REGULAR;
-  float font_size = BASE_FONT_SIZE;
-  std::string m_title{};
-  int m_width{};
-  int m_height{};
+  std::string m_title;
+  int m_width;
+  int m_height;
+  std::unique_ptr<SDL_Window, WindowDeleter> m_window;
+  std::unique_ptr<SDL_Renderer, RendererDeleter> m_renderer;
+  std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine{};
   float scroll_y{0.0f};
   float max_y{0.0f};
-  std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> m_window{
-      nullptr, &SDL_DestroyWindow};
-  std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> m_renderer{
-      nullptr, &SDL_DestroyRenderer};
-  std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine;
-  typedef std::unique_ptr<TTF_Font, FontDeleter> Normal;
-  typedef std::unique_ptr<TTF_Font, FontDeleter> Bold;
-  typedef std::unique_ptr<TTF_Font, FontDeleter> Italics;
-  typedef std::unique_ptr<TTF_Font, FontDeleter> BoldItalics;
 
-  std::vector<DisplayItem> m_items{};
   void init();
-  void load_media();
   void load_engine();
-  void get_font(std::string &str);
-  void set_size(std::string &str);
-  void process_layout(std::vector<Item> &tokens);
-  TTF_Font *choose_font();
-
-  DisplayItem make_display(std::string &word);
 
 public:
+  Layout layout{};
   bool is_Running{true};
   Window(const std::string &title, int width, int height);
-
   SDL_Renderer *getRenderer() const { return m_renderer.get(); }
-  SDL_Window *getWindow() const { return m_window.get(); }
-  TTF_TextEngine *getTextEngine() const { return m_engine.get(); }
   Window(const Window &) = delete;
   Window &operator=(const Window &) = delete;
-  Window(Window &&other) = default;
-  Window &operator=(Window &&other) = default;
+  Window(Window &&other) = delete;
+  Window &operator=(Window &&other) = delete;
   ~Window() = default;
 
   void start_event();
-  static TTF_TextEngine *get_engine();
-  void lex(const std::string &body);
-  friend void calculate_position(Window &window);
-  void draw_text();
+  void draw_text(std::vector<DisplayItem> &items);
 };
