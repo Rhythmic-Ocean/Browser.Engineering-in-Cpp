@@ -47,9 +47,9 @@ modified project's structure a bit, a bit more readable imo
 - no hanging letters/words for variable size fonts
 - proper spacing and new line for br and p tags
 - Rendering [this](https://browser.engineering/examples/example3-sizes.html)
-  ![Chp-3-Completed-1](assets/image/Chp-3-Completed-1.png)
+  ![Chp-3-Completed-1](assets/image/chp-3-completed-1.png)
 - Rendering [this](https://browser.engineering/text.html)
-  ![Chp-3-Completed-2](assets/image/Chp-3-Completed-2.png)
+  ![Chp-3-Completed-2](assets/image/chp-3-completed-2.png)
 
 ### Requirements for anybody wanting to run it
 
