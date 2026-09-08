@@ -15,6 +15,7 @@ void load(URL &url) {
   std::string response = url.request();
   Window window{"Browser", 800, 600};
   window.layout.lex(response);
+  window.layout.calculate_position(*window.getRenderer());
   while (window.is_Running) {
     window.start_event();
     window.draw_text(window.layout.m_items);
