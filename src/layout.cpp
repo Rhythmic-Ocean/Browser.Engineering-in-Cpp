@@ -1,5 +1,6 @@
 #include "layout.hpp"
 #include "helpers.hpp"
+#include "window.hpp"
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -43,42 +44,67 @@ void Layout::lex(const std::string &body) {
 void Layout::process_layout(const std::vector<Item> &tokens) {
   std::vector<DisplayItem> items{};
   std::string word{};
-  for (auto &token : tokens) {
+
+  for (const auto &token : tokens) {
     if (token.m_tag) {
+      // If a tag changes style in the middle of a word, flush pending
+      // characters first
+      if (!word.empty()) {
+        items.push_back(std::move(make_display(word)));
+      }
       set_font(token.m_text);
     } else {
-      auto &str = token.m_text;
-      for (int c{}; c < str.size(); ++c) {
-        if (std::isspace(str[c])) {
+      const auto &str = token.m_text;
+      for (size_t c = 0; c < str.size(); ++c) {
+        unsigned char byte = static_cast<unsigned char>(str[c]);
+
+        // 1. Whitespace handling
+        if (std::isspace(byte)) {
           if (!word.empty()) {
             items.push_back(std::move(make_display(word)));
           }
-          word += ' ';
-          items.push_back(std::move(make_display(word)));
+
+          // Consume all adjacent whitespace (spaces, tabs, newlines)
+          while (c < str.size() &&
+                 std::isspace(static_cast<unsigned char>(str[c]))) {
+            ++c;
+          }
+          --c; // Step back one position so ++c lands on the next non-space char
+
+          // Collapse into a single space token
+          std::string space_str = " ";
+          items.push_back(std::move(make_display(space_str)));
           continue;
         }
-        unsigned char first_byte{static_cast<unsigned char>(str[c])};
-        if ((first_byte & 0x80) == 0x00) {
+
+        // 2. ASCII characters
+        if ((byte & 0x80) == 0x00) {
           word += str[c];
-        } else {
+        }
+        // 3. Multi-byte UTF-8 (e.g. CJK or symbols)
+        else {
           if (!word.empty()) {
             items.push_back(std::move(make_display(word)));
           }
-          int char_length = 2;
-          if ((first_byte & 0xF0) == 0xE0)
+
+          size_t char_length = 2;
+          if ((byte & 0xF0) == 0xE0)
             char_length = 3;
-          else if ((first_byte & 0xF8) == 0xF0)
+          else if ((byte & 0xF8) == 0xF0)
             char_length = 4;
-          std::string cjk_char = str.substr(c, char_length);
-          items.push_back(std::move(make_display(cjk_char)));
+
+          std::string utf8_char = str.substr(c, char_length);
+          items.push_back(std::move(make_display(utf8_char)));
           c += (char_length - 1);
         }
       }
+
       if (!word.empty()) {
         items.push_back(std::move(make_display(word)));
       }
     }
   }
+
   m_items = std::move(items);
 }
 
@@ -99,6 +125,11 @@ void Layout::set_font(const std::string &fontTag) {
     g_fontSize += 20;
   else if (fontTag == "/big")
     g_fontSize = 20;
+  else if (fontTag == "/p") {
+    m_breakLine = true;
+    m_lineSpacing = VSTEP;
+  } else if (fontTag == "br")
+    m_breakLine = true;
 
   if ((oldStyle == BOLD && g_fontStyle == ITALICS) ||
       (oldStyle == ITALICS && g_fontStyle == BOLD)) {
@@ -130,6 +161,10 @@ DisplayItem Layout::make_display(std::string &word) {
   item.width = static_cast<float>(w);
   item.height = static_cast<float>(h);
   item.font = font;
+  item.internal->breakLine = m_breakLine;
+  item.internal->lineSpace = m_lineSpacing;
+  m_breakLine = false;
+  m_lineSpacing = 0;
   word.clear();
   return item;
 }
@@ -148,7 +183,8 @@ void Layout::calculate_position(SDL_Renderer &renderer) {
     float line_width = DEFAULT_MARGIN;
     while (i < total_items) {
       float item_w = m_items[i].width;
-      if (!current_line.empty() && (line_width + item_w > end_x))
+      if ((!current_line.empty() && (line_width + item_w > end_x)) ||
+          (!current_line.empty() && m_items[i].internal->breakLine))
         break;
       line_width += item_w;
       current_line.push_back(&m_items[i]);
@@ -166,7 +202,9 @@ void Layout::calculate_position(SDL_Renderer &renderer) {
       pen_x += word->width;
     }
     current_line_top += std::max(max_ascent + max_descent, max_lineskip);
+    current_line_top += (i >= total_items) ? 0 : m_items[i].internal->lineSpace;
   }
+  Window::max_y = current_line_top;
 }
 
 void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,

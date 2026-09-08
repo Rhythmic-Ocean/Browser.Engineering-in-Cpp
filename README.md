@@ -2,23 +2,54 @@
 
 The original book's implemented in python.
 
-### Current Status (Latest Sept 2)
+### Current Status (Latest Sept 7)
 
-#### Chapter 2 - Completed (Sept 2 2026)
+#### Chapter 3 - Completed (Sept 7 2026)
 
-- Used SDL3 for GUI purposes, **_[Mike Shah](https://www.youtube.com/watch?v=kyD5H6w1x-o&list=PLvv0ScY6vfd-RZSmGbLkZvkgec6lJ0BfX&index=1)'s tutorial helped a lot! Also [TTF_TextEngine](https://github.com/libsdl-org/SDL_ttf/blob/055f4bbcc9882320c9ec9ef5329875ed6a8b98bd/docs/hello-textengine.c) was good!_**
-- Renders upto 4 byte characters with screen resizing, but only supports space wrapping for English words.
-- Can scroll, with no character overflow over the window borders.
+modified project's structure a bit, a bit more readable imo
 
-  ![Chp-2-Mid](assets/image/chp-2-mid.png)
+```
 
-#### Chapter 1 completed (Date: Sept 1 2026)
+├── assets
+│   ├── fonts
+│   │   ├── NotoSansSC-Bold.ttf
+│   │   ├── NotoSansSC-Regular.ttf
+│   │   ├── OpenSans-BoldItalic.ttf
+│   │   ├── OpenSans-Bold.ttf
+│   │   ├── OpenSans-Italic.ttf
+│   │   └── OpenSans-Regular.ttf
+│   └── image
+│       ├── chp-1.png
+│       └── chp-2-mid.png
+├── CMakeLists.txt
+├── include
+│   ├── client.hpp
+│   ├── fonts.hpp
+│   ├── helpers.hpp
+│   ├── layout.hpp
+│   ├── rio.hpp
+│   ├── url.hpp
+│   └── window.hpp
+├── README.md
+└── src
+    ├── client.cpp
+    ├── fonts.cpp
+    ├── helpers.cpp
+    ├── layout.cpp
+    ├── main.cpp
+    ├── rio.cpp
+    ├── url.cpp
+    └── window.cpp
+```
 
-- Raw POSIX socket networking with <sys/socket.h> _Bunch of help from Chp-11 (Network Programming) on [CS:APP](https://csapp.cs.cmu.edu/)_
-- TLS 1.2/1.3 implemented through <openssl/libssl> _Basically C++ implementation of [this](https://docs.openssl.org/master/man7/ossl-guide-tls-client-block/#creating-the-socket-and-bio)_
-- HTTP/1.1 headings are configured
+-supports variable size fonts (floating point sizes are degraded to integer sizes)
 
-![Chp-1](assets/image/chp-1.png)
+- no hanging letters/words for variable size fonts
+- proper spacing and new line for br and p tags
+- Rendering [this](https://browser.engineering/examples/example3-sizes.html)
+  ![Chp-3-Completed-1](assets/image/Chp-3-Completed-1.png)
+- Rendering [this](https://browser.engineering/text.html)
+  ![Chp-3-Completed-2](assets/image/Chp-3-Completed-2.png)
 
 ### Requirements for anybody wanting to run it
 
@@ -36,4 +67,40 @@ The original book's implemented in python.
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Next Step: Chapter 3
+### Project's structure (subject to change heavily in future)
+
+```
+
+├── assets
+│   ├── fonts
+│   │   ├── NotoSansSC-Bold.ttf
+│   │   ├── NotoSansSC-Regular.ttf
+│   │   ├── OpenSans-BoldItalic.ttf
+│   │   ├── OpenSans-Bold.ttf
+│   │   ├── OpenSans-Italic.ttf
+│   │   └── OpenSans-Regular.ttf
+│   └── image
+│       ├── chp-1.png
+│       └── chp-2-mid.png
+├── CMakeLists.txt
+├── include
+│   ├── client.hpp
+│   ├── fonts.hpp
+│   ├── helpers.hpp
+│   ├── layout.hpp
+│   ├── rio.hpp
+│   ├── url.hpp
+│   └── window.hpp
+├── README.md
+└── src
+    ├── client.cpp
+    ├── fonts.cpp
+    ├── helpers.cpp
+    ├── layout.cpp
+    ├── main.cpp
+    ├── rio.cpp
+    ├── url.cpp
+    └── window.cpp
+```
+
+### Next Step: Chapter 4, parsing HTML DOM

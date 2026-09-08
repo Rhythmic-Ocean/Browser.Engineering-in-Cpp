@@ -17,13 +17,13 @@ class Window {
   std::unique_ptr<SDL_Window, WindowDeleter> m_window;
   std::unique_ptr<SDL_Renderer, RendererDeleter> m_renderer;
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine{};
-  float scroll_y{0.0f};
-  float max_y{0.0f};
 
   void init();
   void load_engine();
 
 public:
+  inline static float scroll_y;
+  inline static float max_y;
   Layout layout{};
   bool is_Running{true};
   Window(const std::string &title, int width, int height);

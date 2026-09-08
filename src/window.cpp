@@ -41,6 +41,8 @@ void Window::init() {
 
   m_window.reset(raw_window);
   m_renderer.reset(raw_renderer);
+  scroll_y = 0.0f;
+  max_y = 0.0f;
 }
 
 void Window::load_engine() {

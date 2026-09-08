@@ -16,6 +16,8 @@ class Layout {
   void process_layout(const std::vector<Item> &tokens);
   DisplayItem make_display(std::string &str);
   void set_font(const std::string &fontTag);
+  bool m_breakLine{false};
+  int m_lineSpacing{};
 
 public:
   std::vector<DisplayItem> m_items{};
