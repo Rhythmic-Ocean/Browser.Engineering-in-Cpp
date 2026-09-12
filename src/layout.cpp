@@ -13,17 +13,17 @@ void Layout::init(TTF_TextEngine *textEngine) {
 }
 
 void Layout::lex(const std::string &body) {
-  std::vector<Item> out{};
+  std::vector<std::unique_ptr<Item>> out{};
   std::string word{};
   bool in_tag = false;
   for (size_t c = 0; c < body.size(); ++c) {
     if (body[c] == '<') {
       in_tag = true;
-      out.push_back({word, false}); // pushinig in actual content
+      out.emplace_back(new Text{word}); // pushinig in actual content
       word.clear();
     } else if (body[c] == '>') {
       in_tag = false;
-      out.push_back({word, true}); // pushing in html stuffs
+      out.emplace_back(new Tag{word}); // pushing in html stuffs
       word.clear();
     } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
                body.compare(c, 4, "&lt;") == 0) {
@@ -37,52 +37,44 @@ void Layout::lex(const std::string &body) {
       word += body[c];
   }
   if (!word.empty())
-    out.push_back({word, false});
+    out.emplace_back(new Text{word});
   process_layout(out);
 }
 
-void Layout::process_layout(const std::vector<Item> &tokens) {
+void Layout::process_layout(const std::vector<std::unique_ptr<Item>> &tokens) {
   std::vector<DisplayItem> items{};
   std::string word{};
 
   for (const auto &token : tokens) {
-    if (token.m_tag) {
-      // If a tag changes style in the middle of a word, flush pending
-      // characters first
+    if (token->getType() == ItemType::TAG) {
       if (!word.empty()) {
         items.push_back(std::move(make_display(word)));
       }
-      set_font(token.m_text);
+      set_font(token->m_text);
     } else {
-      const auto &str = token.m_text;
+      const auto &str = token->m_text;
       for (size_t c = 0; c < str.size(); ++c) {
         unsigned char byte = static_cast<unsigned char>(str[c]);
 
-        // 1. Whitespace handling
         if (std::isspace(byte)) {
           if (!word.empty()) {
             items.push_back(std::move(make_display(word)));
           }
 
-          // Consume all adjacent whitespace (spaces, tabs, newlines)
           while (c < str.size() &&
                  std::isspace(static_cast<unsigned char>(str[c]))) {
             ++c;
           }
-          --c; // Step back one position so ++c lands on the next non-space char
+          --c;
 
-          // Collapse into a single space token
           std::string space_str = " ";
           items.push_back(std::move(make_display(space_str)));
           continue;
         }
 
-        // 2. ASCII characters
         if ((byte & 0x80) == 0x00) {
           word += str[c];
-        }
-        // 3. Multi-byte UTF-8 (e.g. CJK or symbols)
-        else {
+        } else {
           if (!word.empty()) {
             items.push_back(std::move(make_display(word)));
           }

@@ -56,10 +56,27 @@ struct DisplayItem {
   std::unique_ptr<ItemProperties> internal{std::make_unique<ItemProperties>()};
 };
 
+enum class ItemType { TAG, TEXT };
+
 struct Item {
   std::string m_text{};
-  bool m_tag;
-  Item(std::string &text, bool tag) : m_text{text}, m_tag{tag} {}
+  std::vector<std::unique_ptr<Item>> m_children{};
+  Item *m_parent{};
+  Item(std::string &text) : m_text{text} {}
+  virtual ItemType getType() const = 0;
+  virtual ~Item() = default;
+};
+
+struct Text : public Item {
+
+  Text(std::string &text) : Item{text} {}
+  ItemType getType() const { return ItemType::TEXT; }
+};
+
+struct Tag : public Item {
+
+  Tag(std::string &text) : Item{text} {}
+  ItemType getType() const { return ItemType::TAG; }
 };
 
 struct myFile {

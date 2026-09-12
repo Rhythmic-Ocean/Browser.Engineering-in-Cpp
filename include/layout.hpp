@@ -13,7 +13,7 @@ class Layout {
   FontSize g_fontSize = BASE_FONT_SIZE;
   FontStyle g_fontStyle = FontStyle::REGULAR;
 
-  void process_layout(const std::vector<Item> &tokens);
+  void process_layout(const std::vector<std::unique_ptr<Item>> &out);
   DisplayItem make_display(std::string &str);
   void set_font(const std::string &fontTag);
   bool m_breakLine{false};
