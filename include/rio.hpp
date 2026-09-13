@@ -1,3 +1,5 @@
+//--WARNING: Buffered RIO functions are deprecated, they were for pre-SSL config
+
 #pragma once
 
 #include <openssl/ssl.h>

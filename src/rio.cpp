@@ -1,3 +1,5 @@
+//--WARNING: Buffered RIO functions are deprecated, they were for pre-SSL config
+
 /* Robust I/O package to handle the short count problem caused by normal
  read()/write()/send() operations*/
 
