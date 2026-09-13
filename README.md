@@ -42,7 +42,7 @@ New project structure w/ some description:
     ├── client.cpp
     ├── fonts.cpp
     ├── helpers.cpp
-│   ├── HTMLParse.cpp
+    ├── HTMLParse.cpp
     ├── layout.cpp
     ├── main.cpp
     ├── rio.cpp
@@ -54,9 +54,9 @@ New project structure w/ some description:
 - All edge cases mentioned in book such as non closing tags, empty space before first tag, first/last tags are taken care of.
 - [output.txt](output.txt) contains the output sample of the DOM
 - HTML DOM sample:
-  ![Output.txt](assets/image/chp4-complete-1)
+  ![Output.txt](assets/image/chp4-complete-1.png)
 - Rendering [this](https://browser.engineering/examples/index.html)
-  ![Output.txt](assets/image/chp4-complete-2)
+  ![Output.txt](assets/image/chp4-complete-2.png)
 
 ### Current Status (Latest Sept 7)
 
