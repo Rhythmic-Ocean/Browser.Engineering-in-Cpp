@@ -6,7 +6,7 @@ The original book's implemented in python.
 
 ### Current Status (Latest Sept 13)
 
-#### Chapter 4 - Completed (Sept 7 2026)
+#### Chapter 4 - Completed (Sept 13 2026)
 
 New project structure w/ some description:
 
