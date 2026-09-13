@@ -12,120 +12,118 @@ void Layout::init(TTF_TextEngine *textEngine) {
   m_fontCache.init();
 }
 
-void Layout::lex(const std::string &body) {
-  std::vector<std::unique_ptr<Item>> out{};
-  std::string word{};
-  bool in_tag = false;
-  for (size_t c = 0; c < body.size(); ++c) {
-    if (body[c] == '<') {
-      in_tag = true;
-      out.emplace_back(new Text{word}); // pushinig in actual content
-      word.clear();
-    } else if (body[c] == '>') {
-      in_tag = false;
-      out.emplace_back(new Tag{word}); // pushing in html stuffs
-      word.clear();
-    } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
-               body.compare(c, 4, "&lt;") == 0) {
-      word += "<";
-      c += 3; // skip past "lt;" (loop's ++c handles the last +1)
-    } else if (!in_tag && body[c] == '&' && body.size() - c >= 4 &&
-               body.compare(c, 4, "&gt;") == 0) {
-      word += '>';
-      c += 3;
-    } else
-      word += body[c];
-  }
-  if (!word.empty())
-    out.emplace_back(new Text{word});
-  process_layout(out);
-}
-
-void Layout::process_layout(const std::vector<std::unique_ptr<Item>> &tokens) {
-  std::vector<DisplayItem> items{};
-  std::string word{};
-
-  for (const auto &token : tokens) {
-    if (token->getType() == ItemType::TAG) {
-      if (!word.empty()) {
-        items.push_back(std::move(make_display(word)));
-      }
-      set_font(token->m_text);
-    } else {
-      const auto &str = token->m_text;
-      for (size_t c = 0; c < str.size(); ++c) {
-        unsigned char byte = static_cast<unsigned char>(str[c]);
-
-        if (std::isspace(byte)) {
-          if (!word.empty()) {
-            items.push_back(std::move(make_display(word)));
-          }
-
-          while (c < str.size() &&
-                 std::isspace(static_cast<unsigned char>(str[c]))) {
-            ++c;
-          }
-          --c;
-
-          std::string space_str = " ";
-          items.push_back(std::move(make_display(space_str)));
-          continue;
-        }
-
-        if ((byte & 0x80) == 0x00) {
-          word += str[c];
-        } else {
-          if (!word.empty()) {
-            items.push_back(std::move(make_display(word)));
-          }
-
-          size_t char_length = 2;
-          if ((byte & 0xF0) == 0xE0)
-            char_length = 3;
-          else if ((byte & 0xF8) == 0xF0)
-            char_length = 4;
-
-          std::string utf8_char = str.substr(c, char_length);
-          items.push_back(std::move(make_display(utf8_char)));
-          c += (char_length - 1);
-        }
-      }
-
-      if (!word.empty()) {
-        items.push_back(std::move(make_display(word)));
-      }
-    }
-  }
-
-  m_items = std::move(items);
-}
-
-void Layout::set_font(const std::string &fontTag) {
+void Layout::open_tag(const std::string &tag) {
   using enum FontStyle;
-  FontStyle oldStyle = g_fontStyle;
-  if (fontTag == "i") {
-    g_fontStyle = ITALICS;
-  } else if (fontTag == "b") {
-    g_fontStyle = BOLD;
-  } else if (fontTag == "/b" || fontTag == "/i") {
-    g_fontStyle = REGULAR;
-  } else if (fontTag == "small")
+  if (tag == "i") {
+    if (g_fontStyle == BOLD)
+      g_fontStyle = BOLD_ITALICS;
+    else
+      g_fontStyle = ITALICS;
+  } else if (tag == "b") {
+    if (g_fontStyle == ITALICS)
+      g_fontStyle = BOLD_ITALICS;
+    else
+      g_fontStyle = BOLD;
+  } else if (tag == "small")
     g_fontSize = 10;
-  else if (fontTag == "/small")
-    g_fontSize += 10;
-  else if (fontTag == "big")
+  else if (tag == "big")
     g_fontSize += 20;
-  else if (fontTag == "/big")
+  else if (tag == "br")
+    m_breakLine = true;
+}
+
+void Layout::close_tag(const std::string &tag) {
+  using enum FontStyle;
+  if (tag == "i") {
+    if (g_fontStyle == BOLD_ITALICS)
+      g_fontStyle = BOLD;
+    else
+      g_fontStyle = REGULAR;
+  } else if (tag == "b") {
+    if (g_fontStyle == BOLD_ITALICS)
+      g_fontStyle = ITALICS;
+    else
+      g_fontStyle = REGULAR;
+  } else if (tag == "small")
+    g_fontSize += 10;
+  else if (tag == "big")
     g_fontSize = 20;
-  else if (fontTag == "/p") {
+  else if (tag == "p") {
     m_breakLine = true;
     m_lineSpacing = VSTEP;
-  } else if (fontTag == "br")
-    m_breakLine = true;
+  }
+}
 
-  if ((oldStyle == BOLD && g_fontStyle == ITALICS) ||
-      (oldStyle == ITALICS && g_fontStyle == BOLD)) {
-    g_fontStyle = BOLD_ITALICS;
+/*
+--WARNING: The multi-byte parsing algorithm in the following functioin was
+           generated with heavy AI assistance. Extensive line-by-line notes for
+           explanative purpose.
+ */
+void Layout::process_text(const std::string &str) {
+  std::string word{};
+  for (size_t c = 0; c < str.size(); ++c) {
+    unsigned char byte = static_cast<unsigned char>(str[c]);
+    /*--NOTE: Collapsing consecutive whitespaces into a single space.
+              Important to note that the whitespaces we see in webpages are
+              the result of tags, not excess ones from plain text in a .html
+              file!!*/
+    if (std::isspace(byte)) {
+      if (!word.empty()) {
+        m_items.push_back(std::move(make_display(word)));
+      }
+      while (c < str.size() &&
+             std::isspace(static_cast<unsigned char>(str[c]))) {
+        ++c;
+      }
+      --c;
+      std::string space_str = " ";
+      m_items.push_back(std::move(make_display(space_str)));
+      continue;
+    }
+    /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
+              stores how many bytes it's made up of in it's first byte as
+              follows:
+              - 0xxxxxxx -> 1 byte chars has first bit set 0, rest of 7 bits
+                store info.
+                That's why we & the byte with 0x10000000, and if it gives 0x00
+                it's a one byte char
+              - 11xxxxxx -> this first byte pattern is for 2 byte chars
+              - 111xxxxx -> this first byte pattern is for 3 byte chars
+              - 1111xxxx -> this first byte pattern is for 4 byte chars
+     */
+    if ((byte & 0x80) == 0x00) { // & with 0x10000000
+      word += str[c];
+    } else {
+      if (!word.empty()) { // if the char is no 1 byte then we immediatly
+                           // clear the buffer and start a new item
+        m_items.push_back(std::move(make_display(word)));
+      }
+      size_t char_length = 2;
+      if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
+        char_length = 3;
+      else if ((byte & 0xF8) == 0xF0) //& w/ 0x11111000
+        char_length = 4;
+      std::string utf8_char = str.substr(c, char_length);
+      // each of the multi byte char are treated as seperate display item
+      m_items.push_back(std::move(make_display(utf8_char)));
+      c += (char_length - 1); // as the enclosing for loop performs ++c next
+    }
+  }
+  // Flush the remaining chars from buffer
+  if (!word.empty())
+    m_items.push_back(std::move(make_display(word)));
+}
+
+void Layout::recurse(Item *root) {
+  std::string word{};
+  if (root->getType() == ItemType::TEXT) {
+    process_text(root->m_text);
+  } else {
+    open_tag(root->m_text);
+    for (auto &child : root->m_children) {
+      recurse(child.get());
+    }
+    close_tag(root->m_text);
   }
 }
 

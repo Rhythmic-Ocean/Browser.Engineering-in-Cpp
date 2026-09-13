@@ -1,6 +1,7 @@
 #include "helpers.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
-#include <algorithm>
+#include <cctype>
+#include <iostream>
 #include <string_view>
 
 std::vector<std::string_view> hlp::split(std::string_view str,
@@ -26,9 +27,16 @@ std::string_view hlp::strip(std::string_view str) {
   return str.substr(start, end - start + 1);
 }
 
-std::string hlp::casefold(std::string_view stri) {
-  std::string str{stri};
-  std::transform(str.begin(), str.end(), str.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  return str;
+void hlp::casefold(std::string &stri) {
+  for (char c : stri) {
+    c = static_cast<char>(std::tolower(c));
+  }
+}
+
+void hlp::print_tree(Item *node, int indent) {
+  std::string indents(indent, ' ');
+  std::cout << indents << *node << std::endl;
+  for (auto &child : node->m_children) {
+    print_tree(child.get(), indent + 2);
+  }
 }

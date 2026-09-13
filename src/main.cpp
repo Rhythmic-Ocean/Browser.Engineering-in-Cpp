@@ -1,4 +1,6 @@
 
+#include "HTMLParse.hpp"
+#include "helpers.hpp"
 #include "url.hpp"
 #include "window.hpp"
 #include <SDL3/SDL_render.h>
@@ -14,7 +16,9 @@
 void load(URL &url) {
   std::string response = url.request();
   Window window{"Browser", 800, 600};
-  window.layout.lex(response);
+  HTMLParse parser{response};
+  Item *root = parser.parse();
+  window.layout.recurse(root);
   window.layout.calculate_position(*window.getRenderer());
   while (window.is_Running) {
     window.start_event();

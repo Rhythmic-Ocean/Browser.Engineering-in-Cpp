@@ -11,18 +11,20 @@ class Layout {
   FontCache m_fontCache{};
 
   FontSize g_fontSize = BASE_FONT_SIZE;
-  FontStyle g_fontStyle = FontStyle::REGULAR;
+  FontStyle g_fontStyle = FontStyle::REGULAR; // prob make a vector later on cuz
+                                              // we can stack a lottt of styles
 
-  void process_layout(const std::vector<std::unique_ptr<Item>> &out);
+  void process_text(const std::string &text);
+  void open_tag(const std::string &tag);
+  void close_tag(const std::string &tag);
   DisplayItem make_display(std::string &str);
-  void set_font(const std::string &fontTag);
   bool m_breakLine{false};
   int m_lineSpacing{};
 
 public:
+  void recurse(Item *root);
   std::vector<DisplayItem> m_items{};
   Layout();
   void init(TTF_TextEngine *textEngine);
-  void lex(const std::string &body);
   void calculate_position(SDL_Renderer &renderer);
 };

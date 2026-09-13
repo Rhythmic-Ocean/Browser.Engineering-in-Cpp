@@ -75,8 +75,10 @@ URL::parse_response(std::vector<std::string_view> response, int &indx) {
       break;
     }
     auto header_val{hlp::split(line, ":", 1)};
-    auto [header, value] = std::make_tuple(header_val[0], header_val[1]);
-    response_headers[hlp::casefold(header)] = hlp::strip(value);
+    auto [header, value] =
+        std::make_tuple(std::string(header_val[0]), std::string(header_val[1]));
+    hlp::casefold(header);
+    response_headers[header] = hlp::strip(value);
     ++indx;
   }
   return response_headers;

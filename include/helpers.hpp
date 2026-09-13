@@ -6,9 +6,11 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <climits>
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 enum class FontStyle { BOLD, ITALICS, BOLD_ITALICS, REGULAR, COUNT };
@@ -62,21 +64,36 @@ struct Item {
   std::string m_text{};
   std::vector<std::unique_ptr<Item>> m_children{};
   Item *m_parent{};
-  Item(std::string &text) : m_text{text} {}
+  Item(std::string &&text, Item *parent)
+      : m_text{std::move(text)}, m_parent{parent} {}
   virtual ItemType getType() const = 0;
+  virtual std::ostream &printItem(std::ostream &out) = 0;
   virtual ~Item() = default;
+  friend std::ostream &operator<<(std::ostream &out, Item &item) {
+    return item.printItem(out);
+  }
 };
 
 struct Text : public Item {
 
-  Text(std::string &text) : Item{text} {}
-  ItemType getType() const { return ItemType::TEXT; }
+  Text(std::string &&text, Item *parent) : Item{std::move(text), parent} {}
+  ItemType getType() const override { return ItemType::TEXT; }
+  std::ostream &printItem(std::ostream &out) override {
+    out << m_text;
+    return out;
+  }
 };
 
 struct Tag : public Item {
-
-  Tag(std::string &text) : Item{text} {}
-  ItemType getType() const { return ItemType::TAG; }
+  std::unordered_map<std::string, std::string> m_attributes{};
+  Tag(std::string &&text, Item *parent,
+      std::unordered_map<std::string, std::string> &&attributes)
+      : Item{std::move(text), parent}, m_attributes{std::move(attributes)} {}
+  ItemType getType() const override { return ItemType::TAG; }
+  std::ostream &printItem(std::ostream &out) override {
+    out << "<" + m_text + ">";
+    return out;
+  }
 };
 
 struct myFile {
@@ -128,7 +145,8 @@ namespace hlp {
 std::vector<std::string_view> split(std::string_view str, std::string delim,
                                     size_t nums = INT_MAX);
 std::string_view strip(std::string_view str);
-std::string casefold(std::string_view str);
+void casefold(std::string &str);
+void print_tree(Item *node, int indent = 0);
 } // namespace hlp
 //
 inline std::string C_SDL_GetStrError() { return SDL_GetError(); }

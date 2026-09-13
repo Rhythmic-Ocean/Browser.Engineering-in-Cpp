@@ -23,7 +23,8 @@ set(_SOURCE_DIR
     src/helpers.cpp
     src/window.cpp
     src/fonts.cpp
-    src/layout.cpp)
+    src/layout.cpp
+    src/HTMLParse.cpp)
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 
