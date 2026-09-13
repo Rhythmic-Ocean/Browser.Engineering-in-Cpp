@@ -74,40 +74,4 @@ New project structure w/ some description:
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Project's structure (subject to change heavily in future)
-
-```
-
-├── assets
-│   ├── fonts
-│   │   ├── NotoSansSC-Bold.ttf
-│   │   ├── NotoSansSC-Regular.ttf
-│   │   ├── OpenSans-BoldItalic.ttf
-│   │   ├── OpenSans-Bold.ttf
-│   │   ├── OpenSans-Italic.ttf
-│   │   └── OpenSans-Regular.ttf
-│   └── image
-│       ├── chp-1.png
-│       └── chp-2-mid.png
-├── CMakeLists.txt
-├── include
-│   ├── client.hpp
-│   ├── fonts.hpp
-│   ├── helpers.hpp
-│   ├── layout.hpp
-│   ├── rio.hpp
-│   ├── url.hpp
-│   └── window.hpp
-├── README.md
-└── src
-    ├── client.cpp
-    ├── fonts.cpp
-    ├── helpers.cpp
-    ├── layout.cpp
-    ├── main.cpp
-    ├── rio.cpp
-    ├── url.cpp
-    └── window.cpp
-```
-
-### Next Step: Chapter 4, parsing HTML DOM
+### Next Step: Chapter 5!!
