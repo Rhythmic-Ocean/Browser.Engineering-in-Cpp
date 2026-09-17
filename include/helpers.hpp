@@ -19,14 +19,6 @@ typedef int FontSize;
 inline int HSTEP = 13;
 inline int VSTEP = 14;
 
-struct TextDeleter {
-  void operator()(TTF_Text *text) const {
-    if (text)
-      TTF_DestroyText(text);
-    text = nullptr;
-  }
-};
-
 struct WindowDeleter {
   void operator()(SDL_Window *window) const {
     if (window)

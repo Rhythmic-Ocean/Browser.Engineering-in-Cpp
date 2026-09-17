@@ -1,12 +1,53 @@
+#pragma once
+
 #include "layout.hpp"
+#include "Browser.hpp"
 #include "helpers.hpp"
 #include "window.hpp"
+#include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+using namespace Layout;
+
+/*--NOTE: DrawItem's member function definitions
+          Each item is rendered individually here
+*/
+
+void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  float cur_scroll_y{m_top - scroll_y};
+  if (!TTF_DrawRendererText(m_text, m_left, cur_scroll_y)) {
+    SDL_Log("Failed to draw text at item %s: %s\n", m_text->text,
+            SDL_GetError());
+  }
+}
+
+void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
+  float cur_scroll_y{rect.y - scroll_y};
+  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+  if (!SDL_RenderFillRect(renderer, &rect)) {
+    SDL_Log("Failed to render layout rectangle: %s\n", SDL_GetError());
+  }
+}
+
+//--NOTE: Layout's member function definitions
+
+void DocumentLayout::layout(TTF_TextEngine *textEngine) {
+  BlockLayout *child = new BlockLayout(m_node);
+  m_children.emplace_back(child);
+  m_width = Browser::WIDTH - 2 * HSTEP;
+  m_start_x = HSTEP;
+  m_start_y = VSTEP;
+  child->layout(textEngine);
+  m_height = child->m_height;
+}
+
+std::vector<DisplayItem> DocumentLayout::paint() { return {}; }
+
 void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
                  std::vector<DisplayItem *> &line);
-Layout::Layout() {}
+Layout::Layout(Item *rootNode) : m_rootNode{rootNode} {}
 void Layout::init(TTF_TextEngine *textEngine) {
   m_textEngine = textEngine;
   m_fontCache.init();
