@@ -21,8 +21,8 @@ set(_SOURCE_DIR
     src/rio.cpp
     src/url.cpp
     src/helpers.cpp
-    src/window.cpp
     src/fonts.cpp
+    src/Browser.cpp
     src/layout.cpp
     src/HTMLParse.cpp)
 

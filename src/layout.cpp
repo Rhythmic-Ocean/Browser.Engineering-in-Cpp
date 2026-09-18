@@ -12,7 +12,7 @@ using namespace Layout;
 */
 
 void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   float cur_scroll_y{m_top - scroll_y};
   if (!TTF_DrawRendererText(m_text, m_left, cur_scroll_y)) {
     SDL_Log("Failed to draw text at item %s: %s\n", m_text->text,
@@ -30,10 +30,10 @@ void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
 
 //--NOTE: Layout's member function definitions
 
-void DocumentLayout::layout(Browser::LayoutContext &ctx) {
+void DocumentLayout::layout(LayoutContext &ctx) {
   BlockLayout *child = new BlockLayout(m_node, this, nullptr);
   m_children.emplace_back(child);
-  m_width = Browser::WIDTH - 2 * HSTEP;
+  m_width = Browser::m_width - 2 * HSTEP;
   m_start_x = HSTEP;
   m_start_y = VSTEP;
   child->layout(ctx);
@@ -66,7 +66,7 @@ LayoutType BlockLayout::layout_mode() {
     return LayoutType::BLOCK;
 }
 
-void BlockLayout::layout(Browser::LayoutContext &ctx) {
+void BlockLayout::layout(LayoutContext &ctx) {
   m_start_x = m_parent->m_start_x;
   m_width = m_parent->m_width;
   if (m_previous) {
@@ -140,8 +140,7 @@ void BlockLayout::close_tag(const std::string &tag) {
  */
 //--INFO: relative x postion of the text gets set in process_text/make_display.
 //        absolute x and y position gets set at flush()
-void BlockLayout::process_text(const std::string &str,
-                               Browser::LayoutContext &ctx) {
+void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
   std::string word{};
   for (size_t c = 0; c < str.size(); ++c) {
     unsigned char byte = static_cast<unsigned char>(str[c]);
@@ -196,7 +195,7 @@ void BlockLayout::process_text(const std::string &str,
     m_line.emplace_back(std::move(make_display(word, ctx)));
 }
 
-void BlockLayout::recurse(Item *root, Browser::LayoutContext &ctx) {
+void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   std::string word{};
   if (root->getType() == ItemType::TEXT) {
     process_text(root->m_text, ctx);
@@ -212,10 +211,9 @@ void BlockLayout::recurse(Item *root, Browser::LayoutContext &ctx) {
 //--INFO: relative x postion of the text gets set in process_text/make_display.
 //        absolute x and y position gets set at flush()
 PositionedText BlockLayout::make_display(std::string &word,
-                                         Browser::LayoutContext &ctx) {
+                                         LayoutContext &ctx) {
   int h{};
   int w{};
-  DisplayItem item{};
   auto *font = g_fontCache.get_font(m_fontWeight, m_fontSize);
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
 

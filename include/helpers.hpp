@@ -18,6 +18,9 @@ typedef int FontSize;
 inline int HSTEP = 13;
 inline int VSTEP = 14;
 
+static constexpr float WIDTH = 800.0f;
+static constexpr float HEIGHT = 600.0f;
+
 struct WindowDeleter {
   void operator()(SDL_Window *window) const {
     if (window)

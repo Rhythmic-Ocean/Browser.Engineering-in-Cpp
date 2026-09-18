@@ -1,7 +1,9 @@
 #include "Browser.hpp"
 #include "HTMLParse.hpp"
+#include "helpers.hpp"
 #include "layout.hpp"
 #include "url.hpp"
+#include <algorithm>
 
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -31,7 +33,7 @@ void Browser::init() {
   m_max_y = 0.0f;
 }
 
-void Window::start_event() {
+void Browser::start_event() {
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
@@ -41,18 +43,17 @@ void Window::start_event() {
     case SDL_EVENT_WINDOW_RESIZED:
       m_width = event.window.data1;
       m_height = event.window.data2;
-      layout.calculate_position(*m_renderer.get());
+      m_document->layout(ctx);
       break;
     case SDL_EVENT_MOUSE_WHEEL: {
-      scroll_y -= event.wheel.y * 40.0f;
-      if (scroll_y < 0.0f)
-        scroll_y = 0.0f;
-      float max_scroll = max_y - m_height;
-      if (max_scroll < 0.0f)
-        max_scroll = 0.0f;
-      if (scroll_y > max_scroll) {
-        scroll_y = max_scroll;
+      m_max_y = std::max(m_document->m_height + 2 * VSTEP - m_height, 0.0f);
+      m_scroll_y -= event.wheel.y * 40.0f;
+      if (m_scroll_y < 0.0f)
+        m_scroll_y = 0.0f;
+      if (m_scroll_y > m_max_y) {
+        m_scroll_y = m_max_y;
       }
+      draw();
       break;
     }
     default:
@@ -73,19 +74,17 @@ void Browser::paint_tree(Layout::Layout *layoutNode) {
 
 void Browser::load(URL &url) {
   std::string response = url.request();
-  Window window{"Browser", 800, 600};
   HTMLParse parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
   // make layout object indep of window??
   // Browser can own layout and window both...
   ctx.textEngine = m_engine.get();
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
-  m_document.layout();
-  window.layout.recurse(root);
-  window.layout.calculate_position(*window.getRenderer());
-  while (window.is_Running) {
-    window.start_event();
-    window.draw_text(window.layout.m_items);
+  m_document->layout(ctx);
+  paint_tree(m_document.get());
+  while (is_Running) {
+    start_event();
+    draw();
   }
 }
 
@@ -97,4 +96,16 @@ void Browser::load_engine() {
         "Couldn't create text engine: " + std::string(SDL_GetError()) + "\n");
   }
   m_engine.reset(raw_engine);
+}
+
+void Browser::draw() {
+  SDL_RenderClear(m_renderer.get());
+  for (auto &cmd : m_displayItems) {
+    if (cmd->m_top > m_scroll_y + m_height)
+      break; // if u below the screen just stop
+    if (cmd->m_bottom < m_scroll_y)
+      continue;
+    cmd->execute(m_scroll_y, m_renderer.get());
+  }
+  SDL_RenderPresent(m_renderer.get());
 }

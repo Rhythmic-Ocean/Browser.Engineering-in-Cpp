@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Browser.hpp"
 #include "helpers.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_pixels.h>
@@ -15,6 +14,10 @@
 using namespace std::string_view_literals;
 
 namespace Layout {
+
+struct LayoutContext {
+  TTF_TextEngine *textEngine;
+};
 
 static constexpr float HSTEP = 13.0f;
 static constexpr float VSTEP = 13.0f;
@@ -31,8 +34,6 @@ static constexpr auto BLOCK_ELEMENTS = std::to_array<std::string_view>(
 
 enum class FontWeight { BOLD, ITALICS, BOLD_ITALICS, REGULAR, COUNT };
 enum class LayoutType { BLOCK, INLINE };
-
-inline FontCache g_fontCache{};
 
 inline SDL_Color parse_color(std::string &name) {
   static const std::unordered_map<std::string, SDL_Color> color_map = {
@@ -89,6 +90,8 @@ public:
   ~FontCache() = default;
 };
 
+inline FontCache g_fontCache{};
+
 struct PositionedText {
   std::unique_ptr<TTF_Text, TextDeleter> text;
   float start_x{};
@@ -100,7 +103,10 @@ struct PositionedText {
 
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
+  float m_top{};
+  float m_bottom{};
   virtual void execute(float scroll_y, SDL_Renderer *renderer) = 0;
+  virtual ~DrawItem() = default;
 };
 
 struct DrawText : public DrawItem {
@@ -108,12 +114,10 @@ private:
   TTF_Text *m_text;
   TTF_Font *m_font;
   float m_left{};
-  float m_top{};
-  float m_bottom{};
 
 public:
-  DrawText(TTF_Text *text, float x1, float y1)
-      : m_text{text}, m_left{x1}, m_top{y1} {
+  DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
+    m_top = y1;
     m_font = TTF_GetTextFont(m_text);
     m_bottom = y1 + TTF_GetFontLineSkip(m_font);
   }
@@ -124,7 +128,10 @@ struct DrawRect : public DrawItem {
   SDL_FRect rect;
   SDL_Color color;
   DrawRect(float x, float y, float width, float height, std::string &color)
-      : rect{x, y, width, height}, color{parse_color(color)} {}
+      : rect{x, y, width, height}, color{parse_color(color)} {
+    m_top = y;
+    m_bottom = height;
+  }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
@@ -143,16 +150,16 @@ public:
   Layout(Item *node, Layout *parent, Layout *previous)
       : m_node{node}, m_parent{parent}, m_previous{previous} {}
 
-  virtual void layout(Browser::LayoutContext &ctx) = 0;
+  virtual void layout(LayoutContext &ctx) = 0;
   virtual std::vector<DrawItem *> paint() = 0;
-  virtual ~Layout();
+  virtual ~Layout() = default;
 };
 
 class DocumentLayout : public Layout {
 
 public:
   DocumentLayout(Item *node) : Layout{node, nullptr, nullptr} {}
-  void layout(Browser::LayoutContext &ctx);
+  void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
   ~DocumentLayout() = default;
 };
@@ -173,10 +180,10 @@ public:
 private:
   LayoutType layout_mode();
   void open_tag(const std::string &tag);
-  void process_text(const std::string &text, Browser::LayoutContext &ctx);
+  void process_text(const std::string &text, LayoutContext &ctx);
   void close_tag(const std::string &tag);
-  PositionedText make_display(std::string &str, Browser::LayoutContext &ctx);
-  void recurse(Item *root, Browser::LayoutContext &ctx);
+  PositionedText make_display(std::string &str, LayoutContext &ctx);
+  void recurse(Item *root, LayoutContext &ctx);
   void flush();
   static void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
                           std::vector<PositionedText> &line);
@@ -184,9 +191,9 @@ private:
 public:
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
-  void layout(Browser::LayoutContext &ctx);
+  void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
-  ~BlockLayout();
+  ~BlockLayout() = default;
 };
 
 } // namespace Layout
