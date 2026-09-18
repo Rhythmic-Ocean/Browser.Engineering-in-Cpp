@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-enum class FontStyle { BOLD, ITALICS, BOLD_ITALICS, REGULAR, COUNT };
 static constexpr float BASE_FONT_SIZE = 16.0f;
 typedef int FontSize;
 inline int HSTEP = 13;
@@ -38,16 +37,6 @@ struct RendererDeleter {
 struct ItemProperties {
   bool breakLine{false};
   int lineSpace{};
-};
-
-struct DisplayItem {
-  std::unique_ptr<TTF_Text, TextDeleter> text_obj;
-  TTF_Font *font{nullptr};
-  float x;
-  float y;
-  float width;
-  float height;
-  std::unique_ptr<ItemProperties> internal{std::make_unique<ItemProperties>()};
 };
 
 enum class ItemType { TAG, TEXT };

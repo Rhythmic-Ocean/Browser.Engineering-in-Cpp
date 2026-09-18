@@ -1,9 +1,6 @@
-#pragma once
-
 #include "layout.hpp"
 #include "Browser.hpp"
 #include "helpers.hpp"
-#include "window.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -33,65 +30,106 @@ void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
 
 //--NOTE: Layout's member function definitions
 
-void DocumentLayout::layout(TTF_TextEngine *textEngine) {
-  BlockLayout *child = new BlockLayout(m_node);
+void DocumentLayout::layout(Browser::LayoutContext &ctx) {
+  BlockLayout *child = new BlockLayout(m_node, this, nullptr);
   m_children.emplace_back(child);
   m_width = Browser::WIDTH - 2 * HSTEP;
   m_start_x = HSTEP;
   m_start_y = VSTEP;
-  child->layout(textEngine);
+  child->layout(ctx);
   m_height = child->m_height;
 }
 
-std::vector<DisplayItem> DocumentLayout::paint() { return {}; }
+std::vector<DrawItem *> DocumentLayout::paint() { return {}; }
 
-void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
-                 std::vector<DisplayItem *> &line);
-Layout::Layout(Item *rootNode) : m_rootNode{rootNode} {}
-void Layout::init(TTF_TextEngine *textEngine) {
-  m_textEngine = textEngine;
-  m_fontCache.init();
+LayoutType BlockLayout::layout_mode() {
+  auto checkBlockTag = [](std::vector<std::unique_ptr<Item>> &children) {
+    for (auto &child : children) {
+      if (std::ranges::find(BLOCK_ELEMENTS, child->m_text) !=
+          BLOCK_ELEMENTS.end())
+        return true;
+    }
+    return false;
+  };
+  // if plain text, it's inline by default
+  if (m_node->getType() == ItemType::TEXT)
+    return LayoutType::INLINE;
+  // if it's a tag and it's children are of block type it gets block
+  else if (m_node->getType() == ItemType::TAG &&
+           checkBlockTag(m_node->m_children)) {
+    return LayoutType::BLOCK;
+    // all of this node's children don't form block layout!
+  } else if (!m_node->m_children.empty())
+    return LayoutType::INLINE;
+  // web developer's mistake for having an empty block type tag!!
+  else
+    return LayoutType::BLOCK;
 }
 
-void Layout::open_tag(const std::string &tag) {
-  using enum FontStyle;
+void BlockLayout::layout(Browser::LayoutContext &ctx) {
+  m_start_x = m_parent->m_start_x;
+  m_width = m_parent->m_width;
+  if (m_previous) {
+    m_start_y = m_previous->m_start_y + m_previous->m_height;
+  } else {
+    m_start_y = m_parent->m_start_y;
+  }
+  LayoutType mode = layout_mode();
+  if (mode == LayoutType::BLOCK) {
+    Layout *previous = nullptr;
+    for (auto &m_child : m_node->m_children) {
+      Layout *next = new BlockLayout(m_child.get(), this, previous);
+      m_children.emplace_back(next);
+      previous = next;
+    }
+  } else {
+    m_cursor_x = 0;
+    m_cursor_y = 0;
+    m_fontWeight = FontWeight::REGULAR;
+    m_fontSize = 16;
+    m_font = g_fontCache.get_font(m_fontWeight, m_fontSize);
+    recurse(m_node, ctx);
+    flush();
+  }
+}
+
+void BlockLayout::open_tag(const std::string &tag) {
   if (tag == "i") {
-    if (g_fontStyle == BOLD)
-      g_fontStyle = BOLD_ITALICS;
+    if (m_fontWeight == FontWeight::BOLD)
+      m_fontWeight = FontWeight::BOLD_ITALICS;
     else
-      g_fontStyle = ITALICS;
+      m_fontWeight = FontWeight::ITALICS;
   } else if (tag == "b") {
-    if (g_fontStyle == ITALICS)
-      g_fontStyle = BOLD_ITALICS;
+    if (m_fontWeight == FontWeight::ITALICS)
+      m_fontWeight = FontWeight::BOLD_ITALICS;
     else
-      g_fontStyle = BOLD;
+      m_fontWeight = FontWeight::BOLD;
   } else if (tag == "small")
-    g_fontSize = 10;
+    m_fontSize = 10;
   else if (tag == "big")
-    g_fontSize += 20;
+    m_fontSize += 20;
   else if (tag == "br")
-    m_breakLine = true;
+    flush();
 }
 
-void Layout::close_tag(const std::string &tag) {
-  using enum FontStyle;
+void BlockLayout::close_tag(const std::string &tag) {
   if (tag == "i") {
-    if (g_fontStyle == BOLD_ITALICS)
-      g_fontStyle = BOLD;
+    if (m_fontWeight == FontWeight::BOLD_ITALICS)
+      m_fontWeight = FontWeight::BOLD;
     else
-      g_fontStyle = REGULAR;
+      m_fontWeight = FontWeight::REGULAR;
   } else if (tag == "b") {
-    if (g_fontStyle == BOLD_ITALICS)
-      g_fontStyle = ITALICS;
+    if (m_fontWeight == FontWeight::BOLD_ITALICS)
+      m_fontWeight = FontWeight::ITALICS;
     else
-      g_fontStyle = REGULAR;
+      m_fontWeight = FontWeight::REGULAR;
   } else if (tag == "small")
-    g_fontSize += 10;
+    m_fontSize += 10;
   else if (tag == "big")
-    g_fontSize = 20;
+    m_fontSize = 20;
   else if (tag == "p") {
-    m_breakLine = true;
-    m_lineSpacing = VSTEP;
+    flush();
+    //--NOTE: NEED TO ADD SOMETHING MORE TO DIFF FROM <br>
   }
 }
 
@@ -100,7 +138,10 @@ void Layout::close_tag(const std::string &tag) {
            generated with heavy AI assistance. Extensive line-by-line notes for
            explanative purpose.
  */
-void Layout::process_text(const std::string &str) {
+//--INFO: relative x postion of the text gets set in process_text/make_display.
+//        absolute x and y position gets set at flush()
+void BlockLayout::process_text(const std::string &str,
+                               Browser::LayoutContext &ctx) {
   std::string word{};
   for (size_t c = 0; c < str.size(); ++c) {
     unsigned char byte = static_cast<unsigned char>(str[c]);
@@ -110,7 +151,7 @@ void Layout::process_text(const std::string &str) {
               file!!*/
     if (std::isspace(byte)) {
       if (!word.empty()) {
-        m_items.push_back(std::move(make_display(word)));
+        m_line.emplace_back(std::move(make_display(word, ctx)));
       }
       while (c < str.size() &&
              std::isspace(static_cast<unsigned char>(str[c]))) {
@@ -118,7 +159,7 @@ void Layout::process_text(const std::string &str) {
       }
       --c;
       std::string space_str = " ";
-      m_items.push_back(std::move(make_display(space_str)));
+      m_line.emplace_back(std::move(make_display(space_str, ctx)));
       continue;
     }
     /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
@@ -137,7 +178,7 @@ void Layout::process_text(const std::string &str) {
     } else {
       if (!word.empty()) { // if the char is no 1 byte then we immediatly
                            // clear the buffer and start a new item
-        m_items.push_back(std::move(make_display(word)));
+        m_line.emplace_back(std::move(make_display(word, ctx)));
       }
       size_t char_length = 2;
       if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
@@ -146,34 +187,37 @@ void Layout::process_text(const std::string &str) {
         char_length = 4;
       std::string utf8_char = str.substr(c, char_length);
       // each of the multi byte char are treated as seperate display item
-      m_items.push_back(std::move(make_display(utf8_char)));
+      m_line.emplace_back(std::move(make_display(utf8_char, ctx)));
       c += (char_length - 1); // as the enclosing for loop performs ++c next
     }
   }
   // Flush the remaining chars from buffer
   if (!word.empty())
-    m_items.push_back(std::move(make_display(word)));
+    m_line.emplace_back(std::move(make_display(word, ctx)));
 }
 
-void Layout::recurse(Item *root) {
+void BlockLayout::recurse(Item *root, Browser::LayoutContext &ctx) {
   std::string word{};
   if (root->getType() == ItemType::TEXT) {
-    process_text(root->m_text);
+    process_text(root->m_text, ctx);
   } else {
     open_tag(root->m_text);
     for (auto &child : root->m_children) {
-      recurse(child.get());
+      recurse(child.get(), ctx);
     }
     close_tag(root->m_text);
   }
 }
 
-DisplayItem Layout::make_display(std::string &word) {
+//--INFO: relative x postion of the text gets set in process_text/make_display.
+//        absolute x and y position gets set at flush()
+PositionedText BlockLayout::make_display(std::string &word,
+                                         Browser::LayoutContext &ctx) {
   int h{};
   int w{};
   DisplayItem item{};
-  auto *font = m_fontCache.get_font(g_fontStyle, g_fontSize);
-  auto *txt{TTF_CreateText(m_textEngine, font, word.c_str(), word.size())};
+  auto *font = g_fontCache.get_font(m_fontWeight, m_fontSize);
+  auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
 
   if (!txt) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
@@ -182,66 +226,61 @@ DisplayItem Layout::make_display(std::string &word) {
                           ". Error: " + std::string(SDL_GetError()));
   }
   TTF_SetTextColor(txt, 255, 255, 255, 255);
-  item.text_obj.reset(txt);
   if (!TTF_GetTextSize(txt, &w, &h)) {
     SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
     throw WindowException("Couldn't calculate string size of: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
-  item.width = static_cast<float>(w);
-  item.height = static_cast<float>(h);
-  item.font = font;
-  item.internal->breakLine = m_breakLine;
-  item.internal->lineSpace = m_lineSpacing;
-  m_breakLine = false;
-  m_lineSpacing = 0;
-  word.clear();
-  return item;
-}
-
-void Layout::calculate_position(SDL_Renderer &renderer) {
-  if (m_items.empty())
-    return;
-  size_t total_items{m_items.size()};
-  int current_w, current_h;
-  SDL_GetCurrentRenderOutputSize(&renderer, &current_w, &current_h);
-  auto current_line_top{DEFAULT_MARGIN};
-  auto end_x{current_w - DEFAULT_MARGIN};
-  int i{};
-  while (i < total_items) {
-    std::vector<DisplayItem *> current_line{};
-    float line_width = DEFAULT_MARGIN;
-    while (i < total_items) {
-      float item_w = m_items[i].width;
-      if ((!current_line.empty() && (line_width + item_w > end_x)) ||
-          (!current_line.empty() && m_items[i].internal->breakLine))
-        break;
-      line_width += item_w;
-      current_line.push_back(&m_items[i]);
-      ++i;
-    }
-    int max_ascent{}, max_descent{}, max_lineskip{};
-    getExtremes(max_ascent, max_descent, max_lineskip, current_line);
-    float baseline_y = current_line_top + max_ascent;
-    float pen_x = DEFAULT_MARGIN;
-    for (auto *word : current_line) {
-      word->x = pen_x;
-      TTF_Font *font = word->font;
-      float font_ascent = TTF_GetFontAscent(font);
-      word->y = baseline_y - font_ascent;
-      pen_x += word->width;
-    }
-    current_line_top += std::max(max_ascent + max_descent, max_lineskip);
-    current_line_top += (i >= total_items) ? 0 : m_items[i].internal->lineSpace;
+  if (m_cursor_x + w > m_width) {
+    flush();
   }
-  Window::max_y = current_line_top;
+  m_cursor_x += w;
+  return {txt, m_cursor_x, 0.0f};
 }
 
-void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
-                 std::vector<DisplayItem *> &line) {
-  for (auto *word : line) {
-    TTF_Font *font = word->font;
+//--INFO: relative x postion of the text gets set in process_text/make_display.
+//        absolute x and y position gets set at flush()
+void BlockLayout::flush() {
+  if (m_line.empty())
+    return;
+  int max_ascent{}, max_descent{}, max_lineskip{};
+  getExtremes(max_ascent, max_descent, max_lineskip, m_line);
+  float baseline = m_cursor_x + 1.25 * max_ascent;
+  for (auto &word : m_line) {
+    TTF_Font *font = TTF_GetTextFont(word.text.get());
+    float font_ascent = TTF_GetFontAscent(font);
+    word.start_x += m_start_x; // absolute position of x
+    word.start_y += (baseline - font_ascent);
+    m_displayList.push_back(std::move(word));
+  }
+  m_cursor_x = 0;
+  m_line.clear();
+  m_cursor_y = baseline + 1.25 * max_descent;
+}
+
+std::vector<DrawItem *> BlockLayout::paint() {
+  std::vector<DrawItem *> cmds{};
+  if (m_node->getType() == ItemType::TAG && m_node->m_text == "pre") {
+    float x2 = m_start_x + m_width;
+    float y2 = m_start_y + m_width;
+    std::string color = "grey";
+    cmds.emplace_back(new DrawRect{m_start_x, m_start_y, x2, y2, color});
+  }
+
+  if (layout_mode() == LayoutType::INLINE) {
+    for (auto &item : m_displayList) {
+      cmds.emplace_back(new DrawText{item.text.get(), m_start_x, m_start_y});
+    }
+  }
+  return cmds;
+}
+
+void BlockLayout::getExtremes(int &max_ascent, int &max_descent,
+                              int &max_lineskip,
+                              std::vector<PositionedText> &line) {
+  for (auto &word : line) {
+    TTF_Font *font = TTF_GetTextFont(word.text.get());
     max_ascent = std::max(max_ascent, TTF_GetFontAscent(font));
     max_descent = std::max(max_descent, std::abs(TTF_GetFontDescent(font)));
     max_lineskip = std::max(max_lineskip, TTF_GetFontLineSkip(font));

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "fonts.hpp"
+#include "Browser.hpp"
 #include "helpers.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_pixels.h>
@@ -8,7 +8,6 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
-#include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -64,9 +63,44 @@ struct TextDeleter {
   }
 };
 
+class FontCache {
+
+  typedef std::unique_ptr<TTF_Font, FontDeleter> Font;
+  typedef std::unique_ptr<myFile, FileDeleter> FontFile;
+
+  std::unordered_map<FontWeight, std::pair<FontFile, FontFile>> fontFile_map{};
+  std::vector<std::unordered_map<FontSize, Font>> font_vec{
+      static_cast<int>(FontWeight::COUNT)};
+
+  void init_fontFiles();
+  void init_normalFonts();
+  void load_fontFiles(FontWeight weight, const std::string &primary,
+                      const std::string &fallback);
+  void load_font(FontWeight weight, FontSize size);
+
+public:
+  FontCache();
+  void init();
+  TTF_Font *get_font(FontWeight style, FontSize size);
+  FontCache(FontCache &) = delete;
+  FontCache &operator=(FontCache &) = delete;
+  FontCache(FontCache &&) = delete;
+  FontCache &operator=(FontCache &&) = delete;
+  ~FontCache() = default;
+};
+
+struct PositionedText {
+  std::unique_ptr<TTF_Text, TextDeleter> text;
+  float start_x{};
+  float start_y{};
+  PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+    text.reset(txt);
+  }
+};
+
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
-  virtual void execute() = 0;
+  virtual void execute(float scroll_y, SDL_Renderer *renderer) = 0;
 };
 
 struct DrawText : public DrawItem {
@@ -83,7 +117,7 @@ public:
     m_font = TTF_GetTextFont(m_text);
     m_bottom = y1 + TTF_GetFontLineSkip(m_font);
   }
-  void execute(float scroll_y, SDL_Renderer *renderer);
+  void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
 struct DrawRect : public DrawItem {
@@ -91,94 +125,68 @@ struct DrawRect : public DrawItem {
   SDL_Color color;
   DrawRect(float x, float y, float width, float height, std::string &color)
       : rect{x, y, width, height}, color{parse_color(color)} {}
-  void execute(float scroll_y, SDL_Renderer *renderer);
+  void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
 class Layout {
 public:
-  virtual void layout(TTF_TextEngine *textEngine) = 0;
-  virtual std::vector<DisplayItem> paint() = 0;
+  float m_start_x{};
+  float m_start_y{};
+  float m_width{};
+  float m_height{};
+
+  Item *m_node{nullptr};
+  Layout *m_parent{nullptr};
+  Layout *m_previous{nullptr};
+  std::vector<std::unique_ptr<Layout>> m_children{};
+
+  Layout(Item *node, Layout *parent, Layout *previous)
+      : m_node{node}, m_parent{parent}, m_previous{previous} {}
+
+  virtual void layout(Browser::LayoutContext &ctx) = 0;
+  virtual std::vector<DrawItem *> paint() = 0;
   virtual ~Layout();
 };
 
 class DocumentLayout : public Layout {
-  Item *m_node{nullptr};
-  Layout *m_parent{nullptr};
-  Layout *m_previous{nullptr};
-  std::vector<std::unique_ptr<Layout>> m_children{};
-
-  float m_start_x{};
-  float m_start_y{};
-  float m_width{};
-  float m_height{};
 
 public:
-  DocumentLayout(Item *node) : m_node{node} {}
-  void layout(TTF_TextEngine *textEngine);
-  std::vector<DisplayItem> paint();
+  DocumentLayout(Item *node) : Layout{node, nullptr, nullptr} {}
+  void layout(Browser::LayoutContext &ctx);
+  std::vector<DrawItem *> paint();
   ~DocumentLayout() = default;
 };
 
 class BlockLayout : public Layout {
-  Item *m_node{nullptr};
-  Layout *m_parent{nullptr};
-  Layout *m_previous{nullptr};
-  std::vector<std::unique_ptr<Layout>> m_children{};
   //--INFO: BlockLayout owns the TTF_Text, NOT DrawText!!!
-  std::vector<std::unique_ptr<TTF_Text, TextDeleter>> m_line;
+  std::vector<PositionedText> m_line;
+  std::vector<PositionedText> m_displayList;
 
 public:
-  float m_start_x{};
-  float m_start_y{};
-  float m_width{};
-  float m_height{};
   float m_cursor_x{};
   float m_cursor_y{};
   FontSize m_fontSize = BASE_FONT_SIZE;
-  FontWeight m_fontWeignt =
+  FontWeight m_fontWeight =
       FontWeight::REGULAR; // prob make a vector later on cuz
   TTF_Font *m_font{};
 
+private:
   LayoutType layout_mode();
   void open_tag(const std::string &tag);
-  void process_text(const std::string &text);
+  void process_text(const std::string &text, Browser::LayoutContext &ctx);
   void close_tag(const std::string &tag);
-  DisplayItem make_display(std::string &str);
-  void recurse(Item *root);
+  PositionedText make_display(std::string &str, Browser::LayoutContext &ctx);
+  void recurse(Item *root, Browser::LayoutContext &ctx);
   void flush();
+  static void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
+                          std::vector<PositionedText> &line);
 
 public:
-  BlockLayout(Item *node) : m_node{node} {}
-  void layout(TTF_TextEngine *textEngine);
-  std::vector<DisplayItem> paint();
+  BlockLayout(Item *node, Layout *parent, Layout *previous)
+      : Layout{node, parent, previous} {}
+  void layout(Browser::LayoutContext &ctx);
+  std::vector<DrawItem *> paint();
   ~BlockLayout();
-};
-
-class Layout {
-  FontSize g_fontSize = BASE_FONT_SIZE;
-  FontStyle g_fontStyle = FontStyle::REGULAR; // prob make a vector later on cuz
-
-  TTF_TextEngine *m_textEngine{nullptr};
-  FontCache m_fontCache{};
-
-  // we can stack a lottt of styles
-  //--NOTE: Browser class owns the root node, DO NOT FREE HERE!!
-  Item *m_rootNode{nullptr};
-
-  void open_tag(const std::string &tag);
-  void process_text(const std::string &text);
-  void close_tag(const std::string &tag);
-  DisplayItem make_display(std::string &str);
-  bool m_breakLine{false};
-  int m_lineSpacing{};
-
-public:
-  void layout();
-  void recurse(Item *root);
-  std::vector<DisplayItem> m_items{};
-  Layout(Item *rootNode, TTF_TextEngine *engine);
-  void init(TTF_TextEngine *textEngine);
-  void calculate_position(SDL_Renderer &renderer);
 };
 
 } // namespace Layout

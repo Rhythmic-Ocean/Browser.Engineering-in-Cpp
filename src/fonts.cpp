@@ -1,9 +1,10 @@
-#include "fonts.hpp"
 #include "helpers.hpp"
+#include "layout.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+using namespace Layout;
 void FontCache::init_fontFiles() {
   const std::string fontPath1{"../assets/fonts/OpenSans-Regular.ttf"};
   const std::string fontPath2{"../assets/fonts/OpenSans-Italic.ttf"};
@@ -11,22 +12,22 @@ void FontCache::init_fontFiles() {
   const std::string fontPath3{"../assets/fonts/OpenSans-Bold.ttf"};
   const std::string fontPath4{"../assets/fonts/OpenSans-BoldItalic.ttf"};
   const std::string fallbackPath2{"../assets/fonts/NotoSansSC-Bold.ttf"};
-  load_fontFiles(FontStyle::REGULAR, fontPath1, fallbackPath1);
-  load_fontFiles(FontStyle::ITALICS, fontPath2, fallbackPath1);
-  load_fontFiles(FontStyle::BOLD, fontPath3, fallbackPath2);
-  load_fontFiles(FontStyle::BOLD_ITALICS, fontPath4, fallbackPath2);
+  load_fontFiles(FontWeight::REGULAR, fontPath1, fallbackPath1);
+  load_fontFiles(FontWeight::ITALICS, fontPath2, fallbackPath1);
+  load_fontFiles(FontWeight::BOLD, fontPath3, fallbackPath2);
+  load_fontFiles(FontWeight::BOLD_ITALICS, fontPath4, fallbackPath2);
   return;
 }
 
 void FontCache::init_normalFonts() {
-  load_font(FontStyle::REGULAR, BASE_FONT_SIZE);
-  load_font(FontStyle::BOLD, BASE_FONT_SIZE);
-  load_font(FontStyle::ITALICS, BASE_FONT_SIZE);
-  load_font(FontStyle::BOLD_ITALICS, BASE_FONT_SIZE);
+  load_font(FontWeight::REGULAR, BASE_FONT_SIZE);
+  load_font(FontWeight::BOLD, BASE_FONT_SIZE);
+  load_font(FontWeight::ITALICS, BASE_FONT_SIZE);
+  load_font(FontWeight::BOLD_ITALICS, BASE_FONT_SIZE);
   return;
 }
 
-void FontCache::load_fontFiles(FontStyle style, const std::string &primary,
+void FontCache::load_fontFiles(FontWeight style, const std::string &primary,
                                const std::string &fallback) {
   FontFile Fontfile1{};
   FontFile Fontfile2{};
@@ -47,7 +48,7 @@ void FontCache::load_fontFiles(FontStyle style, const std::string &primary,
   return;
 }
 
-void FontCache::load_font(FontStyle style, FontSize size) {
+void FontCache::load_font(FontWeight style, FontSize size) {
   Font myFont1{};
   Font myFont2{};
   auto &[fontFile1, fontFile2] = fontFile_map[style];
@@ -84,10 +85,10 @@ void FontCache::init() {
   init_fontFiles();
   init_normalFonts();
 }
-TTF_Font *FontCache::get_font(FontStyle style, FontSize size) {
-  auto &font_map = font_vec[static_cast<int>(style)];
+TTF_Font *FontCache::get_font(FontWeight weight, FontSize size) {
+  auto &font_map = font_vec[static_cast<int>(weight)];
   if (font_map.find(size) == font_map.end()) {
-    load_font(style, size);
+    load_font(weight, size);
   }
   return font_map[size].get();
 }
