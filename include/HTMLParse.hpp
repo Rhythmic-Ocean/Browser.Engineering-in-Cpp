@@ -26,6 +26,7 @@ class HTMLParse {
   std::pair<std::string, std::unordered_map<std::string, std::string>>
   get_attributes(std::string &text);
   Item *finish();
+  std::vector<std::string> attrib_splitter(std::string &str);
 
 public:
   HTMLParse(std::string &body);

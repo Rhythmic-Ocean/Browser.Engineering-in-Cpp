@@ -16,6 +16,7 @@ private:
   std::unique_ptr<SDL_Renderer, RendererDeleter> m_renderer;
   std::unique_ptr<Item> m_rootNode{};
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine{};
+  std::unique_ptr<Layout::FontCache> m_fontCache{};
   std::unique_ptr<Layout::Layout> m_document{};
 
   inline static float m_scroll_y;
@@ -30,10 +31,10 @@ private:
   void draw();
 
 public:
-  inline static float m_width = WIDTH;
-  inline static float m_height = HEIGHT;
+  float m_width{};
+  float m_height{};
   Browser(std::string &&title, float width = WIDTH, float height = HEIGHT)
-      : m_title{std::move(title)} {
+      : m_title{std::move(title)}, m_width{width}, m_height{height} {
     m_width = width;
     m_height = height;
     init();

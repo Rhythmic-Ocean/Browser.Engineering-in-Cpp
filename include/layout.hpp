@@ -15,10 +15,6 @@ using namespace std::string_view_literals;
 
 namespace Layout {
 
-struct LayoutContext {
-  TTF_TextEngine *textEngine;
-};
-
 static constexpr float HSTEP = 13.0f;
 static constexpr float VSTEP = 13.0f;
 static constexpr float BASE_FONT_SIZE = 16.0f;
@@ -90,7 +86,12 @@ public:
   ~FontCache() = default;
 };
 
-inline FontCache g_fontCache{};
+struct LayoutContext {
+  TTF_TextEngine *textEngine;
+  FontCache *fontCache;
+  float windowWidth{};
+  float windowHeight{};
+};
 
 struct PositionedText {
   std::unique_ptr<TTF_Text, TextDeleter> text;
@@ -111,11 +112,11 @@ struct DrawItem {
 
 struct DrawText : public DrawItem {
 private:
-  TTF_Text *m_text;
   TTF_Font *m_font;
   float m_left{};
 
 public:
+  TTF_Text *m_text;
   DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
     m_top = y1;
     m_font = TTF_GetTextFont(m_text);
@@ -130,7 +131,7 @@ struct DrawRect : public DrawItem {
   DrawRect(float x, float y, float width, float height, std::string &color)
       : rect{x, y, width, height}, color{parse_color(color)} {
     m_top = y;
-    m_bottom = height;
+    m_bottom = y + height;
   }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
@@ -151,6 +152,7 @@ public:
       : m_node{node}, m_parent{parent}, m_previous{previous} {}
 
   virtual void layout(LayoutContext &ctx) = 0;
+  virtual void pprint() = 0;
   virtual std::vector<DrawItem *> paint() = 0;
   virtual ~Layout() = default;
 };
@@ -161,6 +163,7 @@ public:
   DocumentLayout(Item *node) : Layout{node, nullptr, nullptr} {}
   void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
+  void pprint();
   ~DocumentLayout() = default;
 };
 
@@ -178,7 +181,6 @@ public:
   TTF_Font *m_font{};
 
 private:
-  LayoutType layout_mode();
   void open_tag(const std::string &tag);
   void process_text(const std::string &text, LayoutContext &ctx);
   void close_tag(const std::string &tag);
@@ -189,6 +191,8 @@ private:
                           std::vector<PositionedText> &line);
 
 public:
+  void pprint();
+  LayoutType layout_mode();
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
   void layout(LayoutContext &ctx);

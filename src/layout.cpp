@@ -1,9 +1,9 @@
 #include "layout.hpp"
-#include "Browser.hpp"
 #include "helpers.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <iostream>
 
 using namespace Layout;
 
@@ -21,10 +21,12 @@ void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
 }
 
 void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
-  float cur_scroll_y{rect.y - scroll_y};
+  rect.y = m_top - scroll_y;
   SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
   if (!SDL_RenderFillRect(renderer, &rect)) {
     SDL_Log("Failed to render layout rectangle: %s\n", SDL_GetError());
+    throw WindowException("Can't make rectangles!!" +
+                          std::string(SDL_GetError()));
   }
 }
 
@@ -33,7 +35,7 @@ void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
 void DocumentLayout::layout(LayoutContext &ctx) {
   BlockLayout *child = new BlockLayout(m_node, this, nullptr);
   m_children.emplace_back(child);
-  m_width = Browser::m_width - 2 * HSTEP;
+  m_width = ctx.windowWidth - 2 * HSTEP;
   m_start_x = HSTEP;
   m_start_y = VSTEP;
   child->layout(ctx);
@@ -78,18 +80,31 @@ void BlockLayout::layout(LayoutContext &ctx) {
   if (mode == LayoutType::BLOCK) {
     Layout *previous = nullptr;
     for (auto &m_child : m_node->m_children) {
-      Layout *next = new BlockLayout(m_child.get(), this, previous);
-      m_children.emplace_back(next);
-      previous = next;
+      m_children.emplace_back(
+          std::make_unique<BlockLayout>(m_child.get(), this, previous));
+      previous = m_children.back().get();
     }
   } else {
     m_cursor_x = 0;
     m_cursor_y = 0;
     m_fontWeight = FontWeight::REGULAR;
     m_fontSize = 16;
-    m_font = g_fontCache.get_font(m_fontWeight, m_fontSize);
+    m_font = ctx.fontCache->get_font(m_fontWeight, m_fontSize);
     recurse(m_node, ctx);
     flush();
+  }
+
+  for (auto &child : m_children) {
+    child->layout(ctx);
+  }
+
+  if (mode == LayoutType::BLOCK) {
+    for (auto &child : m_children) {
+      m_height += child->m_height;
+    }
+  }
+  if (mode == LayoutType::INLINE) {
+    m_height = m_cursor_y;
   }
 }
 
@@ -110,6 +125,9 @@ void BlockLayout::open_tag(const std::string &tag) {
     m_fontSize += 20;
   else if (tag == "br")
     flush();
+  else if (tag == "pre") {
+    std::cout << "here" << std::endl;
+  }
 }
 
 void BlockLayout::close_tag(const std::string &tag) {
@@ -129,7 +147,7 @@ void BlockLayout::close_tag(const std::string &tag) {
     m_fontSize = 20;
   else if (tag == "p") {
     flush();
-    //--NOTE: NEED TO ADD SOMETHING MORE TO DIFF FROM <br>
+    m_cursor_y += VSTEP;
   }
 }
 
@@ -196,7 +214,6 @@ void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
 }
 
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
-  std::string word{};
   if (root->getType() == ItemType::TEXT) {
     process_text(root->m_text, ctx);
   } else {
@@ -214,7 +231,7 @@ PositionedText BlockLayout::make_display(std::string &word,
                                          LayoutContext &ctx) {
   int h{};
   int w{};
-  auto *font = g_fontCache.get_font(m_fontWeight, m_fontSize);
+  auto *font = ctx.fontCache->get_font(m_fontWeight, m_fontSize);
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
 
   if (!txt) {
@@ -234,22 +251,27 @@ PositionedText BlockLayout::make_display(std::string &word,
     flush();
   }
   m_cursor_x += w;
-  return {txt, m_cursor_x, 0.0f};
+  word.clear();
+  return {txt, m_cursor_x - w,
+          0.0f}; //--WARNING: The y coords 0.0f is just a placeholder, the
+                 //               actual will be calculated at flush()
 }
 
 //--INFO: relative x postion of the text gets set in process_text/make_display.
 //        absolute x and y position gets set at flush()
+
+//--WARNING: flush() should still happen even if m_line is empty!! Important to
+//            change lines for layout/ linebreak tags!
 void BlockLayout::flush() {
-  if (m_line.empty())
-    return;
   int max_ascent{}, max_descent{}, max_lineskip{};
   getExtremes(max_ascent, max_descent, max_lineskip, m_line);
-  float baseline = m_cursor_x + 1.25 * max_ascent;
+  float baseline = m_cursor_y + 1.25 * max_ascent;
   for (auto &word : m_line) {
     TTF_Font *font = TTF_GetTextFont(word.text.get());
     float font_ascent = TTF_GetFontAscent(font);
     word.start_x += m_start_x; // absolute position of x
-    word.start_y += (baseline - font_ascent);
+    word.start_y +=
+        (m_start_y + baseline - font_ascent); // relative pos for y??
     m_displayList.push_back(std::move(word));
   }
   m_cursor_x = 0;
@@ -260,15 +282,15 @@ void BlockLayout::flush() {
 std::vector<DrawItem *> BlockLayout::paint() {
   std::vector<DrawItem *> cmds{};
   if (m_node->getType() == ItemType::TAG && m_node->m_text == "pre") {
-    float x2 = m_start_x + m_width;
-    float y2 = m_start_y + m_width;
     std::string color = "grey";
-    cmds.emplace_back(new DrawRect{m_start_x, m_start_y, x2, y2, color});
+    cmds.emplace_back(
+        new DrawRect{m_start_x, m_start_y, m_width, m_height, color});
   }
 
   if (layout_mode() == LayoutType::INLINE) {
     for (auto &item : m_displayList) {
-      cmds.emplace_back(new DrawText{item.text.get(), m_start_x, m_start_y});
+      cmds.emplace_back(
+          new DrawText{item.text.get(), item.start_x, item.start_y});
     }
   }
   return cmds;
@@ -282,5 +304,24 @@ void BlockLayout::getExtremes(int &max_ascent, int &max_descent,
     max_ascent = std::max(max_ascent, TTF_GetFontAscent(font));
     max_descent = std::max(max_descent, std::abs(TTF_GetFontDescent(font)));
     max_lineskip = std::max(max_lineskip, TTF_GetFontLineSkip(font));
+  }
+}
+
+void DocumentLayout::pprint() {
+  std::cout << "NOTHING" << std::endl;
+  m_children[0]->pprint();
+}
+
+void BlockLayout::pprint() {
+  if (layout_mode() == LayoutType::BLOCK) {
+    std::cout << "BLOCK " << m_node->m_text << std::endl;
+    for (auto &node : m_children) {
+      static_cast<BlockLayout *>(node.get())->pprint();
+    }
+  } else {
+    std::cout << "INLINE" << m_node->m_text << std::endl;
+    for (auto &child : m_node->m_children) {
+      hlp::print_tree(child.get());
+    }
   }
 }

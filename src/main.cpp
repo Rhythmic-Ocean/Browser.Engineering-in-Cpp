@@ -1,6 +1,5 @@
 
 #include "Browser.hpp"
-#include "HTMLParse.hpp"
 #include "url.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>

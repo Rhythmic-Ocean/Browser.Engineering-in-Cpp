@@ -80,7 +80,7 @@ void HTMLParse::add_tag(std::string &&text) {
 
 std::pair<std::string, std::unordered_map<std::string, std::string>>
 HTMLParse::get_attributes(std::string &text) {
-  auto parts = hlp::split(text, " ");
+  auto parts = attrib_splitter(text);
   std::unordered_map<std::string, std::string> attributes{};
   auto tag = std::string(parts[0]);
   hlp::casefold(tag);
@@ -89,7 +89,7 @@ HTMLParse::get_attributes(std::string &text) {
       auto valPairs = hlp::split(attrpair, "=", 1);
       auto key = std::string(valPairs[0]);
       auto value = (valPairs[1]);
-      if (value.size() > 2 && (value.front() == '\'' || value.back() == '"')) {
+      if (value.size() > 2 && (value.front() == '\'' || value.front() == '"')) {
         value = value.substr(1, value.size() - 2);
       }
       std::string val = std::string(value);
@@ -98,6 +98,7 @@ HTMLParse::get_attributes(std::string &text) {
     } else {
       auto key = std::string(attrpair);
       hlp::casefold(key);
+      key = hlp::strip(key);
       attributes[key] = "";
     }
   }
@@ -141,4 +142,29 @@ Item *HTMLParse::finish() {
   Item *ancestor = m_unfinished.back();
   m_unfinished.pop_back();
   return ancestor;
+}
+
+std::vector<std::string> HTMLParse::attrib_splitter(std::string &str) {
+  int ptr{};
+  bool inQuotes = false;
+  std::string cur_str{};
+  std::vector<std::string> finalAns{};
+  while (ptr < str.size()) {
+    if (std::isspace(str[ptr]) && !inQuotes) {
+      if (!cur_str.empty())
+        finalAns.push_back(std::move(cur_str));
+      cur_str.clear();
+      while (ptr < str.size() && std::isspace(str[ptr]))
+        ++ptr;
+    } else {
+      if (str[ptr] == '\'' || str[ptr] == '"') {
+        inQuotes = !inQuotes;
+      }
+      cur_str.push_back(str[ptr]);
+    }
+    ++ptr;
+  }
+  if (!cur_str.empty())
+    finalAns.push_back(std::move(cur_str));
+  return finalAns;
 }

@@ -19,9 +19,8 @@ void Browser::init() {
   SDL_Window *raw_window = nullptr;
   SDL_Renderer *raw_renderer = nullptr;
 
-  if (!SDL_CreateWindowAndRenderer(m_title.c_str(), m_width, m_height,
-                                   SDL_WINDOW_RESIZABLE, &raw_window,
-                                   &raw_renderer)) {
+  if (!SDL_CreateWindowAndRenderer(m_title.c_str(), m_width, m_height, 0,
+                                   &raw_window, &raw_renderer)) {
     SDL_Log("SDL_CreateWindowAndRenderer failed: %s\n", SDL_GetError());
     throw WindowException("SDL_CreateWindowAndRenderer failed: " +
                           std::string(SDL_GetError()));
@@ -39,11 +38,6 @@ void Browser::start_event() {
     switch (event.type) {
     case SDL_EVENT_QUIT:
       is_Running = false;
-      break;
-    case SDL_EVENT_WINDOW_RESIZED:
-      m_width = event.window.data1;
-      m_height = event.window.data2;
-      m_document->layout(ctx);
       break;
     case SDL_EVENT_MOUSE_WHEEL: {
       m_max_y = std::max(m_document->m_height + 2 * VSTEP - m_height, 0.0f);
@@ -76,11 +70,18 @@ void Browser::load(URL &url) {
   std::string response = url.request();
   HTMLParse parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
+  m_fontCache = std::make_unique<Layout::FontCache>();
+  m_fontCache->init();
   // make layout object indep of window??
   // Browser can own layout and window both...
   ctx.textEngine = m_engine.get();
+  ctx.fontCache = m_fontCache.get();
+  ctx.windowHeight = m_height;
+  ctx.windowWidth = m_width;
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
+  hlp::print_tree(m_rootNode.get());
+  m_document->pprint();
   paint_tree(m_document.get());
   while (is_Running) {
     start_event();
@@ -99,6 +100,8 @@ void Browser::load_engine() {
 }
 
 void Browser::draw() {
+
+  SDL_SetRenderDrawColor(m_renderer.get(), 0, 0, 0, 255);
   SDL_RenderClear(m_renderer.get());
   for (auto &cmd : m_displayItems) {
     if (cmd->m_top > m_scroll_y + m_height)

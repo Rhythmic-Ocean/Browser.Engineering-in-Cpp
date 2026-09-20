@@ -48,10 +48,10 @@ void FontCache::load_fontFiles(FontWeight style, const std::string &primary,
   return;
 }
 
-void FontCache::load_font(FontWeight style, FontSize size) {
+void FontCache::load_font(FontWeight weight, FontSize size) {
   Font myFont1{};
   Font myFont2{};
-  auto &[fontFile1, fontFile2] = fontFile_map[style];
+  auto &[fontFile1, fontFile2] = fontFile_map[weight];
   auto *fileStream1 =
       SDL_IOFromConstMem(fontFile1.get()->fontFile, fontFile1.get()->file_size);
   auto *fileStream2 =
@@ -75,16 +75,19 @@ void FontCache::load_font(FontWeight style, FontSize size) {
     throw FontCacheException("Failed to set fallback " + C_SDL_GetStrError() +
                              "\n");
   }
-  font_vec[static_cast<int>(style)][size] = std::move(myFont1);
+  font_vec[static_cast<int>(weight)][size] = std::move(myFont1);
   return;
 }
 
 FontCache::FontCache() {}
 
+//--WARNING: Gotta initialize these seperatly at Browser::load AFTER SDL_INIT
+//            cuz we are using some SDL functions.
 void FontCache::init() {
   init_fontFiles();
   init_normalFonts();
 }
+
 TTF_Font *FontCache::get_font(FontWeight weight, FontSize size) {
   auto &font_map = font_vec[static_cast<int>(weight)];
   if (font_map.find(size) == font_map.end()) {

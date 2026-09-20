@@ -102,7 +102,9 @@ struct FileDeleter {
 
 struct FontDeleter {
   void operator()(TTF_Font *font) const {
-    TTF_CloseFont(font);
+    if (font) {
+      TTF_CloseFont(font);
+    }
     font = nullptr;
   }
 };
