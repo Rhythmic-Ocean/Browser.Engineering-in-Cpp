@@ -2,7 +2,7 @@
 
 The original book's implemented in python.
 
-> **NOTE:** inter chapter commits are done in the branch chp<x>-working. It's merged with master once I complete the chapter and the executable's functional!!
+> **NOTE:** inter chapter commits are done in the branch chpX-working. It's merged with master once I complete the chapter and the executable's functional!!
 
 ### Current Status (Latest Sept 20)
 
@@ -52,9 +52,9 @@ New project structure w/ some description:
 - All rendering are now done thru Layout trees
 - More closely follows the book's ways of calculating layout/ text position. But had to remove resizing feature cuz it became really laggy having to redo the entire layout tree every time a resize occured.
 - Had a bug in HTMLParse where attributes were not being properly split, now sure how it still worked on the book but I made a seperate attribute_splitter() function for that.
-- Rendering [this](https://browser.engineering/examples/layout.html)
+- Rendering [this](https://browser.engineering/layout.html)
   ![Output.txt](assets/image/chp5-complete-1.png)
-- Rendering `<pre>` tag:
+- Rendering the same page's `<pre>` tags:
   ![Output.txt](assets/image/chp5-complete-2.png)
 
 ### Requirements for anybody wanting to run it
