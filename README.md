@@ -25,7 +25,9 @@ New project structure w/ some description:
 │   ├── chp3-complete-1.png
 │   ├── chp3-complete-2.png
 │   ├── chp4-complete-1.png
-│   └── chp4-complete-2.png
+│   ├── chp4-complete-2.png
+│   ├── chp5-complete-1.png
+│   └── chp5-complete-2.png
 ├── CMakeLists.txt
 ├── include
 │   ├── Browser.hpp //created by main, orchestrates the entire rendering process
