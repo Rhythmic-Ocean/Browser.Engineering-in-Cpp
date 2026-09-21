@@ -125,9 +125,6 @@ void BlockLayout::open_tag(const std::string &tag) {
     m_fontSize += 20;
   else if (tag == "br")
     flush();
-  else if (tag == "pre") {
-    std::cout << "here" << std::endl;
-  }
 }
 
 void BlockLayout::close_tag(const std::string &tag) {

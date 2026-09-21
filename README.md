@@ -4,9 +4,9 @@ The original book's implemented in python.
 
 > **NOTE:** inter chapter commits are done in the branch chp<x>-working. It's merged with master once I complete the chapter and the executable's functional!!
 
-### Current Status (Latest Sept 13)
+### Current Status (Latest Sept 20)
 
-#### Chapter 4 - Completed (Sept 13 2026)
+#### Chapter 5 - Completed (Sept 20 2026)
 
 New project structure w/ some description:
 
@@ -28,17 +28,16 @@ New project structure w/ some description:
 │   └── chp4-complete-2.png
 ├── CMakeLists.txt
 ├── include
+│   ├── Browser.hpp //created by main, orchestrates the entire rendering process
 │   ├── client.hpp //SSL Client to create the TCP connection
-│   ├── fonts.hpp //Font caching mechanism implementation
 │   ├── helpers.hpp //some helper structs, classes and hlp namespace functions
 │   ├── HTMLParse.hpp //creates HTML DOM tree and it's main parse() function returns the root
-│   ├── layout.hpp //uses the HTML tree to create a vector of DisplayItems which holds TTF_Text for each character to be rendered
-│   ├── rio.hpp //robust I/O for communications over TCP, help from CS:APP book
+│   ├── layout.hpp //uses the HTML tree to create the Layout Tree which is then rendered thru Browser::draw()
+    ├── rio.hpp //robust I/O for communications over TCP, help from CS:APP book. Buffer RIO are deprecated
 │   ├── url.hpp //URL and response parsing
-│   └── window.hpp // GUI interface implemented with SDL3, text rendered with SDL3_ttf
-├── output.txt //html tree output
 ├── README.md
 └── src
+    ├── Browser.cpp
     ├── client.cpp
     ├── fonts.cpp
     ├── helpers.cpp
@@ -50,13 +49,13 @@ New project structure w/ some description:
     └── window.cpp
 ```
 
-- HTML tags and text are now in DOM tree structure
-- All edge cases mentioned in book such as non closing tags, empty space before first tag, first/last tags are taken care of.
-- [output.txt](output.txt) contains the output sample of the DOM
-- HTML DOM sample:
-  ![Output.txt](assets/image/chp4-complete-1.png)
-- Rendering [this](https://browser.engineering/examples/index.html)
-  ![Output.txt](assets/image/chp4-complete-2.png)
+- All rendering are now done thru Layout trees
+- More closely follows the book's ways of calculating layout/ text position. But had to remove resizing feature cuz it became really laggy having to redo the entire layout tree every time a resize occured.
+- Had a bug in HTMLParse where attributes were not being properly split, now sure how it still worked on the book but I made a seperate attribute_splitter() function for that.
+- Rendering [this](https://browser.engineering/examples/layout.html)
+  ![Output.txt](assets/image/chp5-complete-1.png)
+- Rendering `<pre>` tag:
+  ![Output.txt](assets/image/chp5-complete-2.png)
 
 ### Requirements for anybody wanting to run it
 
@@ -74,4 +73,4 @@ New project structure w/ some description:
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Next Step: Chapter 5!!
+### Next Step: Chapter 6

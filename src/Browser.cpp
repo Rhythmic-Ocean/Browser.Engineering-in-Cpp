@@ -80,8 +80,6 @@ void Browser::load(URL &url) {
   ctx.windowWidth = m_width;
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
-  hlp::print_tree(m_rootNode.get());
-  m_document->pprint();
   paint_tree(m_document.get());
   while (is_Running) {
     start_event();
