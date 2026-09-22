@@ -29,6 +29,7 @@ private:
   void start_event();
   void paint_tree(Layout::Layout *layoutNode);
   void draw();
+  void style(Item *node);
 
 public:
   float m_width{};

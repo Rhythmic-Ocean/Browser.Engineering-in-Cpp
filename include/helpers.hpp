@@ -47,6 +47,7 @@ enum class ItemType { TAG, TEXT };
 struct Item {
   std::string m_text{};
   std::vector<std::unique_ptr<Item>> m_children{};
+  std::unordered_map<std::string, std::string> m_style{};
   Item *m_parent{};
   Item(std::string &&text, Item *parent)
       : m_text{std::move(text)}, m_parent{parent} {}

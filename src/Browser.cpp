@@ -4,6 +4,7 @@
 #include "layout.hpp"
 #include "url.hpp"
 #include <algorithm>
+#include <iostream>
 
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -70,6 +71,7 @@ void Browser::load(URL &url) {
   std::string response = url.request();
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
+  style(m_rootNode.get());
   m_fontCache = std::make_unique<Layout::FontCache>();
   m_fontCache->init();
   // make layout object indep of window??
@@ -109,4 +111,21 @@ void Browser::draw() {
     cmd->execute(m_scroll_y, m_renderer.get());
   }
   SDL_RenderPresent(m_renderer.get());
+}
+
+void Browser::style(Item *node) {
+  if (node->getType() == ItemType::TAG) {
+    Tag *tag = static_cast<Tag *>(node);
+  }
+  if (node->getType() == ItemType::TAG &&
+      static_cast<Tag *>(node)->m_attributes.contains("style")) {
+    Tag *tag = static_cast<Tag *>(node);
+    auto pairs = Parser::CSSParser(tag->m_attributes["style"]).body();
+    for (auto pair : pairs) {
+      tag->m_style[pair.first] = pair.second;
+    }
+  }
+  for (auto &child : node->m_children) {
+    style(child.get());
+  }
 }

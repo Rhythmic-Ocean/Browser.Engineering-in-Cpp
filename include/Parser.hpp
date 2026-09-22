@@ -17,11 +17,11 @@ class CSSParser {
   std::string_view word();
   void literal(char literal);
   std::pair<std::string, std::string_view> pair();
-  std::unordered_map<std::string, std::string_view> body();
   std::optional<char> ignore_until(const std::string &literals);
 
 public:
   CSSParser(std::string_view body) : m_body{body} {}
+  std::unordered_map<std::string, std::string> body();
 };
 
 class HTMLParser {

@@ -44,8 +44,8 @@ std::pair<std::string, std::string_view> CSSParser::pair() {
 }
 
 //--WARNING: Get rid of try-catch during testings
-std::unordered_map<std::string, std::string_view> CSSParser::body() {
-  std::unordered_map<std::string, std::string_view> pairs{};
+std::unordered_map<std::string, std::string> CSSParser::body() {
+  std::unordered_map<std::string, std::string> pairs{};
   while (index < m_body.size()) {
     try {
       auto [property, value] = pair();

@@ -278,10 +278,11 @@ void BlockLayout::flush() {
 
 std::vector<DrawItem *> BlockLayout::paint() {
   std::vector<DrawItem *> cmds{};
-  if (m_node->getType() == ItemType::TAG && m_node->m_text == "pre") {
-    std::string color = "grey";
+  std::string bg_color = "transparent";
+  if (m_node->m_style.contains("background-color")) {
+    bg_color = m_node->m_style["background-color"];
     cmds.emplace_back(
-        new DrawRect{m_start_x, m_start_y, m_width, m_height, color});
+        new DrawRect{m_start_x, m_start_y, m_width, m_height, bg_color});
   }
 
   if (layout_mode() == LayoutType::INLINE) {

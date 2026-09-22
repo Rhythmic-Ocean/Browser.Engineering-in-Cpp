@@ -163,8 +163,8 @@ std::vector<std::string> HTMLParser::attrib_splitter(std::string &str) {
         inQuotes = !inQuotes;
       }
       cur_str.push_back(str[ptr]);
+      ++ptr;
     }
-    ++ptr;
   }
   if (!cur_str.empty())
     finalAns.push_back(std::move(cur_str));
