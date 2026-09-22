@@ -33,7 +33,7 @@ New project structure w/ some description:
 │   ├── Browser.hpp //created by main, orchestrates the entire rendering process
 │   ├── client.hpp //SSL Client to create the TCP connection
 │   ├── helpers.hpp //some helper structs, classes and hlp namespace functions
-│   ├── HTMLParse.hpp //creates HTML DOM tree and it's main parse() function returns the root
+│   ├── Parse.hpp //General HTML and CSS parser
 │   ├── layout.hpp //uses the HTML tree to create the Layout Tree which is then rendered thru Browser::draw()
     ├── rio.hpp //robust I/O for communications over TCP, help from CS:APP book. Buffer RIO are deprecated
 │   ├── url.hpp //URL and response parsing

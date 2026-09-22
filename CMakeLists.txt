@@ -24,7 +24,8 @@ set(_SOURCE_DIR
     src/fonts.cpp
     src/Browser.cpp
     src/layout.cpp
-    src/HTMLParse.cpp)
+    src/HTMLParser.cpp
+    src/CSSParser.cpp)
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 

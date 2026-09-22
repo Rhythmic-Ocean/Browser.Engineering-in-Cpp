@@ -2,8 +2,29 @@
 
 #include "helpers.hpp"
 #include <array>
+#include <optional>
+#include <string_view>
+#include <unordered_map>
 
-class HTMLParse {
+namespace Parser {
+class CSSParser {
+  constexpr static std::string VALID_SYMB = "#-.%";
+
+  std::string_view m_body{};
+  size_t index{};
+
+  void whiteSpace();
+  std::string_view word();
+  void literal(char literal);
+  std::pair<std::string, std::string_view> pair();
+  std::unordered_map<std::string, std::string_view> body();
+  std::optional<char> ignore_until(const std::string &literals);
+
+public:
+  CSSParser(std::string_view body) : m_body{body} {}
+};
+
+class HTMLParser {
   /*
    *--NOTE: std::string_view does not own these strings, but it's usually only
    * dangerous when they live in the stack, here it's in the compiled binary so
@@ -29,6 +50,7 @@ class HTMLParse {
   std::vector<std::string> attrib_splitter(std::string &str);
 
 public:
-  HTMLParse(std::string &body);
+  HTMLParser(std::string &body);
   Item *parse();
 };
+} // namespace Parser

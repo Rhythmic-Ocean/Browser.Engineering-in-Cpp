@@ -28,7 +28,7 @@ std::string_view hlp::strip(std::string_view str) {
 }
 
 void hlp::casefold(std::string &stri) {
-  for (char c : stri) {
+  for (char &c : stri) {
     c = static_cast<char>(std::tolower(c));
   }
 }

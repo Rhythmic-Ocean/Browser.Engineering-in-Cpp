@@ -1,5 +1,5 @@
 #include "Browser.hpp"
-#include "HTMLParse.hpp"
+#include "Parser.hpp"
 #include "helpers.hpp"
 #include "layout.hpp"
 #include "url.hpp"
@@ -68,7 +68,7 @@ void Browser::paint_tree(Layout::Layout *layoutNode) {
 
 void Browser::load(URL &url) {
   std::string response = url.request();
-  HTMLParse parser{response};
+  Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
   m_fontCache = std::make_unique<Layout::FontCache>();
   m_fontCache->init();
