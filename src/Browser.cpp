@@ -4,7 +4,6 @@
 #include "layout.hpp"
 #include "url.hpp"
 #include <algorithm>
-#include <iostream>
 
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -74,8 +73,6 @@ void Browser::load(URL &url) {
   style(m_rootNode.get());
   m_fontCache = std::make_unique<Layout::FontCache>();
   m_fontCache->init();
-  // make layout object indep of window??
-  // Browser can own layout and window both...
   ctx.textEngine = m_engine.get();
   ctx.fontCache = m_fontCache.get();
   ctx.windowHeight = m_height;

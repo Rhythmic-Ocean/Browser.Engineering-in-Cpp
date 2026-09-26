@@ -10,7 +10,7 @@ void CSSParser::whiteSpace() {
     ++index;
 }
 
-std::string_view CSSParser::word() {
+std::string CSSParser::word() {
   size_t start{index};
   while (index < m_body.size()) {
     if (std::isalnum(m_body[index]) ||
@@ -22,7 +22,7 @@ std::string_view CSSParser::word() {
   if (index <= start) {
     throw WindowException("Failed at CSSParser.word(). No word parsed.");
   }
-  return m_body.substr(start, index - start);
+  return std::string(m_body.substr(start, index - start));
 }
 
 void CSSParser::literal(char literal) {
@@ -33,20 +33,21 @@ void CSSParser::literal(char literal) {
   ++index;
 }
 
-std::pair<std::string, std::string_view> CSSParser::pair() {
+std::pair<std::string, std::string> CSSParser::pair() {
   std::string property = std::string(word());
   whiteSpace();
   literal(':');
   whiteSpace();
-  std::string_view value = word();
+  std::string value = word();
   hlp::casefold(property);
   return {property, value};
 }
 
-//--WARNING: Get rid of try-catch during testings
-std::unordered_map<std::string, std::string> CSSParser::body() {
-  std::unordered_map<std::string, std::string> pairs{};
-  while (index < m_body.size()) {
+//--NOTE: the try-excpet here is REQUIRED FOR inline css parsion (cuz they don't
+//        need to have ;)
+Property CSSParser::body() {
+  Property pairs{};
+  while (index < m_body.size() && m_body[index]) {
     try {
       auto [property, value] = pair();
       pairs[property] = value;
@@ -54,7 +55,7 @@ std::unordered_map<std::string, std::string> CSSParser::body() {
       literal(';');
       whiteSpace();
     } catch (WindowException exception) {
-      auto why = ignore_until(";");
+      auto why = ignore_until(";}");
       if (why == ';') {
         literal(';');
         whiteSpace();
@@ -63,6 +64,47 @@ std::unordered_map<std::string, std::string> CSSParser::body() {
     }
   }
   return pairs;
+}
+
+Selector *CSSParser::selector() {
+  auto select = std::string(word());
+  hlp::casefold(select);
+  std::unique_ptr<Selector> out =
+      std::make_unique<TagSelector>(std::move(select));
+  whiteSpace();
+  while (index < m_body.size() && m_body[index] != '{') {
+    std::string tag = word();
+    std::unique_ptr<Selector> descendant =
+        std::make_unique<TagSelector>(std::move(tag));
+    out = std::make_unique<DescendantSelector>(out, descendant);
+    whiteSpace();
+  }
+  return out.release();
+}
+
+//--WARNING: Get rid of try-catch during testings
+StyleSheet CSSParser::parse() {
+  StyleSheet rules{};
+  while (index < m_body.size()) {
+    // try {
+    whiteSpace();
+    std::unique_ptr<Selector> l_selector;
+    l_selector.reset(selector());
+    literal('{');
+    whiteSpace();
+    Property l_body = body();
+    literal('}');
+    rules.emplace_back(StyleRule{l_selector, l_body});
+    // } catch (WindowException exception) {
+    //   auto why = ignore_until("}");
+    //   if (why == '}') {
+    //
+    //     literal('}');
+    //     whiteSpace();
+    //   }
+    // }
+  }
+  return rules;
 }
 
 std::optional<char> CSSParser::ignore_until(const std::string &literals) {

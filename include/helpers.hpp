@@ -76,7 +76,11 @@ struct Tag : public Item {
       : Item{std::move(text), parent}, m_attributes{std::move(attributes)} {}
   ItemType getType() const override { return ItemType::TAG; }
   std::ostream &printItem(std::ostream &out) override {
-    out << "<" + m_text + ">";
+    out << "<" + m_text + ">" << std::endl;
+    ;
+    for (auto &attrib : m_attributes) {
+      out << attrib.first << " : " << attrib.second << std::endl;
+    }
     return out;
   }
 };
