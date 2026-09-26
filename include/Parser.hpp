@@ -10,19 +10,10 @@ namespace Parser {
 enum class SelectorType { TAG, DESCENDANT };
 
 struct Selector {
+  int priority{};
   virtual SelectorType getType() = 0;
   virtual bool matches(Item *node) = 0;
 };
-
-using Property = std::unordered_map<std::string, std::string>;
-struct StyleRule {
-  std::unique_ptr<Selector> selector;
-  Property property;
-  StyleRule(std::unique_ptr<Selector> &selector, Property &property)
-      : selector{selector.release()}, property{property} {}
-};
-
-using StyleSheet = std::vector<StyleRule>;
 
 struct TagSelector : public Selector {
   std::string tag;
@@ -32,7 +23,7 @@ struct TagSelector : public Selector {
   }
 
   SelectorType getType() { return SelectorType::TAG; }
-  TagSelector(const std::string &tag) : tag{tag} {};
+  TagSelector(const std::string &tag) : tag{tag} { priority = 1; };
 };
 
 //--NOTE: Each selector owns it's descendent under unique ptr, but not the
@@ -56,8 +47,20 @@ struct DescendantSelector : public Selector {
 
   DescendantSelector(std::unique_ptr<Selector> &ancestor,
                      std::unique_ptr<Selector> &descendant)
-      : ancestor{ancestor.release()}, descendant{descendant.release()} {}
+      : ancestor{ancestor.release()}, descendant{descendant.release()} {
+    priority = ancestor->priority + descendant->priority;
+  }
 };
+
+using Property = std::unordered_map<std::string, std::string>;
+struct StyleRule {
+  std::unique_ptr<Selector> selector;
+  Property property;
+  StyleRule(std::unique_ptr<Selector> &selector, Property &property)
+      : selector{selector.release()}, property{property} {}
+};
+
+using StyleSheet = std::vector<StyleRule>;
 
 class CSSParser {
   constexpr static std::string VALID_SYMB = "#-.%";

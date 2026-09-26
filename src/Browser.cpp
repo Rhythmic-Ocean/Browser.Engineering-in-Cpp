@@ -90,6 +90,12 @@ void Browser::load(URL &url) {
                  std::make_move_iterator(source.end()));
   }
 
+  auto cascade_priority = [](Parser::StyleRule &rule1,
+                             Parser::StyleRule &rule2) {
+    return rule1.selector->priority < rule2.selector->priority;
+  };
+
+  std::ranges::sort(rules, cascade_priority);
   style(m_rootNode.get(), rules);
   m_fontCache = std::make_unique<Layout::FontCache>();
   m_fontCache->init();
