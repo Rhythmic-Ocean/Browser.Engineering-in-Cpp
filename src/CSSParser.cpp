@@ -86,23 +86,23 @@ Selector *CSSParser::selector() {
 StyleSheet CSSParser::parse() {
   StyleSheet rules{};
   while (index < m_body.size()) {
-    // try {
-    whiteSpace();
-    std::unique_ptr<Selector> l_selector;
-    l_selector.reset(selector());
-    literal('{');
-    whiteSpace();
-    Property l_body = body();
-    literal('}');
-    rules.emplace_back(StyleRule{l_selector, l_body});
-    // } catch (WindowException exception) {
-    //   auto why = ignore_until("}");
-    //   if (why == '}') {
-    //
-    //     literal('}');
-    //     whiteSpace();
-    //   }
-    // }
+    try {
+      whiteSpace();
+      std::unique_ptr<Selector> l_selector;
+      l_selector.reset(selector());
+      literal('{');
+      whiteSpace();
+      Property l_body = body();
+      literal('}');
+      rules.emplace_back(StyleRule{l_selector, l_body});
+    } catch (WindowException exception) {
+      auto why = ignore_until("}");
+      if (why == '}') {
+
+        literal('}');
+        whiteSpace();
+      }
+    }
   }
   return rules;
 }

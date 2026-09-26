@@ -31,3 +31,5 @@ add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL OpenSSL::Crypto SDL3::SDL3 SDL3_ttf::SDL3_ttf)
+target_compile_definitions(Browser PRIVATE PROJECT_ROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+

@@ -4,6 +4,8 @@
 #include "layout.hpp"
 #include "url.hpp"
 #include <algorithm>
+#include <exception>
+#include <iterator>
 
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -70,7 +72,25 @@ void Browser::load(URL &url) {
   std::string response = url.request();
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
-  style(m_rootNode.get());
+
+  auto default_css = hlp::get_default_CSS();
+  auto rules = Parser::CSSParser(default_css).parse();
+  std::vector<std::string_view> css_links =
+      get_links(hlp::tree_to_list(m_rootNode.get()));
+  for (auto link : css_links) {
+    auto style_url = url.resolve(link);
+    std::string body{};
+    try {
+      body = style_url.request();
+    } catch (std::exception &exc) {
+      continue;
+    }
+    auto source = Parser::CSSParser(body).parse();
+    rules.insert(rules.end(), std::make_move_iterator(source.begin()),
+                 std::make_move_iterator(source.end()));
+  }
+
+  style(m_rootNode.get(), rules);
   m_fontCache = std::make_unique<Layout::FontCache>();
   m_fontCache->init();
   ctx.textEngine = m_engine.get();
@@ -110,9 +130,18 @@ void Browser::draw() {
   SDL_RenderPresent(m_renderer.get());
 }
 
-void Browser::style(Item *node) {
+void Browser::style(Item *node, Parser::StyleSheet &rules) {
   if (node->getType() == ItemType::TAG) {
     Tag *tag = static_cast<Tag *>(node);
+  }
+  /*--NOTE: The inline style attribute overrides the one in stylesheet, so it
+            shall come after!!*/
+  for (auto &rules : rules) {
+    if (!rules.selector->matches(node))
+      continue;
+    for (auto &property : rules.property) {
+      node->m_style[property.first] = property.second;
+    }
   }
   if (node->getType() == ItemType::TAG &&
       static_cast<Tag *>(node)->m_attributes.contains("style")) {
@@ -123,6 +152,20 @@ void Browser::style(Item *node) {
     }
   }
   for (auto &child : node->m_children) {
-    style(child.get());
+    style(child.get(), rules);
   }
+}
+
+std::vector<std::string_view>
+Browser::get_links(const std::vector<Item *> &list) {
+  std::vector<std::string_view> links{};
+  for (auto *node : list) {
+    if ((node->getType() != ItemType::TAG) && node->m_text != "link")
+      continue;
+    auto tag = static_cast<Tag *>(node);
+    if (tag->m_attributes["rel"] == "stylesheet" &&
+        tag->m_attributes.contains("href"))
+      links.push_back(tag->m_attributes["href"]);
+  }
+  return links;
 }

@@ -1,7 +1,10 @@
 #include "helpers.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <cctype>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string_view>
 
 std::vector<std::string_view> hlp::split(std::string_view str,
@@ -39,4 +42,24 @@ void hlp::print_tree(Item *node, int indent) {
   for (auto &child : node->m_children) {
     print_tree(child.get(), indent + 2);
   }
+}
+
+std::string hlp::get_default_CSS() {
+  std::filesystem::path cssPath =
+      std::filesystem::path(PROJECT_ROOT_DIR) / "css" / "Browser.css";
+  std::ifstream file(cssPath);
+  if (!file.is_open()) {
+    throw WindowException("Couldn't open Browser's base CSS template\n");
+  }
+  std::ostringstream ss;
+  ss << file.rdbuf();
+  return ss.str();
+}
+
+std::vector<Item *> hlp::tree_to_list(Item *node) {
+  std::vector<Item *> list{};
+  for (auto &child : node->m_children) {
+    tree_to_list(child.get());
+  }
+  return list;
 }

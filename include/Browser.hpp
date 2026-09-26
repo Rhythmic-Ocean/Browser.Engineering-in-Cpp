@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Parser.hpp"
 #include "helpers.hpp"
 #include "layout.hpp"
 #include "url.hpp"
@@ -29,7 +30,8 @@ private:
   void start_event();
   void paint_tree(Layout::Layout *layoutNode);
   void draw();
-  void style(Item *node);
+  void style(Item *node, Parser::StyleSheet &rules);
+  std::vector<std::string_view> get_links(const std::vector<Item *> &list);
 
 public:
   float m_width{};
