@@ -18,8 +18,14 @@ typedef int FontSize;
 inline int HSTEP = 13;
 inline int VSTEP = 14;
 
-static constexpr float WIDTH = 800.0f;
-static constexpr float HEIGHT = 600.0f;
+static constexpr int WIDTH = 800.0f;
+static constexpr int HEIGHT = 600.0f;
+
+static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+    {"font-size", "16px"},
+    {"font-style", "normal"},
+    {"font-weight", "normal"},
+    {"color", "black"}};
 
 struct WindowDeleter {
   void operator()(SDL_Window *window) const {
@@ -47,6 +53,7 @@ enum class ItemType { TAG, TEXT };
 struct Item {
   std::string m_text{};
   std::vector<std::unique_ptr<Item>> m_children{};
+  std::unordered_map<std::string, std::string> m_style{};
   Item *m_parent{};
   Item(std::string &&text, Item *parent)
       : m_text{std::move(text)}, m_parent{parent} {}
@@ -75,7 +82,11 @@ struct Tag : public Item {
       : Item{std::move(text), parent}, m_attributes{std::move(attributes)} {}
   ItemType getType() const override { return ItemType::TAG; }
   std::ostream &printItem(std::ostream &out) override {
-    out << "<" + m_text + ">";
+    out << "<" + m_text + ">" << std::endl;
+    ;
+    for (auto &attrib : m_attributes) {
+      out << attrib.first << " : " << attrib.second << std::endl;
+    }
     return out;
   }
 };
@@ -132,7 +143,9 @@ std::vector<std::string_view> split(std::string_view str, std::string delim,
                                     size_t nums = INT_MAX);
 std::string_view strip(std::string_view str);
 void casefold(std::string &str);
-void print_tree(Item *node, int indent = 0);
+void print_tree(Item *node, size_t indent = 0);
+std::string get_default_CSS();
+std::vector<Item *> tree_to_list(Item *node);
 } // namespace hlp
 //
 inline std::string C_SDL_GetStrError() { return SDL_GetError(); }

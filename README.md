@@ -1,73 +1,50 @@
 ## An attempt at implementing the book [Web Browser Engineering](https://browser.engineering/) **_by Pavel Panchekha & Chris Harrelson_** in C++20
 
-The original book's implemented in python.
+The original book's implementation is in python.
 
 > **NOTE:** inter chapter commits are done in the branch chpX-working. It's merged with master once I complete the chapter and the executable's functional!!
 
-### Current Status (Latest Sept 20)
+> This is a learning project, basically my first C++ project after doing learncpp. So probably a lot of errors.
 
-#### Chapter 5 - Completed (Sept 20 2026)
+> I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
-New project structure w/ some description:
+### Current Status (Latest Sept 27)
 
-```
-├── assets //fonts and images (images are only used in this README for now)
-│   ├── fonts
-│   │   ├── NotoSansSC-Bold.ttf //for CJK characters
-│   │   ├── NotoSansSC-Regular.ttf //for CJK characters
-│   │   ├── OpenSans-BoldItalic.ttf
-│   │   ├── OpenSans-Bold.ttf
-│   │   ├── OpenSans-Italic.ttf
-│   │   └── OpenSans-Regular.ttf
-│   └── image
-│   ├── chp-1.png
-│   ├── chp-2-mid.png
-│   ├── chp3-complete-1.png
-│   ├── chp3-complete-2.png
-│   ├── chp4-complete-1.png
-│   ├── chp4-complete-2.png
-│   ├── chp5-complete-1.png
-│   └── chp5-complete-2.png
-├── CMakeLists.txt
-├── include
-│   ├── Browser.hpp //created by main, orchestrates the entire rendering process
-│   ├── client.hpp //SSL Client to create the TCP connection
-│   ├── helpers.hpp //some helper structs, classes and hlp namespace functions
-│   ├── HTMLParse.hpp //creates HTML DOM tree and it's main parse() function returns the root
-│   ├── layout.hpp //uses the HTML tree to create the Layout Tree which is then rendered thru Browser::draw()
-    ├── rio.hpp //robust I/O for communications over TCP, help from CS:APP book. Buffer RIO are deprecated
-│   ├── url.hpp //URL and response parsing
-├── README.md
-└── src
-    ├── Browser.cpp
-    ├── client.cpp
-    ├── fonts.cpp
-    ├── helpers.cpp
-    ├── HTMLParse.cpp
-    ├── layout.cpp
-    ├── main.cpp
-    ├── rio.cpp
-    ├── url.cpp
-    └── window.cpp
-```
+#### Chapter 6 - Completed (Sept 27 2026)
 
-- All rendering are now done thru Layout trees
-- More closely follows the book's ways of calculating layout/ text position. But had to remove resizing feature cuz it became really laggy having to redo the entire layout tree every time a resize occured.
-- Had a bug in HTMLParse where attributes were not being properly split, now sure how it still worked on the book but I made a seperate attribute_splitter() function for that.
-- Rendering [this](https://browser.engineering/layout.html)
-  ![Output.txt](assets/image/chp5-complete-1.png)
-- Rendering the same page's `<pre>` tags:
-  ![Output.txt](assets/image/chp5-complete-2.png)
+- Now parses CSS, can render few styles with inline CSS and external CSS.
+- For external CSS, supports tag selectors and descending tag selectors
+- Properties are cascading so child tags automatically inherit their parents properties unless overridden.
+- Has a default browser specific CSS template (see css/Browser.css) that is inherited by all elements unless overridden
+- Re-wrote attribute splitter for HTML Parser, so it's deviates quite a bit from the book's implementation there
+- Proper error handling for cases where parsing fails due to bad html/css inputs
+- Compiled with multiple -W flags (see CMakeLists.txt), and cleaned up all the warnings
+- Successful examples presented below:
+
+- Rendering [this](https://browser.engineering/index.html)
+
+
+  ![Output.txt](assets/image/chp6-complete-2.png)
+  
+- Rendering [this](https://browser.engineering/styles.html)
+
+
+  ![Output.txt](assets/image/chp6-complete-1.png)
 
 ### Requirements for anybody wanting to run it
 
-- CMake > 3.8
+- CMake >= 4.3.0
 - C++20 capable compiler
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
 
+### Steps
+
+- Fork the repo
+- Run the following on your linux system:
+
   ```
-  git clone https://github.com/Rhythmic-Ocean/Browser.Engineering-in-Cpp
+  git clone https://github.com/<your-username>/Browser.Engineering-in-Cpp
   cd Browser
   cmake -B build
   cmake --build build
@@ -75,4 +52,4 @@ New project structure w/ some description:
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Next Step: Chapter 6
+### Next Step: Chapter 7

@@ -18,7 +18,7 @@ int main() {
   URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
     // and TTF
-    Browser b{"Browser", 800, 600};
+    Browser b{"Browser"};
     b.load(url);
   }
   TTF_Quit();

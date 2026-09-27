@@ -1,5 +1,6 @@
-#include "HTMLParse.hpp"
+#include "Parser.hpp"
 #include "helpers.hpp"
+#include <cctype>
 #include <functional>
 #include <ranges>
 #include <string>
@@ -7,8 +8,10 @@
 #include <tuple>
 #include <unordered_map>
 
-HTMLParse::HTMLParse(std::string &body) : m_body{body} {}
-Item *HTMLParse::parse() {
+using namespace Parser;
+
+HTMLParser::HTMLParser(std::string &body) : m_body{body} {}
+Item *HTMLParser::parse() {
   std::string word{};
   bool in_tag = false;
   for (size_t c = 0; c < m_body.size(); ++c) {
@@ -35,7 +38,7 @@ Item *HTMLParse::parse() {
     add_text(std::move(word));
   return finish();
 }
-void HTMLParse::add_text(std::string &&text) {
+void HTMLParser::add_text(std::string &&text) {
   if (hlp::strip(text).size() == 0)
     return;
   implcit_tag("");
@@ -48,7 +51,7 @@ void HTMLParse::add_text(std::string &&text) {
 --NOTE: The open tag is first put into the unfinished bucket, it's only put
   inside the parent's m_children node after it's closed.
  * */
-void HTMLParse::add_tag(std::string &&text) {
+void HTMLParser::add_tag(std::string &&text) {
   auto [tag, attributes] = get_attributes(text);
   if (tag.starts_with('!')) // ignoring !doctype stuff and comments too
     return;
@@ -79,8 +82,8 @@ void HTMLParse::add_tag(std::string &&text) {
 }
 
 std::pair<std::string, std::unordered_map<std::string, std::string>>
-HTMLParse::get_attributes(std::string &text) {
-  auto parts = attrib_splitter(text);
+HTMLParser::get_attributes(std::string &text) {
+  auto parts = parse_attrib(text);
   std::unordered_map<std::string, std::string> attributes{};
   auto tag = std::string(parts[0]);
   hlp::casefold(tag);
@@ -105,7 +108,7 @@ HTMLParse::get_attributes(std::string &text) {
   return {std::move(tag), std::move(attributes)};
 }
 
-void HTMLParse::implcit_tag(const std::string &tag) {
+void HTMLParser::implcit_tag(const std::string &tag) {
   std::vector<std::reference_wrapper<std::string>> open_tags{};
   while (true) {
     for (auto &node : m_unfinished) {
@@ -130,7 +133,7 @@ void HTMLParse::implcit_tag(const std::string &tag) {
   }
 }
 
-Item *HTMLParse::finish() {
+Item *HTMLParser::finish() {
   if (m_unfinished.empty())
     implcit_tag("");
   while (m_unfinished.size() > 1) {
@@ -144,27 +147,92 @@ Item *HTMLParse::finish() {
   return ancestor;
 }
 
-std::vector<std::string> HTMLParse::attrib_splitter(std::string &str) {
-  int ptr{};
-  bool inQuotes = false;
-  std::string cur_str{};
-  std::vector<std::string> finalAns{};
-  while (ptr < str.size()) {
-    if (std::isspace(str[ptr]) && !inQuotes) {
-      if (!cur_str.empty())
-        finalAns.push_back(std::move(cur_str));
-      cur_str.clear();
-      while (ptr < str.size() && std::isspace(str[ptr]))
-        ++ptr;
-    } else {
-      if (str[ptr] == '\'' || str[ptr] == '"') {
-        inQuotes = !inQuotes;
-      }
-      cur_str.push_back(str[ptr]);
-    }
-    ++ptr;
+void whiteSpace(std::string &body, size_t &indx) {
+  while (indx < body.size() &&
+         std::isspace(static_cast<unsigned char>(body[indx])))
+    ++indx;
+  return;
+}
+
+std::string word(std::string &body, size_t &indx, bool inQuotes) {
+  size_t start = indx;
+  while (indx < body.size()) {
+    if (inQuotes && std::isspace(static_cast<unsigned char>(body[indx]))) {
+      ++indx;
+    } else if (!std::isspace(static_cast<unsigned char>(body[indx])) &&
+               body[indx] != '=' && body[indx] != '"') {
+      ++indx;
+    } else
+      break;
   }
-  if (!cur_str.empty())
-    finalAns.push_back(std::move(cur_str));
-  return finalAns;
+  if (indx <= start)
+    ++indx;
+  return std::string(body.substr(start, indx - start));
+}
+
+bool is_literal(std::string &body, size_t &indx, char l_literal) {
+  if (indx < body.size() && body[indx] == l_literal) {
+    ++indx;
+    return true;
+  }
+  return false;
+}
+
+void literal(std::string &body, size_t &indx, char l_literal) {
+  if (indx < body.size() && body[indx] != l_literal)
+    throw WindowException("Failed catching literal: " + std::string{l_literal});
+  ++indx;
+}
+
+std::optional<char> ignore_until(std::string &body, size_t &indx,
+                                 const std::string &literals) {
+  while (indx < body.size()) {
+    if (std::ranges::find(literals, body[indx]) != literals.end())
+      return body[indx];
+    else
+      ++indx;
+  }
+  return std::nullopt;
+}
+
+std::vector<std::string> HTMLParser::parse_attrib(std::string &body) {
+  size_t indx = 0;
+  size_t b_size = body.size();
+  std::vector<std::string> attributes{};
+  std::string l_word{};
+  while (indx < b_size) {
+    try {
+      whiteSpace(body, indx);
+      l_word += word(body, indx, false);
+      whiteSpace(body, indx);
+      if (!is_literal(body, indx, '=')) {
+        attributes.push_back(l_word);
+        l_word.clear();
+        continue;
+      }
+      l_word += '=';
+      whiteSpace(body, indx);
+      literal(body, indx, '"');
+      l_word += '"';
+      l_word += word(body, indx, true);
+      literal(body, indx, '"');
+      l_word += '"';
+      attributes.push_back(l_word);
+      l_word.clear();
+    } catch (WindowException &exception) {
+      auto why = ignore_until(body, indx, "\"");
+      if (why == '"') {
+        literal(body, indx, '"');
+        whiteSpace(body, indx);
+        l_word.clear();
+        continue;
+      }
+      if (!l_word.empty())
+        attributes.push_back(l_word);
+      else
+        attributes.push_back("dummy");
+      break;
+    }
+  }
+  return attributes;
 }

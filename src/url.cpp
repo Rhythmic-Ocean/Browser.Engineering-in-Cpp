@@ -22,6 +22,11 @@ void URL::parse() {
     throw NetworkException("Unsupported network scheme: " +
                            std::string(scheme));
   }
+  if (scheme == "http")
+    m_port = "80";
+  else if (scheme == "https")
+    m_port = "443";
+
   size_t host_start{scheme_end + 3};
   size_t path_start{m_url.find('/', host_start)};
   if (path_start == std::string::npos) {
@@ -30,6 +35,11 @@ void URL::parse() {
   } else {
     host = std::string_view(m_url).substr(host_start, path_start - host_start);
     path = std::string_view(m_url).substr(path_start);
+  }
+
+  if (auto portPos = host.find(':'); portPos != std::string_view::npos) {
+    m_port = host.substr(portPos + 1);
+    host = host.substr(0, portPos);
   }
 }
 
@@ -44,18 +54,18 @@ std::string URL::request() {
   request += "Connection: close\r\n";
   request += "User-Agent: IHateCpp!!\r\n";
   request += "\r\n";
-  size_t num{};
+  ssize_t num{};
   if ((num = rio::writen(m_client.get_ssl_client(), request)) !=
-      request.size()) {
+      static_cast<ssize_t>(request.size())) {
     throw NetworkException("Failed to send about " + std::to_string(num) +
                            " chars thru server");
   }
   std::string response{};
   get_response(response);
-  int indx{};
+  size_t indx{};
   std::vector<std::string_view> data{hlp::split(response, "\r\n")};
   std::vector<std::string_view> statusline = hlp::split(data[indx], " ", 2);
-  auto [version, status, explanation] =
+  [[maybe_unused]] auto [version, status, explanation] =
       std::make_tuple(statusline[0], statusline[1], statusline[2]);
   ++indx;
   auto response_headers{parse_response(data, indx)};
@@ -66,7 +76,7 @@ std::string URL::request() {
 }
 
 std::unordered_map<std::string, std::string_view>
-URL::parse_response(std::vector<std::string_view> response, int &indx) {
+URL::parse_response(std::vector<std::string_view> response, size_t &indx) {
   std::unordered_map<std::string, std::string_view> response_headers{};
   while (true) {
     auto line = response[indx];
@@ -89,7 +99,31 @@ void URL::get_response(std::string &response) {
   ssize_t n;
   while ((n = rio::readn(m_client.get_ssl_client(),
                          std::span(chunk, sizeof(chunk)))) > 0) {
-    response.append(chunk, n);
+    response.append(chunk, static_cast<size_t>(n));
+  }
+}
+URL URL::resolve(std::string_view url) {
+  std::string resolvedURL{};
+  if (url.find("://") != std::string_view ::npos)
+    return {std::move(std::string(url))};
+  if (!url.starts_with('/')) {
+    size_t pos1 = m_url.find_last_of('/');
+    std::string dir{m_url.substr(0, pos1)};
+    while (url.starts_with("../")) {
+      size_t pos2 = url.find_first_of('/');
+      url = url.substr(pos2 + 1);
+      if (size_t pos3 = dir.find_last_of('/'); pos3 != std::string_view::npos) {
+        dir = dir.substr(0, pos3);
+      }
+    }
+    resolvedURL = std::string(dir) + '/' + std::string(url);
+    return resolvedURL;
+  }
+  if (url.starts_with("//")) {
+    return {std::string(scheme) + ':' + std::string(url)};
+  } else {
+    return {std::string(scheme) + "://" + std::string(host) + ":" +
+            std::string(m_port) + std::string(url)};
   }
 }
 
