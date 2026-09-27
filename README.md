@@ -5,8 +5,8 @@ The original book's implementation is in python.
 > **NOTE:** inter chapter commits are done in the branch chpX-working. It's merged with master once I complete the chapter and the executable's functional!!
 
 > This is a learning project, basically my first C++ project after doing learncpp. So probably a lot of errors.
-> I aim to have as little AI generated code as possible in this repo.
-> NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
+
+> I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
 ### Current Status (Latest Sept 27)
 
@@ -22,8 +22,13 @@ The original book's implementation is in python.
 - Successful examples presented below:
 
 - Rendering [this](https://browser.engineering/index.html)
+
+
   ![Output.txt](assets/image/chp6-complete-2.png)
+  
 - Rendering [this](https://browser.engineering/styles.html)
+
+
   ![Output.txt](assets/image/chp6-complete-1.png)
 
 ### Requirements for anybody wanting to run it
