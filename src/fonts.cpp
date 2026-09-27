@@ -20,10 +20,12 @@ void FontCache::init_fontFiles() {
 }
 
 void FontCache::init_normalFonts() {
-  load_font(FontWeight::REGULAR, BASE_FONT_SIZE);
-  load_font(FontWeight::BOLD, BASE_FONT_SIZE);
-  load_font(FontWeight::ITALICS, BASE_FONT_SIZE);
-  load_font(FontWeight::BOLD_ITALICS, BASE_FONT_SIZE);
+  auto &size = INHERITED_PROPERTIES["font-size"];
+  auto acSize = get_size(size);
+  load_font(FontWeight::REGULAR, acSize);
+  load_font(FontWeight::BOLD, acSize);
+  load_font(FontWeight::ITALICS, acSize);
+  load_font(FontWeight::BOLD_ITALICS, acSize);
   return;
 }
 
@@ -61,8 +63,10 @@ void FontCache::load_font(FontWeight weight, FontSize size) {
     throw FontCacheException(
         "Failed to create IOStream: " + C_SDL_GetStrError() + "\n");
   }
-  auto *font1 = TTF_OpenFontIO(fileStream1, false, size);
-  auto *font2 = TTF_OpenFontIO(fileStream2, false, size);
+  auto *font1 =
+      TTF_OpenFontIO(fileStream1, false, static_cast<float>(size) / 10.0f);
+  auto *font2 =
+      TTF_OpenFontIO(fileStream2, false, static_cast<float>(size) / 10.0f);
   if (!font1 || !font2) {
     SDL_Log("Failed to open font: %s\n", SDL_GetError());
     throw FontCacheException("Failed to open font: " + C_SDL_GetStrError() +
@@ -75,7 +79,7 @@ void FontCache::load_font(FontWeight weight, FontSize size) {
     throw FontCacheException("Failed to set fallback " + C_SDL_GetStrError() +
                              "\n");
   }
-  font_vec[static_cast<int>(weight)][size] = std::move(myFont1);
+  font_vec[static_cast<size_t>(weight)][size] = std::move(myFont1);
   return;
 }
 
@@ -89,7 +93,7 @@ void FontCache::init() {
 }
 
 TTF_Font *FontCache::get_font(FontWeight weight, FontSize size) {
-  auto &font_map = font_vec[static_cast<int>(weight)];
+  auto &font_map = font_vec[static_cast<size_t>(weight)];
   if (font_map.find(size) == font_map.end()) {
     load_font(weight, size);
   }

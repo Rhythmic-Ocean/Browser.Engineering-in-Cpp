@@ -36,7 +36,7 @@ void hlp::casefold(std::string &stri) {
   }
 }
 
-void hlp::print_tree(Item *node, int indent) {
+void hlp::print_tree(Item *node, size_t indent) {
   std::string indents(indent, ' ');
   std::cout << indents << *node << std::endl;
   for (auto &child : node->m_children) {
@@ -56,10 +56,15 @@ std::string hlp::get_default_CSS() {
   return ss.str();
 }
 
+void tree_to_list(Item *node, std::vector<Item *> &list) {
+  list.push_back(node);
+  for (auto &child : node->m_children) {
+    tree_to_list(child.get(), list);
+  }
+}
+
 std::vector<Item *> hlp::tree_to_list(Item *node) {
   std::vector<Item *> list{};
-  for (auto &child : node->m_children) {
-    tree_to_list(child.get());
-  }
+  tree_to_list(node, list);
   return list;
 }

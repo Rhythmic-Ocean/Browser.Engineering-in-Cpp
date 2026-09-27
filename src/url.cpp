@@ -54,18 +54,18 @@ std::string URL::request() {
   request += "Connection: close\r\n";
   request += "User-Agent: IHateCpp!!\r\n";
   request += "\r\n";
-  size_t num{};
+  ssize_t num{};
   if ((num = rio::writen(m_client.get_ssl_client(), request)) !=
-      request.size()) {
+      static_cast<ssize_t>(request.size())) {
     throw NetworkException("Failed to send about " + std::to_string(num) +
                            " chars thru server");
   }
   std::string response{};
   get_response(response);
-  int indx{};
+  size_t indx{};
   std::vector<std::string_view> data{hlp::split(response, "\r\n")};
   std::vector<std::string_view> statusline = hlp::split(data[indx], " ", 2);
-  auto [version, status, explanation] =
+  [[maybe_unused]] auto [version, status, explanation] =
       std::make_tuple(statusline[0], statusline[1], statusline[2]);
   ++indx;
   auto response_headers{parse_response(data, indx)};
@@ -76,7 +76,7 @@ std::string URL::request() {
 }
 
 std::unordered_map<std::string, std::string_view>
-URL::parse_response(std::vector<std::string_view> response, int &indx) {
+URL::parse_response(std::vector<std::string_view> response, size_t &indx) {
   std::unordered_map<std::string, std::string_view> response_headers{};
   while (true) {
     auto line = response[indx];
@@ -99,20 +99,20 @@ void URL::get_response(std::string &response) {
   ssize_t n;
   while ((n = rio::readn(m_client.get_ssl_client(),
                          std::span(chunk, sizeof(chunk)))) > 0) {
-    response.append(chunk, n);
+    response.append(chunk, static_cast<size_t>(n));
   }
 }
 URL URL::resolve(std::string_view url) {
   std::string resolvedURL{};
-  if (url.find("://") == std::string_view ::npos)
+  if (url.find("://") != std::string_view ::npos)
     return {std::move(std::string(url))};
   if (!url.starts_with('/')) {
     size_t pos1 = m_url.find_last_of('/');
-    std::string_view dir{m_url.substr(0, pos1)};
+    std::string dir{m_url.substr(0, pos1)};
     while (url.starts_with("../")) {
       size_t pos2 = url.find_first_of('/');
       url = url.substr(pos2 + 1);
-      if (size_t pos3 = dir.find('/'); pos3 != std::string_view::npos) {
+      if (size_t pos3 = dir.find_last_of('/'); pos3 != std::string_view::npos) {
         dir = dir.substr(0, pos3);
       }
     }

@@ -7,7 +7,11 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <memory>
 
-// browser own the nodes too
+struct Size {
+  int width;
+  int height;
+};
+
 class Browser {
 public:
 private:
@@ -34,12 +38,10 @@ private:
   std::vector<std::string_view> get_links(const std::vector<Item *> &list);
 
 public:
-  float m_width{};
-  float m_height{};
-  Browser(std::string &&title, float width = WIDTH, float height = HEIGHT)
-      : m_title{std::move(title)}, m_width{width}, m_height{height} {
-    m_width = width;
-    m_height = height;
+  int m_width{};
+  int m_height{};
+  Browser(std::string &&title, Size size = {WIDTH, HEIGHT})
+      : m_title{std::move(title)}, m_width{size.width}, m_height{size.height} {
     init();
     load_engine();
   };

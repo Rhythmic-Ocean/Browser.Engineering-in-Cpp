@@ -7,6 +7,8 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
+#include <cmath>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +19,6 @@ namespace Layout {
 
 static constexpr float HSTEP = 13.0f;
 static constexpr float VSTEP = 13.0f;
-static constexpr float BASE_FONT_SIZE = 16.0f;
 static constexpr auto BLOCK_ELEMENTS = std::to_array<std::string_view>(
     {"html"sv,    "body"sv,   "article"sv, "section"sv,    "nav"sv,
      "aside"sv,   "h1"sv,     "h2"sv,      "h3"sv,         "h4"sv,
@@ -28,7 +29,13 @@ static constexpr auto BLOCK_ELEMENTS = std::to_array<std::string_view>(
      "div"sv,     "table"sv,  "form"sv,    "fieldset"sv,   "legend"sv,
      "details"sv, "summary"sv});
 
-enum class FontWeight { BOLD, ITALICS, BOLD_ITALICS, REGULAR, COUNT };
+enum class FontWeight : std::int32_t {
+  BOLD,
+  ITALICS,
+  BOLD_ITALICS,
+  REGULAR,
+  COUNT
+};
 enum class LayoutType { BLOCK, INLINE };
 
 inline SDL_Color parse_color(std::string &name) {
@@ -76,6 +83,19 @@ class FontCache {
   void load_font(FontWeight weight, FontSize size);
 
 public:
+  static FontWeight get_weight(const std::string &str) {
+    if (str == "bold")
+      return FontWeight::BOLD;
+    if (str == "italics")
+      return FontWeight::ITALICS;
+    return FontWeight::REGULAR;
+  }
+  static int get_size(const std::string &str) {
+    double fsize = std::stof(str.substr(0, str.size() - 2));
+    int isize = static_cast<int>(std::round(fsize) * 10);
+    return isize;
+  }
+
   FontCache();
   void init();
   TTF_Font *get_font(FontWeight style, FontSize size);
@@ -97,7 +117,9 @@ struct PositionedText {
   std::unique_ptr<TTF_Text, TextDeleter> text;
   float start_x{};
   float start_y{};
-  PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+  std::string color;
+  PositionedText(TTF_Text *txt, float x, float y, const std::string &l_color)
+      : start_x{x}, start_y{y}, color{std::move(l_color)} {
     text.reset(txt);
   }
 };
@@ -111,16 +133,21 @@ struct DrawItem {
 };
 
 struct DrawText : public DrawItem {
-private:
-  TTF_Font *m_font;
-  float m_left{};
 
 public:
   TTF_Text *m_text;
-  DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
+
+private:
+  TTF_Font *m_font;
+  float m_left{};
+  std::string color;
+
+public:
+  DrawText(TTF_Text *text, float x1, float y1, const std::string &l_color)
+      : m_text{text}, m_left{x1}, color{std::move(l_color)} {
     m_top = y1;
     m_font = TTF_GetTextFont(m_text);
-    m_bottom = y1 + TTF_GetFontLineSkip(m_font);
+    m_bottom = y1 + static_cast<float>((TTF_GetFontLineSkip(m_font)));
   }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
@@ -128,8 +155,8 @@ public:
 struct DrawRect : public DrawItem {
   SDL_FRect rect;
   SDL_Color color;
-  DrawRect(float x, float y, float width, float height, std::string &color)
-      : rect{x, y, width, height}, color{parse_color(color)} {
+  DrawRect(float x, float y, float width, float height, std::string &l_color)
+      : rect{x, y, width, height}, color{parse_color(l_color)} {
     m_top = y;
     m_bottom = y + height;
   }
@@ -175,16 +202,15 @@ class BlockLayout : public Layout {
 public:
   float m_cursor_x{};
   float m_cursor_y{};
-  FontSize m_fontSize = BASE_FONT_SIZE;
   FontWeight m_fontWeight =
       FontWeight::REGULAR; // prob make a vector later on cuz
   TTF_Font *m_font{};
 
 private:
   void open_tag(const std::string &tag);
-  void process_text(const std::string &text, LayoutContext &ctx);
+  void process_text(Item *node, LayoutContext &ctx);
   void close_tag(const std::string &tag);
-  PositionedText make_display(std::string &str, LayoutContext &ctx);
+  PositionedText make_display(Item *node, std::string &str, LayoutContext &ctx);
   void recurse(Item *root, LayoutContext &ctx);
   void flush();
   static void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,

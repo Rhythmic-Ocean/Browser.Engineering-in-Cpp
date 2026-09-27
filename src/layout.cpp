@@ -10,7 +10,6 @@ using namespace Layout;
 /*--NOTE: DrawItem's member function definitions
           Each item is rendered individually here
 */
-
 void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   float cur_scroll_y{m_top - scroll_y};
@@ -87,9 +86,6 @@ void BlockLayout::layout(LayoutContext &ctx) {
   } else {
     m_cursor_x = 0;
     m_cursor_y = 0;
-    m_fontWeight = FontWeight::REGULAR;
-    m_fontSize = 16;
-    m_font = ctx.fontCache->get_font(m_fontWeight, m_fontSize);
     recurse(m_node, ctx);
     flush();
   }
@@ -119,11 +115,7 @@ void BlockLayout::open_tag(const std::string &tag) {
       m_fontWeight = FontWeight::BOLD_ITALICS;
     else
       m_fontWeight = FontWeight::BOLD;
-  } else if (tag == "small")
-    m_fontSize = 10;
-  else if (tag == "big")
-    m_fontSize += 20;
-  else if (tag == "br")
+  } else if (tag == "br")
     flush();
 }
 
@@ -138,11 +130,7 @@ void BlockLayout::close_tag(const std::string &tag) {
       m_fontWeight = FontWeight::ITALICS;
     else
       m_fontWeight = FontWeight::REGULAR;
-  } else if (tag == "small")
-    m_fontSize += 10;
-  else if (tag == "big")
-    m_fontSize = 20;
-  else if (tag == "p") {
+  } else if (tag == "p") {
     flush();
     m_cursor_y += VSTEP;
   }
@@ -155,7 +143,8 @@ void BlockLayout::close_tag(const std::string &tag) {
  */
 //--INFO: relative x postion of the text gets set in process_text/make_display.
 //        absolute x and y position gets set at flush()
-void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
+void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
+  std::string &str = node->m_text;
   std::string word{};
   for (size_t c = 0; c < str.size(); ++c) {
     unsigned char byte = static_cast<unsigned char>(str[c]);
@@ -165,7 +154,7 @@ void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
               file!!*/
     if (std::isspace(byte)) {
       if (!word.empty()) {
-        m_line.emplace_back(std::move(make_display(word, ctx)));
+        m_line.emplace_back(make_display(node, word, ctx));
       }
       while (c < str.size() &&
              std::isspace(static_cast<unsigned char>(str[c]))) {
@@ -173,7 +162,7 @@ void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
       }
       --c;
       std::string space_str = " ";
-      m_line.emplace_back(std::move(make_display(space_str, ctx)));
+      m_line.emplace_back(make_display(node, space_str, ctx));
       continue;
     }
     /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
@@ -192,7 +181,7 @@ void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
     } else {
       if (!word.empty()) { // if the char is no 1 byte then we immediatly
                            // clear the buffer and start a new item
-        m_line.emplace_back(std::move(make_display(word, ctx)));
+        m_line.emplace_back((make_display(node, word, ctx)));
       }
       size_t char_length = 2;
       if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
@@ -201,18 +190,18 @@ void BlockLayout::process_text(const std::string &str, LayoutContext &ctx) {
         char_length = 4;
       std::string utf8_char = str.substr(c, char_length);
       // each of the multi byte char are treated as seperate display item
-      m_line.emplace_back(std::move(make_display(utf8_char, ctx)));
+      m_line.emplace_back((make_display(node, utf8_char, ctx)));
       c += (char_length - 1); // as the enclosing for loop performs ++c next
     }
   }
   // Flush the remaining chars from buffer
   if (!word.empty())
-    m_line.emplace_back(std::move(make_display(word, ctx)));
+    m_line.emplace_back(make_display(node, word, ctx));
 }
 
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   if (root->getType() == ItemType::TEXT) {
-    process_text(root->m_text, ctx);
+    process_text(root, ctx);
   } else {
     open_tag(root->m_text);
     for (auto &child : root->m_children) {
@@ -224,11 +213,18 @@ void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
 
 //--INFO: relative x postion of the text gets set in process_text/make_display.
 //        absolute x and y position gets set at flush()
-PositionedText BlockLayout::make_display(std::string &word,
+PositionedText BlockLayout::make_display(Item *node, std::string &word,
                                          LayoutContext &ctx) {
-  int h{};
-  int w{};
-  auto *font = ctx.fontCache->get_font(m_fontWeight, m_fontSize);
+  int iHeight{};
+  int iWidth{};
+  auto icolor = node->m_style["color"];
+  auto color = parse_color(node->m_style["color"]);
+  auto &weight = node->m_style["font-weight"];
+  //--WARNING: Only have one style for nw, stick w/ it. So we ignore this
+  [[maybe_unused]] auto &style = node->m_style["font-style"];
+  auto &size = node->m_style["font-size"];
+  auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
+                                       FontCache::get_size(size));
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
 
   if (!txt) {
@@ -237,21 +233,25 @@ PositionedText BlockLayout::make_display(std::string &word,
     throw WindowException("Couldn't create text: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
-  TTF_SetTextColor(txt, 255, 255, 255, 255);
-  if (!TTF_GetTextSize(txt, &w, &h)) {
+  TTF_SetTextColor(txt, color.r, color.g, color.b, color.a);
+  if (!TTF_GetTextSize(txt, &iWidth, &iHeight)) {
     SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
     throw WindowException("Couldn't calculate string size of: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
-  if (m_cursor_x + w > m_width) {
+  float width = static_cast<float>(iWidth);
+  [[maybe_unused]] float height = static_cast<float>(iHeight);
+  if (m_cursor_x + width > m_width) {
     flush();
   }
-  m_cursor_x += w;
+  m_cursor_x += width;
   word.clear();
-  return {txt, m_cursor_x - w,
-          0.0f}; //--WARNING: The y coords 0.0f is just a placeholder, the
-                 //               actual will be calculated at flush()
+  return {
+      txt, m_cursor_x - width, 0.0f,
+      std::move(
+          icolor)}; //--WARNING: The y coords 0.0f is just a placeholder, the
+                    //               actual will be calculated at flush()
 }
 
 //--INFO: relative x postion of the text gets set in process_text/make_display.
@@ -262,18 +262,18 @@ PositionedText BlockLayout::make_display(std::string &word,
 void BlockLayout::flush() {
   int max_ascent{}, max_descent{}, max_lineskip{};
   getExtremes(max_ascent, max_descent, max_lineskip, m_line);
-  float baseline = m_cursor_y + 1.25 * max_ascent;
+  float baseline = m_cursor_y + 1.25f * static_cast<float>(max_ascent);
   for (auto &word : m_line) {
     TTF_Font *font = TTF_GetTextFont(word.text.get());
-    float font_ascent = TTF_GetFontAscent(font);
+    int font_ascent = TTF_GetFontAscent(font);
     word.start_x += m_start_x; // absolute position of x
-    word.start_y +=
-        (m_start_y + baseline - font_ascent); // relative pos for y??
+    word.start_y += (m_start_y + baseline -
+                     static_cast<float>(font_ascent)); // relative pos for y??
     m_displayList.push_back(std::move(word));
   }
   m_cursor_x = 0;
   m_line.clear();
-  m_cursor_y = baseline + 1.25 * max_descent;
+  m_cursor_y = baseline + 1.25f * static_cast<float>(max_descent);
 }
 
 std::vector<DrawItem *> BlockLayout::paint() {
@@ -287,8 +287,8 @@ std::vector<DrawItem *> BlockLayout::paint() {
 
   if (layout_mode() == LayoutType::INLINE) {
     for (auto &item : m_displayList) {
-      cmds.emplace_back(
-          new DrawText{item.text.get(), item.start_x, item.start_y});
+      cmds.emplace_back(new DrawText{item.text.get(), item.start_x,
+                                     item.start_y, item.color});
     }
   }
   return cmds;

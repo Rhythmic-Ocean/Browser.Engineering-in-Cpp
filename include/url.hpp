@@ -20,7 +20,7 @@ private:
   void parse();
   void get_response(std::string &response);
   std::unordered_map<std::string, std::string_view>
-  parse_response(std::vector<std::string_view> response, int &indx);
+  parse_response(std::vector<std::string_view> response, size_t &indx);
 
 public:
   URL(const std::string &url);

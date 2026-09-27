@@ -147,14 +147,14 @@ Item *HTMLParser::finish() {
   return ancestor;
 }
 
-void whiteSpace(std::string &body, int &indx) {
+void whiteSpace(std::string &body, size_t &indx) {
   while (indx < body.size() &&
          std::isspace(static_cast<unsigned char>(body[indx])))
     ++indx;
   return;
 }
 
-std::string word(std::string &body, int &indx, bool inQuotes) {
+std::string word(std::string &body, size_t &indx, bool inQuotes) {
   size_t start = indx;
   while (indx < body.size()) {
     if (inQuotes && std::isspace(static_cast<unsigned char>(body[indx]))) {
@@ -170,7 +170,7 @@ std::string word(std::string &body, int &indx, bool inQuotes) {
   return std::string(body.substr(start, indx - start));
 }
 
-bool is_literal(std::string &body, int &indx, char l_literal) {
+bool is_literal(std::string &body, size_t &indx, char l_literal) {
   if (indx < body.size() && body[indx] == l_literal) {
     ++indx;
     return true;
@@ -178,13 +178,13 @@ bool is_literal(std::string &body, int &indx, char l_literal) {
   return false;
 }
 
-void literal(std::string &body, int &indx, char l_literal) {
+void literal(std::string &body, size_t &indx, char l_literal) {
   if (indx < body.size() && body[indx] != l_literal)
     throw WindowException("Failed catching literal: " + std::string{l_literal});
   ++indx;
 }
 
-std::optional<char> ignore_until(std::string &body, int &indx,
+std::optional<char> ignore_until(std::string &body, size_t &indx,
                                  const std::string &literals) {
   while (indx < body.size()) {
     if (std::ranges::find(literals, body[indx]) != literals.end())
@@ -196,8 +196,8 @@ std::optional<char> ignore_until(std::string &body, int &indx,
 }
 
 std::vector<std::string> HTMLParser::parse_attrib(std::string &body) {
-  int indx = 0;
-  int b_size = body.size();
+  size_t indx = 0;
+  size_t b_size = body.size();
   std::vector<std::string> attributes{};
   std::string l_word{};
   while (indx < b_size) {

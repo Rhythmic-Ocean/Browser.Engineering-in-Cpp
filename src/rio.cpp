@@ -1,5 +1,3 @@
-//--WARNING: Buffered RIO functions are deprecated, they were for pre-SSL config
-
 /* Robust I/O package to handle the short count problem caused by normal
  read()/write()/send() operations*/
 
@@ -36,7 +34,6 @@
 // Unbuffered Robust Input/Output:
 
 #include "helpers.hpp"
-#include <cerrno>
 #include <cstring>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
@@ -59,7 +56,7 @@ void readinitb(rio_t &rp, int fd) {
   rp.rio_cnt = 0;
   rp.rio_bufptr = rp.rio_buf;
 }
-[[nodiscard]] ssize_t readn(SSL *ssl, std::span<char> usrbuf) {
+[[nodiscard]] size_t readn(SSL *ssl, std::span<char> usrbuf) {
   size_t n{usrbuf.size()};
   size_t nleft{n};
   size_t nread{};
@@ -105,83 +102,4 @@ void readinitb(rio_t &rp, int fd) {
   return static_cast<ssize_t>(
       n - nleft); // Number of bytes successfully encrypted and written
 }
-
-// Buffered Read, useful when you wanna read line by line (/r/n seperators),
-// usually for non binary data strems
-
-// Basic rio read functon that first refills the internal buffer from the file
-// descriptor if empty and then fills the usr buffer from the said internal
-// buffer as needed.
-
-// It's an alt buffered version for POSIX read function
-namespace {
-[[nodiscard]] ssize_t read(rio_t &rp, std::span<char> usrbuf) {
-  size_t n{usrbuf.size()};
-  int cnt;
-
-  while (rp.rio_cnt <= 0) {
-    rp.rio_cnt = ::read(rp.rio_fd, rp.rio_buf, sizeof(rp.rio_buf));
-    if (rp.rio_cnt < 0) {
-      if (errno != EINTR)
-        throw NetworkException("Error at rio::read: ::read() failed writing "
-                               "into rio buffer from fd" +
-                               std::to_string(rp.rio_fd));
-    } else if (rp.rio_cnt == 0)
-      return 0;
-    else
-      rp.rio_bufptr = rp.rio_buf;
-  }
-
-  cnt = n;
-  if (rp.rio_cnt < n)
-    cnt = rp.rio_cnt;
-  std::memcpy(usrbuf.data(), rp.rio_bufptr, cnt);
-  rp.rio_bufptr += cnt;
-  rp.rio_cnt -= cnt;
-  return cnt;
-}
-
-} // namespace
-
-// The rio_readnb function is basically rio_readn but instead uses buffered
-// rio_read instead of POSIX read
-[[nodiscard]] ssize_t readnb(rio_t &rp, std::span<char> usrbuf) {
-  size_t n{usrbuf.size()};
-  size_t nleft{n};
-  ssize_t nread{};
-  char *buf{usrbuf.data()};
-
-  while (nleft > 0) {
-    if ((nread = read(rp, std::span(buf, nleft))) == 0)
-      break;
-    nleft -= nread;
-    buf += nread;
-  }
-  return (n - nleft);
-}
-
-//
-[[nodiscard]] ssize_t readlineb(rio_t &rp, std::span<char> usrbuf) {
-  size_t maxlen{usrbuf.size()};
-  int n, rc;
-  char c, *bufp{usrbuf.data()};
-
-  for (n = 1; n < maxlen; ++n) {
-    if ((rc = read(rp, std::span(&c, 1))) == 1) {
-      *bufp++ = c;
-      if (c == '\n') {
-        n++;
-        break;
-      }
-    } else if (rc == 0) {
-      if (n == 1)
-        return 0;
-      else
-        break;
-    }
-  }
-  *bufp = 0;
-  return n - 1;
-}
-
 } // namespace rio

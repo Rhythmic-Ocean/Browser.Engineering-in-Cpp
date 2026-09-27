@@ -3,9 +3,11 @@
 #include "helpers.hpp"
 #include "layout.hpp"
 #include "url.hpp"
+#include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <exception>
 #include <iterator>
+#include <string>
 
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -28,6 +30,12 @@ void Browser::init() {
                           std::string(SDL_GetError()));
   }
 
+  if (!SDL_SetRenderVSync(raw_renderer, 1)) {
+    SDL_Log("SDL_SetRenderVSync failed: %s\n", SDL_GetError());
+    throw WindowException("SDL_SetRenderVSync failed: " +
+                          std::string(SDL_GetError()));
+  }
+
   m_window.reset(raw_window);
   m_renderer.reset(raw_renderer);
   m_scroll_y = 0.0f;
@@ -42,7 +50,10 @@ void Browser::start_event() {
       is_Running = false;
       break;
     case SDL_EVENT_MOUSE_WHEEL: {
-      m_max_y = std::max(m_document->m_height + 2 * VSTEP - m_height, 0.0f);
+      m_max_y =
+          std::max(m_document->m_height + 2.0f * static_cast<float>(VSTEP) -
+                       static_cast<float>(m_height),
+                   0.0f);
       m_scroll_y -= event.wheel.y * 40.0f;
       if (m_scroll_y < 0.0f)
         m_scroll_y = 0.0f;
@@ -101,8 +112,8 @@ void Browser::load(URL &url) {
   m_fontCache->init();
   ctx.textEngine = m_engine.get();
   ctx.fontCache = m_fontCache.get();
-  ctx.windowHeight = m_height;
-  ctx.windowWidth = m_width;
+  ctx.windowHeight = static_cast<float>(m_height);
+  ctx.windowWidth = static_cast<float>(m_width);
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
   paint_tree(m_document.get());
@@ -124,10 +135,10 @@ void Browser::load_engine() {
 
 void Browser::draw() {
 
-  SDL_SetRenderDrawColor(m_renderer.get(), 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 255, 255);
   SDL_RenderClear(m_renderer.get());
   for (auto &cmd : m_displayItems) {
-    if (cmd->m_top > m_scroll_y + m_height)
+    if (cmd->m_top > m_scroll_y + static_cast<float>(m_height))
       break; // if u below the screen just stop
     if (cmd->m_bottom < m_scroll_y)
       continue;
@@ -137,25 +148,48 @@ void Browser::draw() {
 }
 
 void Browser::style(Item *node, Parser::StyleSheet &rules) {
-  if (node->getType() == ItemType::TAG) {
-    Tag *tag = static_cast<Tag *>(node);
+  //--NOTE: This inherite rules applies to all elements by default, and
+  //         is overidden by ANY other rules applied to the elements themseleves
+  for (auto &property : INHERITED_PROPERTIES) {
+    if (node->m_parent) {
+      node->m_style[property.first] = node->m_parent->m_style[property.first];
+    } else {
+      node->m_style[property.first] = property.second;
+    }
   }
-  /*--NOTE: The inline style attribute overrides the one in stylesheet, so it
-            shall come after!!*/
-  for (auto &rules : rules) {
-    if (!rules.selector->matches(node))
+  //--NOTE: This one's from the style sheet!
+  for (auto &rule : rules) {
+    if (!rule.selector->matches(node))
       continue;
-    for (auto &property : rules.property) {
+    for (auto &property : rule.property) {
       node->m_style[property.first] = property.second;
     }
   }
   if (node->getType() == ItemType::TAG &&
       static_cast<Tag *>(node)->m_attributes.contains("style")) {
+
+    //--INFO: This one's inline styling
     Tag *tag = static_cast<Tag *>(node);
     auto pairs = Parser::CSSParser(tag->m_attributes["style"]).body();
     for (auto pair : pairs) {
       tag->m_style[pair.first] = pair.second;
     }
+    //--NOTE: Resolving font size to absolute pixels instead of %
+  }
+  if (node->m_style.contains("font-size") &&
+      node->m_style["font-size"].ends_with('%')) {
+    std::string parent_font_size{};
+    if (node->m_parent && node->m_parent->m_style.contains("font-size")) {
+      parent_font_size = node->m_parent->m_style["font-size"];
+    } else {
+      parent_font_size = INHERITED_PROPERTIES["font-size"];
+    }
+    auto &str_fontS = node->m_style["font-size"];
+    float font_frac =
+        std::stof(str_fontS.substr(0, str_fontS.size() - 1)) / 100;
+    float parent_px =
+        std::stof(parent_font_size.substr(0, parent_font_size.size() - 2));
+    node->m_style["font-size"] = std::to_string(font_frac * parent_px) + "px";
   }
   for (auto &child : node->m_children) {
     style(child.get(), rules);
@@ -166,11 +200,12 @@ std::vector<std::string_view>
 Browser::get_links(const std::vector<Item *> &list) {
   std::vector<std::string_view> links{};
   for (auto *node : list) {
-    if ((node->getType() != ItemType::TAG) && node->m_text != "link")
+    if ((node->getType() != ItemType::TAG) || node->m_text != "link")
       continue;
-    auto tag = static_cast<Tag *>(node);
-    if (tag->m_attributes["rel"] == "stylesheet" &&
-        tag->m_attributes.contains("href"))
+    auto *tag = static_cast<Tag *>(node);
+    auto &attributes = tag->m_attributes;
+    if (attributes.contains("rel") && attributes["rel"] == "stylesheet" &&
+        attributes.contains("href"))
       links.push_back(tag->m_attributes["href"]);
   }
   return links;

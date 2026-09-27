@@ -2,28 +2,30 @@
 
 #include "helpers.hpp"
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <unordered_map>
 
 namespace Parser {
-enum class SelectorType { TAG, DESCENDANT };
+enum class SelectorType : std::uint8_t { TAG, DESCENDANT };
 
 struct Selector {
   int priority{};
   virtual SelectorType getType() = 0;
   virtual bool matches(Item *node) = 0;
+  virtual ~Selector() = default;
 };
 
 struct TagSelector : public Selector {
   std::string tag;
 
-  bool matches(Item *node) {
+  bool matches(Item *node) override {
     return node->getType() == ItemType::TAG && tag == node->m_text;
   }
 
-  SelectorType getType() { return SelectorType::TAG; }
-  TagSelector(const std::string &tag) : tag{tag} { priority = 1; };
+  SelectorType getType() override { return SelectorType::TAG; }
+  TagSelector(const std::string &l_tag) : tag{l_tag} { priority = 1; };
 };
 
 //--NOTE: Each selector owns it's descendent under unique ptr, but not the
@@ -33,8 +35,8 @@ struct DescendantSelector : public Selector {
   std::unique_ptr<Selector> ancestor{};
   std::unique_ptr<Selector> descendant{};
 
-  SelectorType getType() { return SelectorType::DESCENDANT; }
-  bool matches(Item *node) {
+  SelectorType getType() override { return SelectorType::DESCENDANT; }
+  bool matches(Item *node) override {
     if (!descendant->matches(node))
       return false;
     while (node->m_parent) {
@@ -45,9 +47,9 @@ struct DescendantSelector : public Selector {
     return false;
   }
 
-  DescendantSelector(std::unique_ptr<Selector> &ancestor,
-                     std::unique_ptr<Selector> &descendant)
-      : ancestor{ancestor.release()}, descendant{descendant.release()} {
+  DescendantSelector(std::unique_ptr<Selector> &l_ancestor,
+                     std::unique_ptr<Selector> &l_descendant)
+      : ancestor{l_ancestor.release()}, descendant{l_descendant.release()} {
     priority = ancestor->priority + descendant->priority;
   }
 };
@@ -56,8 +58,8 @@ using Property = std::unordered_map<std::string, std::string>;
 struct StyleRule {
   std::unique_ptr<Selector> selector;
   Property property;
-  StyleRule(std::unique_ptr<Selector> &selector, Property &property)
-      : selector{selector.release()}, property{property} {}
+  StyleRule(std::unique_ptr<Selector> &l_selector, Property &l_property)
+      : selector{l_selector.release()}, property{l_property} {}
 };
 
 using StyleSheet = std::vector<StyleRule>;
