@@ -165,8 +165,10 @@ std::string word(std::string &body, size_t &indx, bool inQuotes) {
     } else
       break;
   }
-  if (indx <= start)
+  if (indx < body.size() && indx <= start)
     ++indx;
+  if (start >= body.size())
+    return "";
   return std::string(body.substr(start, indx - start));
 }
 
