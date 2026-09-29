@@ -207,9 +207,7 @@ public:
   TTF_Font *m_font{};
 
 private:
-  void open_tag(const std::string &tag);
   void process_text(Item *node, LayoutContext &ctx);
-  void close_tag(const std::string &tag);
   PositionedText make_display(Item *node, std::string &str, LayoutContext &ctx);
   void recurse(Item *root, LayoutContext &ctx);
   void flush();

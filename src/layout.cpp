@@ -104,38 +104,6 @@ void BlockLayout::layout(LayoutContext &ctx) {
   }
 }
 
-void BlockLayout::open_tag(const std::string &tag) {
-  if (tag == "i") {
-    if (m_fontWeight == FontWeight::BOLD)
-      m_fontWeight = FontWeight::BOLD_ITALICS;
-    else
-      m_fontWeight = FontWeight::ITALICS;
-  } else if (tag == "b") {
-    if (m_fontWeight == FontWeight::ITALICS)
-      m_fontWeight = FontWeight::BOLD_ITALICS;
-    else
-      m_fontWeight = FontWeight::BOLD;
-  } else if (tag == "br")
-    flush();
-}
-
-void BlockLayout::close_tag(const std::string &tag) {
-  if (tag == "i") {
-    if (m_fontWeight == FontWeight::BOLD_ITALICS)
-      m_fontWeight = FontWeight::BOLD;
-    else
-      m_fontWeight = FontWeight::REGULAR;
-  } else if (tag == "b") {
-    if (m_fontWeight == FontWeight::BOLD_ITALICS)
-      m_fontWeight = FontWeight::ITALICS;
-    else
-      m_fontWeight = FontWeight::REGULAR;
-  } else if (tag == "p") {
-    flush();
-    m_cursor_y += VSTEP;
-  }
-}
-
 /*
 --WARNING: The multi-byte parsing algorithm in the following functioin was
            generated with heavy AI assistance. Extensive line-by-line notes for
@@ -203,11 +171,11 @@ void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   if (root->getType() == ItemType::TEXT) {
     process_text(root, ctx);
   } else {
-    open_tag(root->m_text);
+    if (root->m_text == "br")
+      flush();
     for (auto &child : root->m_children) {
       recurse(child.get(), ctx);
     }
-    close_tag(root->m_text);
   }
 }
 
