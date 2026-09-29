@@ -36,7 +36,7 @@ enum class FontWeight : std::int32_t {
   REGULAR,
   COUNT
 };
-enum class LayoutType { BLOCK, INLINE };
+enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
 
 inline SDL_Color parse_color(std::string &name) {
   static const std::unordered_map<std::string, SDL_Color> color_map = {
@@ -117,11 +117,13 @@ struct PositionedText {
   std::unique_ptr<TTF_Text, TextDeleter> text;
   float start_x{};
   float start_y{};
-  std::string color;
-  PositionedText(TTF_Text *txt, float x, float y, const std::string &l_color)
-      : start_x{x}, start_y{y}, color{std::move(l_color)} {
+  PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
     text.reset(txt);
   }
+  PositionedText() = default;
+
+  PositionedText(PositionedText &&) = default;
+  PositionedText &operator=(PositionedText &&) = default;
 };
 
 //--NOTE: Starting public viewing struct/classes
@@ -140,11 +142,9 @@ public:
 private:
   TTF_Font *m_font;
   float m_left{};
-  std::string color;
 
 public:
-  DrawText(TTF_Text *text, float x1, float y1, const std::string &l_color)
-      : m_text{text}, m_left{x1}, color{std::move(l_color)} {
+  DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
     m_top = y1;
     m_font = TTF_GetTextFont(m_text);
     m_bottom = y1 + static_cast<float>((TTF_GetFontLineSkip(m_font)));
@@ -162,6 +162,12 @@ struct DrawRect : public DrawItem {
   }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
+
+class Layout;
+class DocumentLayout;
+class BlockLayout;
+class LineLayout;
+class TextLayout;
 
 class Layout {
 public:
@@ -181,6 +187,7 @@ public:
   virtual void layout(LayoutContext &ctx) = 0;
   virtual void pprint() = 0;
   virtual std::vector<DrawItem *> paint() = 0;
+  virtual LayoutType getType() = 0;
   virtual ~Layout() = default;
 };
 
@@ -191,37 +198,70 @@ public:
   void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
   void pprint();
+  LayoutType getType() { return LayoutType::DOCUMENT; }
   ~DocumentLayout() = default;
 };
 
 class BlockLayout : public Layout {
   //--INFO: BlockLayout owns the TTF_Text, NOT DrawText!!!
-  std::vector<PositionedText> m_line;
   std::vector<PositionedText> m_displayList;
 
 public:
   float m_cursor_x{};
   float m_cursor_y{};
-  FontWeight m_fontWeight =
-      FontWeight::REGULAR; // prob make a vector later on cuz
-  TTF_Font *m_font{};
 
 private:
-  void process_text(Item *node, LayoutContext &ctx);
-  PositionedText make_display(Item *node, std::string &str, LayoutContext &ctx);
+  void word(Item *node, LayoutContext &ctx);
+  void make_word(Item *node, std::string &str, LayoutContext &ctx);
   void recurse(Item *root, LayoutContext &ctx);
   void flush();
+  void new_line();
   static void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
                           std::vector<PositionedText> &line);
 
 public:
   void pprint();
   LayoutType layout_mode();
+  //--WARNING: getType() is different form layout_mode()!!
+  LayoutType getType() { return LayoutType::BLOCK; }
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
   void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
   ~BlockLayout() = default;
 };
+
+class LineLayout : public Layout {
+public:
+  LineLayout(Item *node, BlockLayout *parent, LineLayout *previous_line);
+  void layout(LayoutContext &ctx);
+  std::vector<DrawItem *> paint();
+  LayoutType getType() { return LayoutType::LINE; }
+  void pprint();
+};
+
+class TextLayout : public Layout {
+  PositionedText m_word{};
+
+public:
+  TextLayout(Item *node, PositionedText word, LineLayout *parent,
+             TextLayout *previous_word)
+      : Layout{node, parent, previous_word}, m_word{std::move(word)} {}
+
+  void layout(LayoutContext &ctx);
+  std::vector<DrawItem *> paint();
+  LayoutType getType() { return LayoutType::TEXT; }
+  void pprint();
+};
+
+class LayoutException : public std::runtime_error {
+public:
+  explicit LayoutException(const std::string &message)
+      : std::runtime_error(message) {}
+};
+
+inline LineLayout::LineLayout(Item *node, BlockLayout *parent,
+                              LineLayout *previous_line)
+    : Layout{node, parent, previous_line} {}
 
 } // namespace Layout

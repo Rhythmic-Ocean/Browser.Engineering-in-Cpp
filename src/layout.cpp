@@ -84,23 +84,16 @@ void BlockLayout::layout(LayoutContext &ctx) {
       previous = m_children.back().get();
     }
   } else {
-    m_cursor_x = 0;
-    m_cursor_y = 0;
+    new_line();
     recurse(m_node, ctx);
-    flush();
   }
 
   for (auto &child : m_children) {
     child->layout(ctx);
   }
 
-  if (mode == LayoutType::BLOCK) {
-    for (auto &child : m_children) {
-      m_height += child->m_height;
-    }
-  }
-  if (mode == LayoutType::INLINE) {
-    m_height = m_cursor_y;
+  for (auto &child : m_children) {
+    m_height += child->m_height;
   }
 }
 
@@ -109,9 +102,9 @@ void BlockLayout::layout(LayoutContext &ctx) {
            generated with heavy AI assistance. Extensive line-by-line notes for
            explanative purpose.
  */
-//--INFO: relative x postion of the text gets set in process_text/make_display.
+//--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
+void BlockLayout::word(Item *node, LayoutContext &ctx) {
   std::string &str = node->m_text;
   std::string word{};
   for (size_t c = 0; c < str.size(); ++c) {
@@ -122,7 +115,7 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
               file!!*/
     if (std::isspace(byte)) {
       if (!word.empty()) {
-        m_line.emplace_back(make_display(node, word, ctx));
+        make_word(node, word, ctx);
       }
       while (c < str.size() &&
              std::isspace(static_cast<unsigned char>(str[c]))) {
@@ -130,7 +123,7 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
       }
       --c;
       std::string space_str = " ";
-      m_line.emplace_back(make_display(node, space_str, ctx));
+      make_word(node, space_str, ctx);
       continue;
     }
     /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
@@ -149,7 +142,7 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
     } else {
       if (!word.empty()) { // if the char is no 1 byte then we immediatly
                            // clear the buffer and start a new item
-        m_line.emplace_back((make_display(node, word, ctx)));
+        (make_word(node, word, ctx));
       }
       size_t char_length = 2;
       if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
@@ -158,43 +151,43 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
         char_length = 4;
       std::string utf8_char = str.substr(c, char_length);
       // each of the multi byte char are treated as seperate display item
-      m_line.emplace_back((make_display(node, utf8_char, ctx)));
+      (make_word(node, utf8_char, ctx));
       c += (char_length - 1); // as the enclosing for loop performs ++c next
     }
   }
   // Flush the remaining chars from buffer
   if (!word.empty())
-    m_line.emplace_back(make_display(node, word, ctx));
+    make_word(node, word, ctx);
 }
 
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   if (root->getType() == ItemType::TEXT) {
-    process_text(root, ctx);
+    word(root, ctx);
   } else {
     if (root->m_text == "br")
-      flush();
+      new_line();
     for (auto &child : root->m_children) {
       recurse(child.get(), ctx);
     }
   }
 }
 
-//--INFO: relative x postion of the text gets set in process_text/make_display.
+//--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-PositionedText BlockLayout::make_display(Item *node, std::string &word,
-                                         LayoutContext &ctx) {
-  int iHeight{};
-  int iWidth{};
+void BlockLayout::make_word(Item *node, std::string &word, LayoutContext &ctx) {
+
+  // getting formatting info from current Block Node
   auto icolor = node->m_style["color"];
-  auto color = parse_color(node->m_style["color"]);
   auto &weight = node->m_style["font-weight"];
   //--WARNING: Only have one style for nw, stick w/ it. So we ignore this
   [[maybe_unused]] auto &style = node->m_style["font-style"];
   auto &size = node->m_style["font-size"];
+
+  // creating the TTF_Text and coloring it
+  auto color = parse_color(node->m_style["color"]);
   auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
                                        FontCache::get_size(size));
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
-
   if (!txt) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
@@ -202,6 +195,11 @@ PositionedText BlockLayout::make_display(Item *node, std::string &word,
                           ". Error: " + std::string(SDL_GetError()));
   }
   TTF_SetTextColor(txt, color.r, color.g, color.b, color.a);
+
+  // Getting the word's dimensions
+  int iHeight{};
+  int iWidth{};
+
   if (!TTF_GetTextSize(txt, &iWidth, &iHeight)) {
     SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
@@ -210,39 +208,58 @@ PositionedText BlockLayout::make_display(Item *node, std::string &word,
   }
   float width = static_cast<float>(iWidth);
   [[maybe_unused]] float height = static_cast<float>(iHeight);
+
+  // If cursor moves past this block's width change line
   if (m_cursor_x + width > m_width) {
-    flush();
+    new_line();
   }
   m_cursor_x += width;
   word.clear();
-  return {
-      txt, m_cursor_x - width, 0.0f,
-      std::move(
-          icolor)}; //--WARNING: The y coords 0.0f is just a placeholder, the
-                    //               actual will be calculated at flush()
+
+  /*Grabbing the ongoing line layout, creating a new txt layout and adding it to
+   * the line*/
+  //--WARNING: The y coords 0.0f is just a placeholder, the
+  //           actual will be calculated at flush()
+  PositionedText pTxt{txt, m_cursor_x - width, 0.0f};
+  auto *layout = m_children.back().get();
+  if (layout->getType() != LayoutType::LINE)
+    throw LayoutException(
+        "Error at BlockLayout::make_word(). Type is not LineLayout.");
+  auto *line = static_cast<LineLayout *>(layout);
+  TextLayout *previous_word{nullptr};
+  if (!line->m_children.empty()) {
+    //--NOTE: Only TextLayout are gonna be LineLayout's children so no need to
+    //        check
+    previous_word = static_cast<TextLayout *>(line->m_children.back().get());
+  }
+  auto new_word =
+      std::make_unique<TextLayout>(node, std::move(pTxt), line, previous_word);
+  line->m_children.push_back(std::move(new_word));
+  return;
 }
 
-//--INFO: relative x postion of the text gets set in process_text/make_display.
+//--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-
 //--WARNING: flush() should still happen even if m_line is empty!! Important to
 //            change lines for layout/ linebreak tags!
-void BlockLayout::flush() {
-  int max_ascent{}, max_descent{}, max_lineskip{};
-  getExtremes(max_ascent, max_descent, max_lineskip, m_line);
-  float baseline = m_cursor_y + 1.25f * static_cast<float>(max_ascent);
-  for (auto &word : m_line) {
-    TTF_Font *font = TTF_GetTextFont(word.text.get());
-    int font_ascent = TTF_GetFontAscent(font);
-    word.start_x += m_start_x; // absolute position of x
-    word.start_y += (m_start_y + baseline -
-                     static_cast<float>(font_ascent)); // relative pos for y??
-    m_displayList.push_back(std::move(word));
-  }
-  m_cursor_x = 0;
-  m_line.clear();
-  m_cursor_y = baseline + 1.25f * static_cast<float>(max_descent);
-}
+
+// void BlockLayout::flush() {
+//   int max_ascent{}, max_descent{}, max_lineskip{};
+//   getExtremes(max_ascent, max_descent, max_lineskip, m_line);
+//   float baseline = m_cursor_y + 1.25f * static_cast<float>(max_ascent);
+//   for (auto &word : m_line) {
+//     TTF_Font *font = TTF_GetTextFont(word.text.get());
+//     int font_ascent = TTF_GetFontAscent(font);
+//     word.start_x += m_start_x; // absolute position of x
+//     word.start_y += (m_start_y + baseline -
+//                      static_cast<float>(font_ascent)); // relative pos for
+//                      y??
+//     m_displayList.push_back(std::move(word));
+//   }
+//   m_cursor_x = 0;
+//   m_line.clear();
+//   m_cursor_y = baseline + 1.25f * static_cast<float>(max_descent);
+// }
 
 std::vector<DrawItem *> BlockLayout::paint() {
   std::vector<DrawItem *> cmds{};
@@ -255,8 +272,8 @@ std::vector<DrawItem *> BlockLayout::paint() {
 
   if (layout_mode() == LayoutType::INLINE) {
     for (auto &item : m_displayList) {
-      cmds.emplace_back(new DrawText{item.text.get(), item.start_x,
-                                     item.start_y, item.color});
+      cmds.emplace_back(
+          new DrawText{item.text.get(), item.start_x, item.start_y});
     }
   }
   return cmds;
@@ -290,4 +307,14 @@ void BlockLayout::pprint() {
       hlp::print_tree(child.get());
     }
   }
+}
+
+void BlockLayout::new_line() {
+  m_cursor_x = 0;
+  LineLayout *lastLine{nullptr};
+  if (!m_children.empty()) {
+    lastLine = static_cast<LineLayout *>(m_children.back().get());
+  }
+  auto new_line = std::make_unique<LineLayout>(m_node, this, lastLine);
+  m_children.push_back(std::move(new_line));
 }
