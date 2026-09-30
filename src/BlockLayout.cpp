@@ -1,5 +1,5 @@
-#include "layout.hpp"
 #include "helpers.hpp"
+#include "layout.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -115,15 +115,14 @@ void BlockLayout::word(Item *node, LayoutContext &ctx) {
               file!!*/
     if (std::isspace(byte)) {
       if (!word.empty()) {
-        make_word(node, word, ctx);
+        make_word(node, std::move(word), ctx);
+        word.clear();
       }
       while (c < str.size() &&
              std::isspace(static_cast<unsigned char>(str[c]))) {
         ++c;
       }
       --c;
-      std::string space_str = " ";
-      make_word(node, space_str, ctx);
       continue;
     }
     /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
@@ -142,7 +141,8 @@ void BlockLayout::word(Item *node, LayoutContext &ctx) {
     } else {
       if (!word.empty()) { // if the char is no 1 byte then we immediatly
                            // clear the buffer and start a new item
-        (make_word(node, word, ctx));
+        make_word(node, std::move(word), ctx);
+        word.clear();
       }
       size_t char_length = 2;
       if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
@@ -151,13 +151,15 @@ void BlockLayout::word(Item *node, LayoutContext &ctx) {
         char_length = 4;
       std::string utf8_char = str.substr(c, char_length);
       // each of the multi byte char are treated as seperate display item
-      (make_word(node, utf8_char, ctx));
+      make_word(node, std::move(utf8_char), ctx);
+      utf8_char.clear();
       c += (char_length - 1); // as the enclosing for loop performs ++c next
     }
   }
   // Flush the remaining chars from buffer
   if (!word.empty())
-    make_word(node, word, ctx);
+    make_word(node, std::move(word), ctx);
+  word.clear();
 }
 
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
@@ -174,27 +176,25 @@ void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
 
 //--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-void BlockLayout::make_word(Item *node, std::string &word, LayoutContext &ctx) {
+void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
 
   // getting formatting info from current Block Node
-  auto icolor = node->m_style["color"];
   auto &weight = node->m_style["font-weight"];
   //--WARNING: Only have one style for nw, stick w/ it. So we ignore this
   [[maybe_unused]] auto &style = node->m_style["font-style"];
   auto &size = node->m_style["font-size"];
 
   // creating the TTF_Text and coloring it
-  auto color = parse_color(node->m_style["color"]);
   auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
                                        FontCache::get_size(size));
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
-  if (!txt) {
+  auto *space{TTF_CreateText(ctx.textEngine, font, " ", 1)};
+  if (!txt || !space) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
     throw WindowException("Couldn't create text: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
-  TTF_SetTextColor(txt, color.r, color.g, color.b, color.a);
 
   // Getting the word's dimensions
   int iHeight{};
@@ -209,18 +209,23 @@ void BlockLayout::make_word(Item *node, std::string &word, LayoutContext &ctx) {
   float width = static_cast<float>(iWidth);
   [[maybe_unused]] float height = static_cast<float>(iHeight);
 
+  // Getting the space's dimensions
+  if (!TTF_GetTextSize(space, &iWidth, &iHeight)) {
+    SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
+            SDL_GetError());
+    throw WindowException("Couldn't calculate string size of: " + word +
+                          ". Error: " + std::string(SDL_GetError()));
+  }
+  float Swidth = static_cast<float>(iWidth);
+  [[maybe_unused]] float Sheight = static_cast<float>(iHeight);
   // If cursor moves past this block's width change line
   if (m_cursor_x + width > m_width) {
     new_line();
   }
-  m_cursor_x += width;
-  word.clear();
+  m_cursor_x += width + Swidth;
 
   /*Grabbing the ongoing line layout, creating a new txt layout and adding it to
    * the line*/
-  //--WARNING: The y coords 0.0f is just a placeholder, the
-  //           actual will be calculated at flush()
-  PositionedText pTxt{txt, m_cursor_x - width, 0.0f};
   auto *layout = m_children.back().get();
   if (layout->getType() != LayoutType::LINE)
     throw LayoutException(
@@ -233,7 +238,7 @@ void BlockLayout::make_word(Item *node, std::string &word, LayoutContext &ctx) {
     previous_word = static_cast<TextLayout *>(line->m_children.back().get());
   }
   auto new_word =
-      std::make_unique<TextLayout>(node, std::move(pTxt), line, previous_word);
+      std::make_unique<TextLayout>(node, std::move(word), line, previous_word);
   line->m_children.push_back(std::move(new_word));
   return;
 }
@@ -269,25 +274,7 @@ std::vector<DrawItem *> BlockLayout::paint() {
     cmds.emplace_back(
         new DrawRect{m_start_x, m_start_y, m_width, m_height, bg_color});
   }
-
-  if (layout_mode() == LayoutType::INLINE) {
-    for (auto &item : m_displayList) {
-      cmds.emplace_back(
-          new DrawText{item.text.get(), item.start_x, item.start_y});
-    }
-  }
   return cmds;
-}
-
-void BlockLayout::getExtremes(int &max_ascent, int &max_descent,
-                              int &max_lineskip,
-                              std::vector<PositionedText> &line) {
-  for (auto &word : line) {
-    TTF_Font *font = TTF_GetTextFont(word.text.get());
-    max_ascent = std::max(max_ascent, TTF_GetFontAscent(font));
-    max_descent = std::max(max_descent, std::abs(TTF_GetFontDescent(font)));
-    max_lineskip = std::max(max_lineskip, TTF_GetFontLineSkip(font));
-  }
 }
 
 void DocumentLayout::pprint() {
@@ -302,9 +289,8 @@ void BlockLayout::pprint() {
       static_cast<BlockLayout *>(node.get())->pprint();
     }
   } else {
-    std::cout << "INLINE" << m_node->m_text << std::endl;
-    for (auto &child : m_node->m_children) {
-      hlp::print_tree(child.get());
+    for (auto &child : m_children) {
+      child.get()->pprint();
     }
   }
 }

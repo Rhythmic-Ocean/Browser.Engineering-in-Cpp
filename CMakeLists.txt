@@ -21,7 +21,8 @@ set(_SOURCE_DIR
     src/helpers.cpp
     src/fonts.cpp
     src/Browser.cpp
-    src/layout.cpp
+    src/InlineLayout.cpp
+    src/BlockLayout.cpp
     src/HTMLParser.cpp
     src/CSSParser.cpp
 )

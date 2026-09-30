@@ -137,7 +137,8 @@ void Browser::draw() {
 
   SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 255, 255);
   SDL_RenderClear(m_renderer.get());
-  for (auto &cmd : m_displayItems) {
+  for (size_t i{}; i < m_displayItems.size(); ++i) {
+    auto &cmd = m_displayItems[i];
     if (cmd->m_top > m_scroll_y + static_cast<float>(m_height))
       break; // if u below the screen just stop
     if (cmd->m_bottom < m_scroll_y)

@@ -126,11 +126,14 @@ struct PositionedText {
   PositionedText &operator=(PositionedText &&) = default;
 };
 
+enum class DrawType { RECT, TEXT };
+
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
   float m_top{};
   float m_bottom{};
   virtual void execute(float scroll_y, SDL_Renderer *renderer) = 0;
+  virtual DrawType getType() = 0;
   virtual ~DrawItem() = default;
 };
 
@@ -144,6 +147,7 @@ private:
   float m_left{};
 
 public:
+  DrawType getType() override { return DrawType::TEXT; }
   DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
     m_top = y1;
     m_font = TTF_GetTextFont(m_text);
@@ -160,6 +164,7 @@ struct DrawRect : public DrawItem {
     m_top = y;
     m_bottom = y + height;
   }
+  DrawType getType() override { return DrawType::RECT; }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
@@ -204,7 +209,6 @@ public:
 
 class BlockLayout : public Layout {
   //--INFO: BlockLayout owns the TTF_Text, NOT DrawText!!!
-  std::vector<PositionedText> m_displayList;
 
 public:
   float m_cursor_x{};
@@ -212,12 +216,10 @@ public:
 
 private:
   void word(Item *node, LayoutContext &ctx);
-  void make_word(Item *node, std::string &str, LayoutContext &ctx);
+  void make_word(Item *node, std::string str, LayoutContext &ctx);
   void recurse(Item *root, LayoutContext &ctx);
   void flush();
   void new_line();
-  static void getExtremes(int &max_ascent, int &max_descent, int &max_lineskip,
-                          std::vector<PositionedText> &line);
 
 public:
   void pprint();
@@ -237,14 +239,17 @@ public:
   void layout(LayoutContext &ctx);
   std::vector<DrawItem *> paint();
   LayoutType getType() { return LayoutType::LINE; }
+  void getExtremes(float &max_ascent, float &max_descent);
   void pprint();
 };
 
 class TextLayout : public Layout {
-  PositionedText m_word{};
+  std::string m_word{};
 
 public:
-  TextLayout(Item *node, PositionedText word, LineLayout *parent,
+  TTF_Font *font{};
+  std::unique_ptr<TTF_Text, TextDeleter> m_text{};
+  TextLayout(Item *node, std::string word, LineLayout *parent,
              TextLayout *previous_word)
       : Layout{node, parent, previous_word}, m_word{std::move(word)} {}
 
