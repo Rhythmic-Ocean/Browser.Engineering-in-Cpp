@@ -3,6 +3,7 @@
 #include "helpers.hpp"
 #include "layout.hpp"
 #include "url.hpp"
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <exception>
@@ -63,6 +64,10 @@ void Browser::start_event() {
       draw();
       break;
     }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+      click(event.button);
+      break;
+    }
     default:
       break;
     }
@@ -79,8 +84,18 @@ void Browser::paint_tree(Layout::Layout *layoutNode) {
   }
 }
 
-void Browser::load(URL &url) {
-  std::string response = url.request();
+void Browser::ctx_setup() {
+  m_fontCache = std::make_unique<Layout::FontCache>();
+  m_fontCache->init();
+  ctx.textEngine = m_engine.get();
+  ctx.fontCache = m_fontCache.get();
+  ctx.windowHeight = static_cast<float>(m_height);
+  ctx.windowWidth = static_cast<float>(m_width);
+}
+
+void Browser::load(URL url) {
+  m_url = std::move(url);
+  std::string response = m_url.request();
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
 
@@ -89,7 +104,7 @@ void Browser::load(URL &url) {
   std::vector<std::string_view> css_links =
       get_links(hlp::tree_to_list(m_rootNode.get()));
   for (auto link : css_links) {
-    auto style_url = url.resolve(link);
+    auto style_url = m_url.resolve(link);
     std::string body{};
     try {
       body = style_url.request();
@@ -108,19 +123,11 @@ void Browser::load(URL &url) {
 
   std::ranges::sort(rules, cascade_priority);
   style(m_rootNode.get(), rules);
-  m_fontCache = std::make_unique<Layout::FontCache>();
-  m_fontCache->init();
-  ctx.textEngine = m_engine.get();
-  ctx.fontCache = m_fontCache.get();
-  ctx.windowHeight = static_cast<float>(m_height);
-  ctx.windowWidth = static_cast<float>(m_width);
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
+  m_displayItems.clear();
   paint_tree(m_document.get());
-  while (is_Running) {
-    start_event();
-    draw();
-  }
+  return;
 }
 
 void Browser::load_engine() {
@@ -210,4 +217,31 @@ Browser::get_links(const std::vector<Item *> &list) {
       links.push_back(tag->m_attributes["href"]);
   }
   return links;
+}
+
+void Browser::click(SDL_MouseButtonEvent &event) {
+  float x = event.x;
+  float y = event.y + m_scroll_y;
+  std::vector<Layout::Layout *> objects{};
+  auto list = hlp::tree_to_list(m_document.get());
+  for (auto *obj : list) {
+    if ((obj->m_start_x <= x && (x < (obj->m_start_x + obj->m_width))) &&
+        (obj->m_start_y <= y && (y < (obj->m_start_y + obj->m_height)))) {
+      objects.push_back(obj);
+    }
+  }
+  if (objects.empty())
+    return;
+  auto *elt = objects.back()->m_node;
+  while (elt) {
+    if (elt->getType() == ItemType::TAG) {
+      auto *tag = static_cast<Tag *>(elt);
+      if (tag->m_text == "a" && tag->m_attributes.contains("href")) {
+        URL url = m_url.resolve(tag->m_attributes["href"]);
+        load(std::move(url));
+        return;
+      }
+    }
+    elt = elt->m_parent;
+  }
 }

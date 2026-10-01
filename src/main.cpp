@@ -19,7 +19,11 @@ int main() {
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
     // and TTF
     Browser b{"Browser"};
-    b.load(url);
+    b.load(std::move(url));
+    while (b.is_Running) {
+      b.start_event();
+      b.draw();
+    }
   }
   TTF_Quit();
   SDL_Quit();

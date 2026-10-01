@@ -54,7 +54,7 @@ Property CSSParser::body() {
       whiteSpace();
       literal(';');
       whiteSpace();
-    } catch (WindowException exception) {
+    } catch (WindowException &exception) {
       auto why = ignore_until(";}");
       if (why == ';') {
         literal(';');
@@ -95,7 +95,7 @@ StyleSheet CSSParser::parse() {
       Property l_body = body();
       literal('}');
       rules.emplace_back(StyleRule{l_selector, l_body});
-    } catch (WindowException exception) {
+    } catch (WindowException &exception) {
       auto why = ignore_until("}");
       if (why == '}') {
 

@@ -145,7 +145,11 @@ std::string_view strip(std::string_view str);
 void casefold(std::string &str);
 void print_tree(Item *node, size_t indent = 0);
 std::string get_default_CSS();
-std::vector<Item *> tree_to_list(Item *node);
+template <typename NodeType>
+std::vector<NodeType *> tree_to_list(NodeType *node);
+
+template <typename NodeType>
+void tree_to_list(NodeType *node, std::vector<NodeType *> &list);
 } // namespace hlp
 //
 inline std::string C_SDL_GetStrError() { return SDL_GetError(); }

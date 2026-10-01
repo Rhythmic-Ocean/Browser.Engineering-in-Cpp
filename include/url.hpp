@@ -24,6 +24,9 @@ private:
 
 public:
   URL(const std::string &url);
+  URL() = default;
+  URL(URL &&) = default;
+  URL &operator=(URL &&) = default;
   ~URL() = default;
   std::string request();
   URL resolve(std::string_view url);
