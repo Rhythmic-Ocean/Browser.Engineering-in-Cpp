@@ -18,8 +18,8 @@ int main() {
   URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
     // and TTF
-    Browser b{"Browser"};
-    b.load(std::move(url));
+    browser::Browser b{"Browser"};
+    b.new_tab(std::move(url));
     while (b.is_Running) {
       b.start_event();
       b.draw();

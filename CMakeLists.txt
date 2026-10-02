@@ -14,17 +14,18 @@ find_package(SDL3 REQUIRED)
 find_package(SDL3_ttf REQUIRED)
 
 set(_SOURCE_DIR
-    src/main.cpp
-    src/client.cpp
-    src/rio.cpp
-    src/url.cpp
-    src/helpers.cpp
-    src/fonts.cpp
+    src/Main.cpp
+    src/Client.cpp
+    src/Rio.cpp
+    src/Url.cpp
+    src/Helpers.cpp
+    src/Fonts.cpp
     src/Browser.cpp
     src/InlineLayout.cpp
     src/BlockLayout.cpp
     src/HTMLParser.cpp
     src/CSSParser.cpp
+    src/Tab.cpp
 )
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
@@ -60,13 +61,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 #
 # # Optional clang-tidy static analysis
-# find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-#
-# if(CLANG_TIDY_EXE)
-#   set_target_properties(${PROJECT_NAME}
-#         PROPERTIES
-#             CXX_CLANG_TIDY
-#                 "${CLANG_TIDY_EXE};--checks=clang-analyzer-* \
-#                                 ,bugprone-*,performance-*"
-#     )
-# endif()
+find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+
+if(CLANG_TIDY_EXE)
+  set_target_properties(${PROJECT_NAME}
+        PROPERTIES
+            CXX_CLANG_TIDY
+                "${CLANG_TIDY_EXE};--checks=clang-analyzer-* \
+                                ,bugprone-*,performance-*"
+    )
+endif()
