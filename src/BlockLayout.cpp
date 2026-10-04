@@ -1,5 +1,6 @@
 #include "helpers.hpp"
 #include "layout.hpp"
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -12,7 +13,7 @@ using namespace Layout;
 */
 void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  float cur_scroll_y{m_top - scroll_y};
+  float cur_scroll_y{original.top - scroll_y};
   if (!TTF_DrawRendererText(m_text, m_left, cur_scroll_y)) {
     SDL_Log("Failed to draw text at item %s: %s\n", m_text->text,
             SDL_GetError());
@@ -20,12 +21,45 @@ void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
 }
 
 void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
-  rect.y = m_top - scroll_y;
+  SDL_FRect rect = {original.left, original.top - scroll_y,
+                    original.right - original.left,
+                    original.bottom - original.top};
+
   SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
   if (!SDL_RenderFillRect(renderer, &rect)) {
     SDL_Log("Failed to render layout rectangle: %s\n", SDL_GetError());
     throw WindowException("Can't make rectangles!!" +
                           std::string(SDL_GetError()));
+  }
+}
+
+void DrawOutline::execute(float scroll_y, SDL_Renderer *renderer) {
+  for (auto &border : borders) {
+    border.y = original.top - scroll_y;
+  }
+  inner.y = original.top - scroll_y;
+  SDL_SetRenderDrawColor(renderer, innerColor.r, innerColor.g, innerColor.b,
+                         innerColor.a);
+  if (!SDL_RenderFillRect(renderer, &inner)) {
+    SDL_Log("Failed to render layout outline inner: %s\n", SDL_GetError());
+    throw WindowException("Can't make inners for outline!!");
+  }
+  SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
+                         borderColor.a);
+  if (!SDL_RenderFillRects(renderer, borders.data(), 4)) {
+    SDL_Log("Failed to render layout outline borders: %s\n", SDL_GetError());
+    throw WindowException("Can't make borders for outline!!");
+  }
+}
+
+void DrawLine::execute(float scroll_y, SDL_Renderer *renderer) {
+  y1 = original.top - scroll_y;
+  y2 = original.bottom - scroll_y;
+  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+  if (!SDL_RenderLine(renderer, x1, y1, x2, y2)) {
+    SDL_Log("Failed to render  line: %s\n", SDL_GetError());
+    throw WindowException("Can't make a line!!");
   }
 }
 
@@ -41,7 +75,7 @@ void DocumentLayout::layout(LayoutContext &ctx) {
   m_height = child->m_height;
 }
 
-std::vector<DrawItem *> DocumentLayout::paint() { return {}; }
+std::vector<std::unique_ptr<DrawItem>> DocumentLayout::paint() { return {}; }
 
 LayoutType BlockLayout::layout_mode() {
   auto checkBlockTag = [](std::vector<std::unique_ptr<Item>> &children) {
@@ -243,36 +277,13 @@ void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
   return;
 }
 
-//--INFO: relative x postion of the text gets set in word/make_word.
-//        absolute x and y position gets set at flush()
-//--WARNING: flush() should still happen even if m_line is empty!! Important to
-//            change lines for layout/ linebreak tags!
-
-// void BlockLayout::flush() {
-//   int max_ascent{}, max_descent{}, max_lineskip{};
-//   getExtremes(max_ascent, max_descent, max_lineskip, m_line);
-//   float baseline = m_cursor_y + 1.25f * static_cast<float>(max_ascent);
-//   for (auto &word : m_line) {
-//     TTF_Font *font = TTF_GetTextFont(word.text.get());
-//     int font_ascent = TTF_GetFontAscent(font);
-//     word.start_x += m_start_x; // absolute position of x
-//     word.start_y += (m_start_y + baseline -
-//                      static_cast<float>(font_ascent)); // relative pos for
-//                      y??
-//     m_displayList.push_back(std::move(word));
-//   }
-//   m_cursor_x = 0;
-//   m_line.clear();
-//   m_cursor_y = baseline + 1.25f * static_cast<float>(max_descent);
-// }
-
-std::vector<DrawItem *> BlockLayout::paint() {
-  std::vector<DrawItem *> cmds{};
+std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
+  std::vector<std::unique_ptr<DrawItem>> cmds{};
   std::string bg_color = "transparent";
   if (m_node->m_style.contains("background-color")) {
     bg_color = m_node->m_style["background-color"];
     cmds.emplace_back(
-        new DrawRect{m_start_x, m_start_y, m_width, m_height, bg_color});
+        std::make_unique<DrawRect>(self_rect(), parse_color(bg_color)));
   }
   return cmds;
 }
@@ -304,3 +315,11 @@ void BlockLayout::new_line() {
   auto new_line = std::make_unique<LineLayout>(m_node, this, lastLine);
   m_children.push_back(std::move(new_line));
 }
+
+Rect BlockLayout::self_rect() {
+  return Rect{m_start_x, m_start_y, m_start_x + m_width, m_start_y + m_height};
+}
+
+bool Rect::contains_point(float x, float y) {
+  return x >= left && x < right && y >= top && y < bottom;
+};

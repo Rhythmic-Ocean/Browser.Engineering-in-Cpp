@@ -61,13 +61,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 #
 # # Optional clang-tidy static analysis
-find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-
-if(CLANG_TIDY_EXE)
-  set_target_properties(${PROJECT_NAME}
-        PROPERTIES
-            CXX_CLANG_TIDY
-                "${CLANG_TIDY_EXE};--checks=clang-analyzer-* \
-                                ,bugprone-*,performance-*"
-    )
-endif()
+# find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+#
+# if(CLANG_TIDY_EXE)
+#   set_target_properties(${PROJECT_NAME}
+#         PROPERTIES
+#             CXX_CLANG_TIDY
+#                 "${CLANG_TIDY_EXE};--checks=clang-analyzer-* \
+#                                 ,bugprone-*,performance-*"
+#     )
+# endif()

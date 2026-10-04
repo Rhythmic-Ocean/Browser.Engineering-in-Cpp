@@ -12,7 +12,8 @@
 
 using namespace browser;
 
-Tab::Tab(TabContext tctx) {
+Tab::Tab(TabContext tctx, float l_tab_height) {
+  tab_height = l_tab_height;
   ctx = std::move(tctx.lctx);
   m_engine = tctx.textEngine;
   m_fontCache = tctx.fontCache;
@@ -22,8 +23,8 @@ Tab::Tab(TabContext tctx) {
 
 void Tab::paint_tree(Layout::Layout *layoutNode) {
   auto displayVec = layoutNode->paint();
-  for (auto *item : displayVec) {
-    m_displayItems.emplace_back(item);
+  for (auto &item : displayVec) {
+    m_displayItems.push_back(std::move(item));
   }
   for (auto &child : layoutNode->m_children) {
     paint_tree(child.get());
@@ -32,7 +33,6 @@ void Tab::paint_tree(Layout::Layout *layoutNode) {
 
 void Tab::load(URL url) {
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
-  m_max_y = 0;
   m_url = std::move(url);
   std::string response = m_url.request();
   Parser::HTMLParser parser{response};
@@ -69,16 +69,17 @@ void Tab::load(URL url) {
   return;
 }
 
-void Tab::draw(SDL_Renderer *renderer) {
+// NOTE: offset accounts for all the chrome items on the top and forces all
+// DrawItems to be drawm below it
+void Tab::draw(SDL_Renderer *renderer, float offset) {
   for (size_t i{}; i < m_displayItems.size(); ++i) {
     auto &cmd = m_displayItems[i];
-    if (cmd->m_top > m_scroll_y + static_cast<float>(m_height))
+    if (cmd->original.top > m_scroll_y + tab_height)
       break; // if u below the screen just stop
-    if (cmd->m_bottom < m_scroll_y)
+    if (cmd->original.bottom < m_scroll_y)
       continue;
-    cmd->execute(m_scroll_y, renderer);
+    cmd->execute(m_scroll_y - offset, renderer);
   }
-  SDL_RenderPresent(renderer);
 }
 
 void Tab::style(Item *node, Parser::StyleSheet &rules) {
@@ -170,9 +171,11 @@ void Tab::click(float x, float y) {
   }
 }
 
+// NOTE: Book has it named scrolldown but since we support both up and down I
+// just made it scroll
 void Tab::scroll(float turn) {
   m_max_y = std::max(m_document->m_height + 2.0f * static_cast<float>(VSTEP) -
-                         static_cast<float>(m_height),
+                         tab_height,
                      0.0f);
   m_scroll_y -= turn * 40.0f;
   if (m_scroll_y < 0.0f)

@@ -25,7 +25,7 @@ void LineLayout::layout(LayoutContext &ctx) {
   m_height = 1.25f * (max_ascent + max_descent);
 }
 
-std::vector<DrawItem *> LineLayout::paint() { return {}; }
+std::vector<std::unique_ptr<DrawItem>> LineLayout::paint() { return {}; }
 
 void LineLayout::getExtremes(float &max_ascent, float &max_descent) {
   for (auto &word : m_children) {
@@ -96,8 +96,11 @@ void TextLayout::layout(LayoutContext &ctx) {
   m_text.reset(txt);
 }
 
-std::vector<DrawItem *> TextLayout::paint() {
-  return {new DrawText{m_text.get(), m_start_x, m_start_y}};
+std::vector<std::unique_ptr<DrawItem>> TextLayout::paint() {
+  std::vector<std::unique_ptr<DrawItem>> cmd{};
+  auto text = std::make_unique<DrawText>(m_text.get(), m_start_x, m_start_y);
+  cmd.push_back(std::move(text));
+  return cmd;
 }
 
 void TextLayout::pprint() { std::cout << m_word << std::endl; }

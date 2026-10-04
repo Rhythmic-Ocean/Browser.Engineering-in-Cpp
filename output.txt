@@ -1,0 +1,504 @@
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:18:9: warning: suspicious exception object created but not thrown; did you mean 'throw NetworkException'? [bugprone-throw-keyword-missing]
+   18 |         NetworkException("Failed to create SSL_CTX\n");
+      |         ^
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:87:16: warning: 2 adjacent parameters of 'Client' of similar type ('std::string_view') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+   87 | Client::Client(std::string_view hostname, std::string_view port)
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:87:33: note: the first parameter in the range is 'hostname'
+   87 | Client::Client(std::string_view hostname, std::string_view port)
+      |                                 ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:87:60: note: the last parameter in the range is 'port'
+   87 | Client::Client(std::string_view hostname, std::string_view port)
+      |                                                            ^~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:97:5: warning: suspicious exception object created but not thrown; did you mean 'throw NetworkException'? [bugprone-throw-keyword-missing]
+   97 |     NetworkException("Failed to set the SNI hostname\n");
+      |     ^
+/home/rhythmic_ocean/Desktop/Browser/src/Client.cpp:100:5: warning: suspicious exception object created but not thrown; did you mean 'throw NetworkException'? [bugprone-throw-keyword-missing]
+  100 |     NetworkException("Failed to set the certificate verification hostname\n");
+      |     ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/Rio.cpp:92:70: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+   92 |       if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+      |                                                                      ^
+/home/rhythmic_ocean/Desktop/Browser/src/Rio.cpp:94:8: note: end of the original
+   94 |       } else if (err == SSL_ERROR_ZERO_RETURN) {
+      |        ^
+/home/rhythmic_ocean/Desktop/Browser/src/Rio.cpp:94:48: note: clone 1 starts here
+   94 |       } else if (err == SSL_ERROR_ZERO_RETURN) {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:58:12: warning: an assignment within an 'if' condition is bug-prone [bugprone-assignment-in-if-condition]
+   58 |   if ((num = rio::writen(m_client.get_ssl_client(), request)) !=
+      |        ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:58:12: note: if it should be an assignment, move it out of the 'if' condition
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:58:12: note: if it is meant to be an equality check, change '=' to '=='
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:108:13: warning: passing result of std::move() as a const reference argument; no move will actually happen [performance-move-const-arg]
+  108 |     return {std::move(std::string(url))};
+      |             ^~~~~~~~~~                ~
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:131:39: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  131 |   out << "Full URL: " << url.m_url << std::endl;
+      |                                       ^~~~~~~~~
+      |                                       '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:132:38: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  132 |   out << "Scheme: " << url.scheme << std::endl;
+      |                                      ^~~~~~~~~
+      |                                      '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/Url.cpp:133:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  133 |   out << "Host: " << url.host << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Helpers.cpp:12:54: warning: the parameter 'delim' of type 'std::string' (aka 'basic_string<char>') is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+   12 |                                          std::string delim, size_t nums) {
+      |                                                      ^
+      |                                          const      &
+/home/rhythmic_ocean/Desktop/Browser/src/Helpers.cpp:42:36: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   42 |   std::cout << indents << *node << std::endl;
+      |                                    ^~~~~~~~~
+      |                                    '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Browser.cpp:91:40: warning: std::move of the variable 'tctx' of the trivially-copyable type 'TabContext' has no effect; remove std::move() [performance-move-const-arg]
+   91 |   auto new_tab = std::make_unique<Tab>(std::move(tctx));
+      |                                        ^~~~~~~~~~    ~
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/InlineLayout.cpp:41:29: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   41 |   std::cout << "NOTHING" << std::endl;
+      |                             ^~~~~~~~~
+      |                             '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/InlineLayout.cpp:103:52: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  103 | void TextLayout::pprint() { std::cout << m_word << std::endl; }
+      |                                                    ^~~~~~~~~
+      |                                                    '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:57:5: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+   57 |     return LayoutType::INLINE;
+      |     ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:57:30: note: end of the original
+   57 |     return LayoutType::INLINE;
+      |                              ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:64:5: note: clone 1 starts here
+   64 |     return LayoutType::INLINE;
+      |     ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:60:47: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+   60 |            checkBlockTag(m_node->m_children)) {
+      |                                               ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:63:4: note: end of the original
+   63 |   } else if (!m_node->m_children.empty())
+      |    ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:67:5: note: clone 1 starts here
+   67 |     return LayoutType::BLOCK;
+      |     ^
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:281:29: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  281 |   std::cout << "NOTHING" << std::endl;
+      |                             ^~~~~~~~~
+      |                             '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/BlockLayout.cpp:287:48: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+  287 |     std::cout << "BLOCK " << m_node->m_text << std::endl;
+      |                                                ^~~~~~~~~
+      |                                                '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/src/HTMLParser.cpp:160:75: warning: repeated branch body in conditional chain [bugprone-branch-clone]
+  160 |     if (inQuotes && std::isspace(static_cast<unsigned char>(body[indx]))) {
+      |                                                                           ^
+/home/rhythmic_ocean/Desktop/Browser/src/HTMLParser.cpp:162:6: note: end of the original
+  162 |     } else if (!std::isspace(static_cast<unsigned char>(body[indx])) &&
+      |      ^
+/home/rhythmic_ocean/Desktop/Browser/src/HTMLParser.cpp:163:56: note: clone 1 starts here
+  163 |                body[indx] != '=' && body[indx] != '"') {
+      |                                                        ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:24:55: warning: initialization of 'INHERITED_PROPERTIES' with static storage duration may throw an exception that cannot be caught [bugprone-throwing-static-initialization]
+   24 | static std::unordered_map<const char *, const char *> INHERITED_PROPERTIES{
+      |                                                       ^
+/usr/bin/../lib/gcc/x86_64-redhat-linux/16/../../../../include/c++/16/bits/unordered_map.h:237:7: note: possibly throwing constructor declared here
+  237 |       unordered_map(initializer_list<value_type> __l,
+      |       ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:51:12: warning: enum 'ItemType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   51 | enum class ItemType { TAG, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:85:34: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   85 |     out << "<" + m_text + ">" << std::endl;
+      |                                  ^~~~~~~~~
+      |                                  '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/helpers.hpp:88:56: warning: do not use 'std::endl' with streams; use '\n' instead [performance-avoid-endl]
+   88 |       out << attrib.first << " : " << attrib.second << std::endl;
+      |                                                        ^~~~~~~~~
+      |                                                        '\n'
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:32:12: warning: enum 'FontWeight' uses a larger base type ('std::int32_t' (aka 'int'), size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   32 | enum class FontWeight : std::int32_t {
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:39:12: warning: enum 'LayoutType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+   39 | enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:33: warning: 2 adjacent parameters of 'PositionedText' of similar type ('float') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                 ^~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:39: note: the first parameter in the range is 'x'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                       ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:120:48: note: the last parameter in the range is 'y'
+  120 |   PositionedText(TTF_Text *txt, float x, float y) : start_x{x}, start_y{y} {
+      |                                                ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:129:12: warning: enum 'DrawType' uses a larger base type ('int', size: 4 bytes) than necessary for its value set, consider using 'std::uint8_t' (1 byte) as the base type to reduce its size [performance-enum-size]
+  129 | enum class DrawType { RECT, TEXT };
+      |            ^
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:22: warning: 2 adjacent parameters of 'Layout' of similar type ('Layout *') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:30: note: the first parameter in the range is 'parent'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                              ^~~~~~
+/home/rhythmic_ocean/Desktop/Browser/include/layout.hpp:189:46: note: the last parameter in the range is 'previous'
+  189 |   Layout(Item *node, Layout *parent, Layout *previous)
+      |                                              ^~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Tab.cpp:16:9: warning: std::move of the expression of the trivially-copyable type 'Layout::LayoutContext' has no effect; remove std::move() [performance-move-const-arg]
+   16 |   ctx = std::move(tctx.lctx);
+      |         ^~~~~~~~~~         ~
+/home/rhythmic_ocean/Desktop/Browser/src/Tab.cpp:87:25: warning: iteration of pointers is nondeterministic [bugprone-nondeterministic-pointer-iteration-order]
+   87 |   for (auto &property : INHERITED_PROPERTIES) {
+      |                         ^~~~~~~~~~~~~~~~~~~~
+/home/rhythmic_ocean/Desktop/Browser/src/Tab.cpp:108:15: warning: loop variable is copied but only used as const reference; consider making it a const reference [performance-for-range-copy]
+  108 |     for (auto pair : pairs) {
+      |               ^
+      |          const  &

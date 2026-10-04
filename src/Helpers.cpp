@@ -78,3 +78,13 @@ std::vector<NodeType *> hlp::tree_to_list(NodeType *node) {
 
 template std::vector<Item *> hlp::tree_to_list(Item *node);
 template std::vector<Layout::Layout *> hlp::tree_to_list(Layout::Layout *node);
+
+std::array<SDL_FRect, 4> get_thick_rect(SDL_FRect rect, float thickness) {
+  std::array<SDL_FRect, 4> outline = {
+      {{rect.x, rect.y, rect.w, thickness},
+       {rect.x, rect.y + rect.h - thickness, rect.w, thickness},
+       {rect.x, rect.y + thickness, thickness, rect.h - (2.0f * thickness)},
+       {rect.x + rect.w - thickness, rect.y + thickness, thickness,
+        rect.h - (2.0f * thickness)}}};
+  return outline;
+}

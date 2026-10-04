@@ -2,15 +2,18 @@
 
 #include "helpers.hpp"
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
-#include <cmath>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace std::string_view_literals;
@@ -38,7 +41,7 @@ enum class FontWeight : std::int32_t {
 };
 enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
 
-inline SDL_Color parse_color(std::string &name) {
+inline SDL_Color parse_color(std::string name) {
   static const std::unordered_map<std::string, SDL_Color> color_map = {
       {"transparent", {0, 0, 0, 0}},       {"white", {255, 255, 255, 255}},
       {"black", {0, 0, 0, 255}},           {"red", {255, 0, 0, 255}},
@@ -67,6 +70,18 @@ struct TextDeleter {
   }
 };
 
+struct Rect {
+  float left;
+  float top;
+  float right;
+  float bottom;
+
+  Rect(float l_x1, float l_y1, float l_x2, float l_y2)
+      : left{l_x1}, top{l_y1}, right{l_x2}, bottom{l_y2} {}
+  Rect() = default;
+  bool contains_point(float x, float y);
+};
+
 class FontCache {
 
   typedef std::unique_ptr<TTF_Font, FontDeleter> Font;
@@ -90,10 +105,9 @@ public:
       return FontWeight::ITALICS;
     return FontWeight::REGULAR;
   }
-  static int get_size(const std::string &str) {
-    double fsize = std::stof(str.substr(0, str.size() - 2));
-    int isize = static_cast<int>(std::round(fsize) * 10);
-    return isize;
+  static float get_size(const std::string &str) {
+    float fsize = std::stof(str.substr(0, str.size() - 2));
+    return fsize;
   }
 
   FontCache();
@@ -126,12 +140,11 @@ struct PositionedText {
   PositionedText &operator=(PositionedText &&) = default;
 };
 
-enum class DrawType { RECT, TEXT };
+enum class DrawType { RECT, TEXT, OUTLINE, LINE };
 
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
-  float m_top{};
-  float m_bottom{};
+  Rect original{};
   virtual void execute(float scroll_y, SDL_Renderer *renderer) = 0;
   virtual DrawType getType() = 0;
   virtual ~DrawItem() = default;
@@ -148,23 +161,85 @@ private:
 
 public:
   DrawType getType() override { return DrawType::TEXT; }
-  DrawText(TTF_Text *text, float x1, float y1) : m_text{text}, m_left{x1} {
-    m_top = y1;
+  DrawText(TTF_Text *text, float x1, float y1)
+      : m_text{text}, m_font{TTF_GetTextFont(text)}, m_left{x1} {
+    int iWidth{};
+    TTF_GetTextSize(m_text, &iWidth, nullptr);
+    float lineSkip = static_cast<float>(TTF_GetFontLineSkip(m_font));
+    float txtWidth = static_cast<float>(iWidth);
+    original = Rect{x1, y1, x1 + txtWidth, y1 + lineSkip};
     m_font = TTF_GetTextFont(m_text);
-    m_bottom = y1 + static_cast<float>((TTF_GetFontLineSkip(m_font)));
   }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
 struct DrawRect : public DrawItem {
-  SDL_FRect rect;
   SDL_Color color;
-  DrawRect(float x, float y, float width, float height, std::string &l_color)
-      : rect{x, y, width, height}, color{parse_color(l_color)} {
-    m_top = y;
-    m_bottom = y + height;
+  DrawRect(Rect Orect, SDL_Color l_color) : color{l_color} {
+    original = std::move(Orect);
   }
   DrawType getType() override { return DrawType::RECT; }
+  void execute(float scroll_y, SDL_Renderer *renderer) override;
+};
+
+// NOTE: Couldn't find a way to have rectangle with thick outlines thru SDL3, so
+// had to improvise a bit here
+struct DrawOutline : public DrawItem {
+  std::array<SDL_FRect, 4> borders;
+  SDL_FRect inner;
+  SDL_Color borderColor;
+  SDL_Color innerColor;
+
+  DrawOutline(std::array<SDL_FRect, 4> l_borders, SDL_FRect l_inner,
+              SDL_Color l_borderColor, SDL_Color l_innerColor)
+      : borders{std::move(l_borders)}, inner{l_inner},
+        borderColor{l_borderColor}, innerColor{l_innerColor} {}
+
+  DrawType getType() override { return DrawType::OUTLINE; }
+
+  void execute(float scroll_y, SDL_Renderer *renderer) override;
+
+  static std::unique_ptr<DrawOutline> createOutline(Rect Orect,
+                                                    SDL_Color innerColor,
+                                                    SDL_Color borderColor,
+                                                    float thickness) {
+    SDL_FRect rect = {Orect.left, Orect.top, Orect.right - Orect.left,
+                      Orect.bottom - Orect.top};
+    std::array<SDL_FRect, 4> borders = {
+        {{rect.x, rect.y, rect.w, thickness},
+         {rect.x, rect.y + rect.h - thickness, rect.w, thickness},
+         {rect.x, rect.y + thickness, thickness, rect.h - (2.0f * thickness)},
+         {rect.x + rect.w - thickness, rect.y + thickness, thickness,
+          rect.h - (2.0f * thickness)}}};
+    SDL_FRect l_inner = {rect.x + thickness, rect.y + thickness,
+                         rect.w - (2.0f * thickness),
+                         rect.h - (2.0f * thickness)};
+    SDL_Color l_innerColor = innerColor;
+    SDL_Color l_borderColor = borderColor;
+    auto outline = std::make_unique<DrawOutline>(std::move(borders), l_inner,
+                                                 l_borderColor, l_innerColor);
+    outline->original = std::move(Orect);
+    return outline;
+  }
+};
+
+// WARNING: Thickness's ignored for a bit, will changed later if things come up
+struct DrawLine : public DrawItem {
+  float x1;
+  float x2;
+  float y1;
+  float y2;
+  SDL_Color color;
+  [[maybe_unused]] int thickness; // just gonna ignore the thickness for a bit
+
+  DrawLine(float l_x1, float l_y1, float l_x2, float l_y2, SDL_Color l_color,
+           int l_thickness)
+      : x1{l_x1}, x2{l_x2}, y1{l_y1}, y2{l_y2}, color{l_color},
+        thickness{l_thickness} {
+    original = {Rect{x1, y1, x2, y2}};
+  }
+
+  DrawType getType() override { return DrawType::LINE; }
   void execute(float scroll_y, SDL_Renderer *renderer) override;
 };
 
@@ -191,7 +266,7 @@ public:
 
   virtual void layout(LayoutContext &ctx) = 0;
   virtual void pprint() = 0;
-  virtual std::vector<DrawItem *> paint() = 0;
+  virtual std::vector<std::unique_ptr<DrawItem>> paint() = 0;
   virtual LayoutType getType() = 0;
   virtual ~Layout() = default;
 };
@@ -201,7 +276,7 @@ class DocumentLayout : public Layout {
 public:
   DocumentLayout(Item *node) : Layout{node, nullptr, nullptr} {}
   void layout(LayoutContext &ctx);
-  std::vector<DrawItem *> paint();
+  std::vector<std::unique_ptr<DrawItem>> paint();
   void pprint();
   LayoutType getType() { return LayoutType::DOCUMENT; }
   ~DocumentLayout() = default;
@@ -220,6 +295,7 @@ private:
   void recurse(Item *root, LayoutContext &ctx);
   void flush();
   void new_line();
+  Rect self_rect();
 
 public:
   void pprint();
@@ -229,7 +305,7 @@ public:
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
   void layout(LayoutContext &ctx);
-  std::vector<DrawItem *> paint();
+  std::vector<std::unique_ptr<DrawItem>> paint();
   ~BlockLayout() = default;
 };
 
@@ -237,7 +313,7 @@ class LineLayout : public Layout {
 public:
   LineLayout(Item *node, BlockLayout *parent, LineLayout *previous_line);
   void layout(LayoutContext &ctx);
-  std::vector<DrawItem *> paint();
+  std::vector<std::unique_ptr<DrawItem>> paint();
   LayoutType getType() { return LayoutType::LINE; }
   void getExtremes(float &max_ascent, float &max_descent);
   void pprint();
@@ -254,7 +330,7 @@ public:
       : Layout{node, parent, previous_word}, m_word{std::move(word)} {}
 
   void layout(LayoutContext &ctx);
-  std::vector<DrawItem *> paint();
+  std::vector<std::unique_ptr<DrawItem>> paint();
   LayoutType getType() { return LayoutType::TEXT; }
   void pprint();
 };
