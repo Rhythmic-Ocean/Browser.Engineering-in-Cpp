@@ -33,8 +33,9 @@ void Tab::paint_tree(Layout::Layout *layoutNode) {
 
 void Tab::load(URL url) {
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
-  m_url = std::move(url);
-  std::string response = m_url.request();
+  m_history.push_back(std::move(url));
+  URL &l_url = m_history.back();
+  std::string response = l_url.request();
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
 
@@ -43,7 +44,7 @@ void Tab::load(URL url) {
   std::vector<std::string_view> css_links =
       get_links(hlp::tree_to_list(m_rootNode.get()));
   for (auto link : css_links) {
-    auto style_url = m_url.resolve(link);
+    auto style_url = l_url.resolve(link);
     std::string body{};
     try {
       body = style_url.request();
@@ -146,6 +147,7 @@ std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
 }
 
 void Tab::click(float x, float y) {
+  URL &l_url = m_history.back();
   y += m_scroll_y;
   std::vector<Layout::Layout *> objects{};
   auto list = hlp::tree_to_list(m_document.get());
@@ -162,7 +164,7 @@ void Tab::click(float x, float y) {
     if (elt->getType() == ItemType::TAG) {
       auto *tag = static_cast<Tag *>(elt);
       if (tag->m_text == "a" && tag->m_attributes.contains("href")) {
-        URL url = m_url.resolve(tag->m_attributes["href"]);
+        URL url = l_url.resolve(tag->m_attributes["href"]);
         load(std::move(url));
         return;
       }
@@ -182,5 +184,19 @@ void Tab::scroll(float turn) {
     m_scroll_y = 0.0f;
   if (m_scroll_y > m_max_y) {
     m_scroll_y = m_max_y;
+  }
+}
+
+void Tab::go_back() {
+  if (m_history.size() > 1) {
+    // pop back current page's URL
+    m_history.pop_back();
+    // Get the prev page's string URL
+    //--WARNING: We can't use the stale URL object cuz the connection's already
+    //closed when it did .request back then
+    URL url = URL(m_history.back().m_url);
+    // remove the empty index
+    m_history.pop_back();
+    load(std::move(url));
   }
 }

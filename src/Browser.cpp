@@ -122,18 +122,29 @@ Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
   m_padding = 5;
   m_tabbar_top = 0;
   m_tabbar_bottom = m_fontHeight + 2 * m_padding;
-  m_bottom = m_tabbar_bottom;
+  m_urlbar_top = m_tabbar_bottom;
+  m_urlbar_bottom = m_urlbar_top + m_fontHeight + 2 * m_padding;
+  m_bottom = m_urlbar_bottom;
   int iWidth;
   TTF_GetStringSize(m_font, "+", 1, &iWidth, nullptr);
-  // WARNING: Rect class in the book takes 4 coordinates of rect, but SDL_Rect
-  // takes 2 coors and width and height
-  float plus_width = static_cast<float>(iWidth);
-  m_newTab_rect = Layout::Rect{m_padding, m_padding, 3 * m_padding + plus_width,
+  float plus_width = static_cast<float>(iWidth) + 2 * m_padding;
+  TTF_GetStringSize(m_font, "<", 1, &iWidth, nullptr);
+  float back_width = static_cast<float>(iWidth) + 2 * m_padding;
+  m_newTab_rect = Layout::Rect{m_padding, m_padding, m_padding + plus_width,
                                m_padding + m_fontHeight};
+  m_back_rect =
+      Layout::Rect{m_padding, m_urlbar_top + m_padding, m_padding + back_width,
+                   m_urlbar_bottom - m_padding};
+  m_address_rect =
+      Layout::Rect{m_back_rect.right + m_padding, m_urlbar_top + m_padding,
+                   WIDTH - m_padding, m_urlbar_bottom - m_padding};
   auto raw_plus = TTF_CreateText(m_browser->m_engine.get(), m_font, "+", 1);
+  auto raw_back = TTF_CreateText(m_browser->m_engine.get(), m_font, "<", 1);
   SDL_Color black = Layout::parse_color("black");
   TTF_SetTextColor(raw_plus, black.r, black.g, black.b, black.a);
+  TTF_SetTextColor(raw_back, black.r, black.g, black.b, black.a);
   m_plus.reset(raw_plus);
+  m_back.reset(raw_back);
 }
 
 Layout::Rect Chrome::tab_rect(size_t i) {
@@ -179,11 +190,28 @@ std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
     if (tab.get() == m_browser->active_tab) {
       cmds.push_back(std::make_unique<Layout::DrawLine>(
           0, bounds.bottom, bounds.left, bounds.bottom,
-          Layout::parse_color("black"), 1));
+          Layout::parse_color("red"), 1));
       cmds.push_back(std::make_unique<Layout::DrawLine>(
           bounds.right, bounds.bottom, static_cast<float>(m_browser->m_width),
-          bounds.bottom, Layout::parse_color("black"), 1));
+          bounds.bottom, Layout::parse_color("blue"), 1));
     }
+
+    // Back Button
+    cmds.push_back(Layout::DrawOutline::createOutline(
+        m_back_rect, Layout::parse_color("white"), Layout::parse_color("black"),
+        1));
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        m_back.get(), m_back_rect.left + m_padding, m_back_rect.top));
+
+    // Address Bar
+    auto url =
+        TTF_CreateText(m_browser->m_engine.get(), m_font,
+                       m_browser->active_tab->m_history.back().to_str().c_str(),
+                       m_browser->active_tab->m_history.back().to_str().size());
+    auto black = Layout::parse_color("black");
+    TTF_SetTextColor(url, black.r, black.g, black.b, black.a);
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        url, m_address_rect.left + m_padding, m_address_rect.top));
   }
 
   return cmds;
@@ -193,6 +221,8 @@ void Chrome::click(float x, float y) {
   // clicking the '+' sign
   if (m_newTab_rect.contains_point(x, y)) {
     m_browser->new_tab(URL("https://browser.engineering/"));
+  } else if (m_back_rect.contains_point(x, y)) {
+    m_browser->active_tab->go_back();
   } else {
     for (size_t i{}; i < m_browser->tabs.size(); ++i) {
       if (tab_rect(i).contains_point(x, y)) {

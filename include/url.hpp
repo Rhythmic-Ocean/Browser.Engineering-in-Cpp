@@ -7,13 +7,13 @@
 #include <vector>
 
 class URL {
-  std::string m_url{};
   Client m_client{};
 
 public:
-  std::string_view scheme{};
-  std::string_view host{};
-  std::string_view path{};
+  std::string m_url{};
+  std::string scheme{};
+  std::string host{};
+  std::string path{};
   std::string m_port{};
 
 private:
@@ -25,11 +25,15 @@ private:
 public:
   URL(const std::string &url);
   URL() = default;
-  URL(URL &&) = default;
-  URL &operator=(URL &&) = default;
+  URL(URL &) = delete;
+  URL &operator=(URL &) = delete;
+  URL(URL &&) noexcept = default;
+  URL &operator=(URL &&) noexcept = default;
   ~URL() = default;
   std::string request();
   URL resolve(std::string_view url);
+  std::string to_str();
+
   friend std::ostream &operator<<(std::ostream &out, const URL &url);
 };
 

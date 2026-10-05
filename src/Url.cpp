@@ -134,3 +134,12 @@ std::ostream &operator<<(std::ostream &out, const URL &url) {
   out << "Path: " << url.path;
   return out;
 }
+
+std::string URL::to_str() {
+  std::string port_part = ":" + m_port;
+  if (scheme == "https" && m_port == "443")
+    port_part = "";
+  else if (scheme == "http" && m_port == "80")
+    port_part = "";
+  return scheme + std::string("://") + host + port_part + path;
+}

@@ -31,7 +31,6 @@ private:
   TTF_TextEngine *m_engine{};
   Layout::FontCache *m_fontCache{};
   std::unique_ptr<Layout::Layout> m_document{};
-  URL m_url{};
   float tab_height{};
 
   inline static float m_scroll_y;
@@ -44,6 +43,8 @@ private:
   void scrolldown();
 
 public:
+  void go_back();
+  std::vector<URL> m_history{};
   void click(float x, float y);
   void scroll(float turn);
   void draw(SDL_Renderer *renderer, float offset);
@@ -62,8 +63,13 @@ class Chrome {
   float m_padding{};
   float m_tabbar_top{};
   float m_tabbar_bottom{};
+  float m_urlbar_top{};
+  float m_urlbar_bottom{};
   Layout::Rect m_newTab_rect{};
+  Layout::Rect m_back_rect{};
+  Layout::Rect m_address_rect{};
   std::unique_ptr<TTF_Text, Layout::TextDeleter> m_plus;
+  std::unique_ptr<TTF_Text, Layout::TextDeleter> m_back;
   std::vector<std::unique_ptr<TTF_Text, Layout::TextDeleter>> m_labelNames{};
 
   Layout::Rect tab_rect(size_t i);
@@ -80,6 +86,7 @@ class Browser {
 public:
   std::vector<std::unique_ptr<Tab>> tabs{};
   Tab *active_tab{};
+  std::unique_ptr<TTF_Text, Layout::TextDeleter> url_name{};
   std::string m_title;
   Layout::LayoutContext ctx{};
   std::unique_ptr<SDL_Window, WindowDeleter> m_window;
