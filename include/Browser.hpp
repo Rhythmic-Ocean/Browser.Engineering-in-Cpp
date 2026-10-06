@@ -11,6 +11,8 @@
 #include <memory>
 
 namespace browser {
+
+enum class FOCUS { ADDRESS_BAR, NONE };
 struct Size {
   int width;
   int height;
@@ -68,6 +70,11 @@ class Chrome {
   Layout::Rect m_newTab_rect{};
   Layout::Rect m_back_rect{};
   Layout::Rect m_address_rect{};
+  SDL_Rect m_input_rect{};
+  // actual address bar string
+  // TTF_Version that would be set to reflect m_address_str right before
+  // rendering
+  std::unique_ptr<TTF_Text, Layout::TextDeleter> m_address_bar{};
   std::unique_ptr<TTF_Text, Layout::TextDeleter> m_plus;
   std::unique_ptr<TTF_Text, Layout::TextDeleter> m_back;
   std::vector<std::unique_ptr<TTF_Text, Layout::TextDeleter>> m_labelNames{};
@@ -75,6 +82,8 @@ class Chrome {
   Layout::Rect tab_rect(size_t i);
 
 public:
+  FOCUS m_focus{FOCUS::NONE};
+  std::string m_address_str{};
   float m_bottom;
   void click(float x, float y);
   Chrome(Browser *l_browser);

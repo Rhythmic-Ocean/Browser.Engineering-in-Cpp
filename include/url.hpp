@@ -1,6 +1,9 @@
 #pragma once
 
 #include "client.hpp"
+#include "layout.hpp"
+#include <SDL3_ttf/SDL_textengine.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -17,6 +20,7 @@ public:
   std::string m_port{};
 
 private:
+  std::unique_ptr<TTF_Text, Layout::TextDeleter> m_urlText{};
   void parse();
   void get_response(std::string &response);
   std::unordered_map<std::string, std::string_view>
@@ -32,7 +36,7 @@ public:
   ~URL() = default;
   std::string request();
   URL resolve(std::string_view url);
-  std::string to_str();
+  TTF_Text *get_ttfText(TTF_TextEngine *engine, TTF_Font *font);
 
   friend std::ostream &operator<<(std::ostream &out, const URL &url);
 };

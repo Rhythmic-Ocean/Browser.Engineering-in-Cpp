@@ -2,7 +2,10 @@
 #include "helpers.hpp"
 #include "layout.hpp"
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <cmath>
 #include <memory>
 
 using namespace browser;
@@ -73,6 +76,41 @@ void Browser::start_event() {
       click(event.button);
       break;
     }
+    // Handling escape, backspace and escape keys!
+    case (SDL_EVENT_KEY_DOWN): {
+      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
+        switch (event.key.key) {
+        case SDLK_ESCAPE: {
+          m_chrome->m_focus = FOCUS::NONE;
+          SDL_StopTextInput(m_window.get());
+          break;
+        }
+        case SDLK_BACKSPACE: {
+          if (!m_chrome->m_address_str.empty()) {
+            m_chrome->m_address_str.pop_back();
+          }
+          break;
+        }
+        case SDLK_RETURN: {
+          m_chrome->m_focus = FOCUS::NONE;
+          SDL_StopTextInput(m_window.get());
+          URL new_url = URL(m_chrome->m_address_str);
+          active_tab->load(std::move(new_url));
+          break;
+        }
+        }
+      }
+      break;
+    }
+    case (SDL_EVENT_TEXT_INPUT): {
+      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
+        std::string str = event.text.text;
+        for (char c : str) {
+          m_chrome->m_address_str.push_back(c);
+        }
+      }
+      break;
+    }
     default:
       break;
     }
@@ -138,6 +176,11 @@ Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
   m_address_rect =
       Layout::Rect{m_back_rect.right + m_padding, m_urlbar_top + m_padding,
                    WIDTH - m_padding, m_urlbar_bottom - m_padding};
+  m_input_rect = SDL_Rect{
+      static_cast<int>(std::round(m_address_rect.left)),
+      static_cast<int>(std::round(m_address_rect.top)),
+      static_cast<int>(std::round(m_address_rect.right - m_address_rect.left)),
+      static_cast<int>(std::round(m_address_rect.bottom - m_address_rect.top))};
   auto raw_plus = TTF_CreateText(m_browser->m_engine.get(), m_font, "+", 1);
   auto raw_back = TTF_CreateText(m_browser->m_engine.get(), m_font, "<", 1);
   SDL_Color black = Layout::parse_color("black");
@@ -145,6 +188,12 @@ Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
   TTF_SetTextColor(raw_back, black.r, black.g, black.b, black.a);
   m_plus.reset(raw_plus);
   m_back.reset(raw_back);
+  m_focus = FOCUS::NONE;
+  auto *raw_address_bar =
+      TTF_CreateText(m_browser->m_engine.get(), m_font, m_address_str.c_str(),
+                     m_address_str.size());
+  TTF_SetTextColor(raw_address_bar, black.r, black.g, black.b, black.a);
+  m_address_bar.reset(raw_address_bar);
 }
 
 Layout::Rect Chrome::tab_rect(size_t i) {
@@ -159,19 +208,24 @@ Layout::Rect Chrome::tab_rect(size_t i) {
 
 std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
   std::vector<std::unique_ptr<Layout::DrawItem>> cmds{};
+  // Chrome white rect
   cmds.emplace_back(std::make_unique<Layout::DrawRect>(
       Layout::Rect{0, 0, static_cast<float>(m_browser->m_width), m_bottom},
       Layout::parse_color("white")));
+  // Chrome's end line
   cmds.push_back(std::make_unique<Layout::DrawLine>(
       0, m_bottom, static_cast<float>(m_browser->m_width), m_bottom,
       Layout::parse_color("black"), 1));
+  // +'s rectangle' rectangle'
   auto outline = Layout::DrawOutline::createOutline(
       m_newTab_rect, Layout::parse_color("white"), Layout::parse_color("black"),
       1);
+  // the plus text
   auto newText = std::make_unique<Layout::DrawText>(
       m_plus.get(), m_newTab_rect.left + m_padding, m_newTab_rect.top);
   cmds.push_back(std::move(outline));
   cmds.push_back(std::move(newText));
+  // Different tabs
   for (size_t i{}; i < m_labelNames.size(); ++i) {
     auto &tab = m_browser->tabs[i];
     auto bounds = tab_rect(i);
@@ -195,23 +249,41 @@ std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
           bounds.right, bounds.bottom, static_cast<float>(m_browser->m_width),
           bounds.bottom, Layout::parse_color("blue"), 1));
     }
+  }
 
-    // Back Button
-    cmds.push_back(Layout::DrawOutline::createOutline(
-        m_back_rect, Layout::parse_color("white"), Layout::parse_color("black"),
-        1));
-    cmds.push_back(std::make_unique<Layout::DrawText>(
-        m_back.get(), m_back_rect.left + m_padding, m_back_rect.top));
+  // Back Button
+  cmds.push_back(Layout::DrawOutline::createOutline(
+      m_back_rect, Layout::parse_color("white"), Layout::parse_color("black"),
+      1));
+  cmds.push_back(std::make_unique<Layout::DrawText>(
+      m_back.get(), m_back_rect.left + m_padding, m_back_rect.top));
 
-    // Address Bar
-    auto url =
-        TTF_CreateText(m_browser->m_engine.get(), m_font,
-                       m_browser->active_tab->m_history.back().to_str().c_str(),
-                       m_browser->active_tab->m_history.back().to_str().size());
-    auto black = Layout::parse_color("black");
-    TTF_SetTextColor(url, black.r, black.g, black.b, black.a);
+  // Address Bar
+  cmds.push_back(Layout::DrawOutline::createOutline(
+      m_address_rect, Layout::parse_color("white"),
+      Layout::parse_color("black"), 1));
+  if (m_focus == FOCUS::ADDRESS_BAR) {
+    // the actual address bar text that the user's editing
+    TTF_SetTextString(m_address_bar.get(), m_address_str.c_str(),
+                      m_address_str.size());
     cmds.push_back(std::make_unique<Layout::DrawText>(
-        url, m_address_rect.left + m_padding, m_address_rect.top));
+        m_address_bar.get(), m_address_rect.left + m_padding,
+        m_address_rect.top));
+    int iWidth, iHeight;
+    TTF_GetTextSize(m_address_bar.get(), &iWidth, &iHeight);
+    float width = static_cast<float>(iWidth);
+    [[maybe_unused]] float height = static_cast<float>(iHeight);
+    // the cursor
+    cmds.push_back(std::make_unique<Layout::DrawLine>(
+        m_address_rect.left + m_padding + width, m_address_rect.top,
+        m_address_rect.left + m_padding + width, m_address_rect.bottom,
+        Layout::parse_color("black"), 1));
+
+  } else {
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        m_browser->active_tab->m_history.back().get_ttfText(
+            m_browser->m_engine.get(), m_font),
+        m_address_rect.left + m_padding, m_address_rect.top));
   }
 
   return cmds;
@@ -221,9 +293,19 @@ void Chrome::click(float x, float y) {
   // clicking the '+' sign
   if (m_newTab_rect.contains_point(x, y)) {
     m_browser->new_tab(URL("https://browser.engineering/"));
-  } else if (m_back_rect.contains_point(x, y)) {
+  }
+  // clicking on '<' back button
+  else if (m_back_rect.contains_point(x, y)) {
     m_browser->active_tab->go_back();
-  } else {
+  }
+  // clicking on the address bar to type url, and as they type we display!
+  else if (m_address_rect.contains_point(x, y)) {
+    m_focus = FOCUS::ADDRESS_BAR;
+    SDL_StartTextInput(m_browser->m_window.get());
+    m_address_str = "";
+  }
+  // clicking on different tabs for navigation
+  else {
     for (size_t i{}; i < m_browser->tabs.size(); ++i) {
       if (tab_rect(i).contains_point(x, y)) {
         m_browser->active_tab = m_browser->tabs[i].get();

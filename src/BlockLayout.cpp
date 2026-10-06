@@ -38,6 +38,8 @@ void DrawOutline::execute(float scroll_y, SDL_Renderer *renderer) {
   for (auto &border : borders) {
     border.y = original.top - scroll_y;
   }
+  // for bottom border
+  borders[1].y = original.bottom - borders[1].h - scroll_y;
   inner.y = original.top - scroll_y;
   SDL_SetRenderDrawColor(renderer, innerColor.r, innerColor.g, innerColor.b,
                          innerColor.a);

@@ -2,6 +2,7 @@
 #include "url.hpp"
 #include "helpers.hpp"
 #include "rio.hpp"
+#include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <cassert>
 #include <iostream>
@@ -135,11 +136,18 @@ std::ostream &operator<<(std::ostream &out, const URL &url) {
   return out;
 }
 
-std::string URL::to_str() {
-  std::string port_part = ":" + m_port;
-  if (scheme == "https" && m_port == "443")
-    port_part = "";
-  else if (scheme == "http" && m_port == "80")
-    port_part = "";
-  return scheme + std::string("://") + host + port_part + path;
+TTF_Text *URL::get_ttfText(TTF_TextEngine *engine, TTF_Font *font) {
+  if (m_urlText.get() == nullptr) {
+    std::string port_part = ":" + m_port;
+    if (scheme == "https" && m_port == "443")
+      port_part = "";
+    else if (scheme == "http" && m_port == "80")
+      port_part = "";
+    std::string str = scheme + std::string("://") + host + port_part + path;
+    auto txt = TTF_CreateText(engine, font, str.c_str(), str.size());
+    auto black = Layout::parse_color("black");
+    TTF_SetTextColor(txt, black.r, black.g, black.b, black.a);
+    m_urlText.reset(txt);
+  }
+  return m_urlText.get();
 }
