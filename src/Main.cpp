@@ -12,8 +12,7 @@
 #include <unistd.h>
 
 int main() {
-  std::string url_str{};
-  std::getline(std::cin, url_str);
+  std::string url_str{"https://browser.engineering/"};
   // std::string url_str{"https://browser.engineering/text.html"};
   URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
