@@ -20,7 +20,7 @@ The original book's implementation is in python.
 
 - Example usage on [this](https://browser.engineering/)
 
-  ![Output.txt](assets/gifs/chp7-complete-1.png)
+  ![Output.txt](assets/gifs/chp7-complete-1.gif)
 
 ### Requirements for anybody wanting to run it
 
