@@ -1,4 +1,5 @@
 #include "helpers.hpp"
+#include "layout.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <cctype>
 #include <filesystem>
@@ -56,15 +57,34 @@ std::string hlp::get_default_CSS() {
   return ss.str();
 }
 
-void tree_to_list(Item *node, std::vector<Item *> &list) {
+template <typename NodeType>
+void hlp::tree_to_list(NodeType *node, std::vector<NodeType *> &list) {
   list.push_back(node);
   for (auto &child : node->m_children) {
     tree_to_list(child.get(), list);
   }
 }
 
-std::vector<Item *> hlp::tree_to_list(Item *node) {
-  std::vector<Item *> list{};
+template void hlp::tree_to_list(Item *node, std::vector<Item *> &list);
+template void hlp::tree_to_list(Layout::Layout *node,
+                                std::vector<Layout::Layout *> &list);
+
+template <typename NodeType>
+std::vector<NodeType *> hlp::tree_to_list(NodeType *node) {
+  std::vector<NodeType *> list{};
   tree_to_list(node, list);
   return list;
+}
+
+template std::vector<Item *> hlp::tree_to_list(Item *node);
+template std::vector<Layout::Layout *> hlp::tree_to_list(Layout::Layout *node);
+
+std::array<SDL_FRect, 4> get_thick_rect(SDL_FRect rect, float thickness) {
+  std::array<SDL_FRect, 4> outline = {
+      {{rect.x, rect.y, rect.w, thickness},
+       {rect.x, rect.y + rect.h - thickness, rect.w, thickness},
+       {rect.x, rect.y + thickness, thickness, rect.h - (2.0f * thickness)},
+       {rect.x + rect.w - thickness, rect.y + thickness, thickness,
+        rect.h - (2.0f * thickness)}}};
+  return outline;
 }

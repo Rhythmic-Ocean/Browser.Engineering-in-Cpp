@@ -1,5 +1,6 @@
-#include "layout.hpp"
 #include "helpers.hpp"
+#include "layout.hpp"
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -12,7 +13,7 @@ using namespace Layout;
 */
 void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  float cur_scroll_y{m_top - scroll_y};
+  float cur_scroll_y{original.top - scroll_y};
   if (!TTF_DrawRendererText(m_text, m_left, cur_scroll_y)) {
     SDL_Log("Failed to draw text at item %s: %s\n", m_text->text,
             SDL_GetError());
@@ -20,12 +21,47 @@ void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
 }
 
 void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
-  rect.y = m_top - scroll_y;
+  SDL_FRect rect = {original.left, original.top - scroll_y,
+                    original.right - original.left,
+                    original.bottom - original.top};
+
   SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
   if (!SDL_RenderFillRect(renderer, &rect)) {
     SDL_Log("Failed to render layout rectangle: %s\n", SDL_GetError());
     throw WindowException("Can't make rectangles!!" +
                           std::string(SDL_GetError()));
+  }
+}
+
+void DrawOutline::execute(float scroll_y, SDL_Renderer *renderer) {
+  for (auto &border : borders) {
+    border.y = original.top - scroll_y;
+  }
+  // for bottom border
+  borders[1].y = original.bottom - borders[1].h - scroll_y;
+  inner.y = original.top - scroll_y;
+  SDL_SetRenderDrawColor(renderer, innerColor.r, innerColor.g, innerColor.b,
+                         innerColor.a);
+  if (!SDL_RenderFillRect(renderer, &inner)) {
+    SDL_Log("Failed to render layout outline inner: %s\n", SDL_GetError());
+    throw WindowException("Can't make inners for outline!!");
+  }
+  SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
+                         borderColor.a);
+  if (!SDL_RenderFillRects(renderer, borders.data(), 4)) {
+    SDL_Log("Failed to render layout outline borders: %s\n", SDL_GetError());
+    throw WindowException("Can't make borders for outline!!");
+  }
+}
+
+void DrawLine::execute(float scroll_y, SDL_Renderer *renderer) {
+  y1 = original.top - scroll_y;
+  y2 = original.bottom - scroll_y;
+  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+  if (!SDL_RenderLine(renderer, x1, y1, x2, y2)) {
+    SDL_Log("Failed to render  line: %s\n", SDL_GetError());
+    throw WindowException("Can't make a line!!");
   }
 }
 
@@ -41,7 +77,7 @@ void DocumentLayout::layout(LayoutContext &ctx) {
   m_height = child->m_height;
 }
 
-std::vector<DrawItem *> DocumentLayout::paint() { return {}; }
+std::vector<std::unique_ptr<DrawItem>> DocumentLayout::paint() { return {}; }
 
 LayoutType BlockLayout::layout_mode() {
   auto checkBlockTag = [](std::vector<std::unique_ptr<Item>> &children) {
@@ -84,23 +120,16 @@ void BlockLayout::layout(LayoutContext &ctx) {
       previous = m_children.back().get();
     }
   } else {
-    m_cursor_x = 0;
-    m_cursor_y = 0;
+    new_line();
     recurse(m_node, ctx);
-    flush();
   }
 
   for (auto &child : m_children) {
     child->layout(ctx);
   }
 
-  if (mode == LayoutType::BLOCK) {
-    for (auto &child : m_children) {
-      m_height += child->m_height;
-    }
-  }
-  if (mode == LayoutType::INLINE) {
-    m_height = m_cursor_y;
+  for (auto &child : m_children) {
+    m_height += child->m_height;
   }
 }
 
@@ -109,9 +138,9 @@ void BlockLayout::layout(LayoutContext &ctx) {
            generated with heavy AI assistance. Extensive line-by-line notes for
            explanative purpose.
  */
-//--INFO: relative x postion of the text gets set in process_text/make_display.
+//--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
+void BlockLayout::word(Item *node, LayoutContext &ctx) {
   std::string &str = node->m_text;
   std::string word{};
   for (size_t c = 0; c < str.size(); ++c) {
@@ -122,15 +151,14 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
               file!!*/
     if (std::isspace(byte)) {
       if (!word.empty()) {
-        m_line.emplace_back(make_display(node, word, ctx));
+        make_word(node, std::move(word), ctx);
+        word.clear();
       }
       while (c < str.size() &&
              std::isspace(static_cast<unsigned char>(str[c]))) {
         ++c;
       }
       --c;
-      std::string space_str = " ";
-      m_line.emplace_back(make_display(node, space_str, ctx));
       continue;
     }
     /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
@@ -149,7 +177,8 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
     } else {
       if (!word.empty()) { // if the char is no 1 byte then we immediatly
                            // clear the buffer and start a new item
-        m_line.emplace_back((make_display(node, word, ctx)));
+        make_word(node, std::move(word), ctx);
+        word.clear();
       }
       size_t char_length = 2;
       if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
@@ -158,50 +187,55 @@ void BlockLayout::process_text(Item *node, LayoutContext &ctx) {
         char_length = 4;
       std::string utf8_char = str.substr(c, char_length);
       // each of the multi byte char are treated as seperate display item
-      m_line.emplace_back((make_display(node, utf8_char, ctx)));
+      make_word(node, std::move(utf8_char), ctx);
+      utf8_char.clear();
       c += (char_length - 1); // as the enclosing for loop performs ++c next
     }
   }
   // Flush the remaining chars from buffer
   if (!word.empty())
-    m_line.emplace_back(make_display(node, word, ctx));
+    make_word(node, std::move(word), ctx);
+  word.clear();
 }
 
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   if (root->getType() == ItemType::TEXT) {
-    process_text(root, ctx);
+    word(root, ctx);
   } else {
     if (root->m_text == "br")
-      flush();
+      new_line();
     for (auto &child : root->m_children) {
       recurse(child.get(), ctx);
     }
   }
 }
 
-//--INFO: relative x postion of the text gets set in process_text/make_display.
+//--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
-PositionedText BlockLayout::make_display(Item *node, std::string &word,
-                                         LayoutContext &ctx) {
-  int iHeight{};
-  int iWidth{};
-  auto icolor = node->m_style["color"];
-  auto color = parse_color(node->m_style["color"]);
+void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
+
+  // getting formatting info from current Block Node
   auto &weight = node->m_style["font-weight"];
   //--WARNING: Only have one style for nw, stick w/ it. So we ignore this
   [[maybe_unused]] auto &style = node->m_style["font-style"];
   auto &size = node->m_style["font-size"];
+
+  // creating the TTF_Text and coloring it
   auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
                                        FontCache::get_size(size));
   auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
-
-  if (!txt) {
+  auto *space{TTF_CreateText(ctx.textEngine, font, " ", 1)};
+  if (!txt || !space) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
     throw WindowException("Couldn't create text: " + word +
                           ". Error: " + std::string(SDL_GetError()));
   }
-  TTF_SetTextColor(txt, color.r, color.g, color.b, color.a);
+
+  // Getting the word's dimensions
+  int iHeight{};
+  int iWidth{};
+
   if (!TTF_GetTextSize(txt, &iWidth, &iHeight)) {
     SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
             SDL_GetError());
@@ -210,67 +244,50 @@ PositionedText BlockLayout::make_display(Item *node, std::string &word,
   }
   float width = static_cast<float>(iWidth);
   [[maybe_unused]] float height = static_cast<float>(iHeight);
+
+  // Getting the space's dimensions
+  if (!TTF_GetTextSize(space, &iWidth, &iHeight)) {
+    SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
+            SDL_GetError());
+    throw WindowException("Couldn't calculate string size of: " + word +
+                          ". Error: " + std::string(SDL_GetError()));
+  }
+  float Swidth = static_cast<float>(iWidth);
+  [[maybe_unused]] float Sheight = static_cast<float>(iHeight);
+  // If cursor moves past this block's width change line
   if (m_cursor_x + width > m_width) {
-    flush();
+    new_line();
   }
-  m_cursor_x += width;
-  word.clear();
-  return {
-      txt, m_cursor_x - width, 0.0f,
-      std::move(
-          icolor)}; //--WARNING: The y coords 0.0f is just a placeholder, the
-                    //               actual will be calculated at flush()
+  m_cursor_x += width + Swidth;
+
+  /*Grabbing the ongoing line layout, creating a new txt layout and adding it to
+   * the line*/
+  auto *layout = m_children.back().get();
+  if (layout->getType() != LayoutType::LINE)
+    throw LayoutException(
+        "Error at BlockLayout::make_word(). Type is not LineLayout.");
+  auto *line = static_cast<LineLayout *>(layout);
+  TextLayout *previous_word{nullptr};
+  if (!line->m_children.empty()) {
+    //--NOTE: Only TextLayout are gonna be LineLayout's children so no need to
+    //        check
+    previous_word = static_cast<TextLayout *>(line->m_children.back().get());
+  }
+  auto new_word =
+      std::make_unique<TextLayout>(node, std::move(word), line, previous_word);
+  line->m_children.push_back(std::move(new_word));
+  return;
 }
 
-//--INFO: relative x postion of the text gets set in process_text/make_display.
-//        absolute x and y position gets set at flush()
-
-//--WARNING: flush() should still happen even if m_line is empty!! Important to
-//            change lines for layout/ linebreak tags!
-void BlockLayout::flush() {
-  int max_ascent{}, max_descent{}, max_lineskip{};
-  getExtremes(max_ascent, max_descent, max_lineskip, m_line);
-  float baseline = m_cursor_y + 1.25f * static_cast<float>(max_ascent);
-  for (auto &word : m_line) {
-    TTF_Font *font = TTF_GetTextFont(word.text.get());
-    int font_ascent = TTF_GetFontAscent(font);
-    word.start_x += m_start_x; // absolute position of x
-    word.start_y += (m_start_y + baseline -
-                     static_cast<float>(font_ascent)); // relative pos for y??
-    m_displayList.push_back(std::move(word));
-  }
-  m_cursor_x = 0;
-  m_line.clear();
-  m_cursor_y = baseline + 1.25f * static_cast<float>(max_descent);
-}
-
-std::vector<DrawItem *> BlockLayout::paint() {
-  std::vector<DrawItem *> cmds{};
+std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
+  std::vector<std::unique_ptr<DrawItem>> cmds{};
   std::string bg_color = "transparent";
   if (m_node->m_style.contains("background-color")) {
     bg_color = m_node->m_style["background-color"];
     cmds.emplace_back(
-        new DrawRect{m_start_x, m_start_y, m_width, m_height, bg_color});
-  }
-
-  if (layout_mode() == LayoutType::INLINE) {
-    for (auto &item : m_displayList) {
-      cmds.emplace_back(new DrawText{item.text.get(), item.start_x,
-                                     item.start_y, item.color});
-    }
+        std::make_unique<DrawRect>(self_rect(), parse_color(bg_color)));
   }
   return cmds;
-}
-
-void BlockLayout::getExtremes(int &max_ascent, int &max_descent,
-                              int &max_lineskip,
-                              std::vector<PositionedText> &line) {
-  for (auto &word : line) {
-    TTF_Font *font = TTF_GetTextFont(word.text.get());
-    max_ascent = std::max(max_ascent, TTF_GetFontAscent(font));
-    max_descent = std::max(max_descent, std::abs(TTF_GetFontDescent(font)));
-    max_lineskip = std::max(max_lineskip, TTF_GetFontLineSkip(font));
-  }
 }
 
 void DocumentLayout::pprint() {
@@ -285,9 +302,26 @@ void BlockLayout::pprint() {
       static_cast<BlockLayout *>(node.get())->pprint();
     }
   } else {
-    std::cout << "INLINE" << m_node->m_text << std::endl;
-    for (auto &child : m_node->m_children) {
-      hlp::print_tree(child.get());
+    for (auto &child : m_children) {
+      child.get()->pprint();
     }
   }
 }
+
+void BlockLayout::new_line() {
+  m_cursor_x = 0;
+  LineLayout *lastLine{nullptr};
+  if (!m_children.empty()) {
+    lastLine = static_cast<LineLayout *>(m_children.back().get());
+  }
+  auto new_line = std::make_unique<LineLayout>(m_node, this, lastLine);
+  m_children.push_back(std::move(new_line));
+}
+
+Rect BlockLayout::self_rect() {
+  return Rect{m_start_x, m_start_y, m_start_x + m_width, m_start_y + m_height};
+}
+
+bool Rect::contains_point(float x, float y) {
+  return x >= left && x < right && y >= top && y < bottom;
+};

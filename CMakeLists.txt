@@ -14,16 +14,18 @@ find_package(SDL3 REQUIRED)
 find_package(SDL3_ttf REQUIRED)
 
 set(_SOURCE_DIR
-    src/main.cpp
-    src/client.cpp
-    src/rio.cpp
-    src/url.cpp
-    src/helpers.cpp
-    src/fonts.cpp
+    src/Main.cpp
+    src/Client.cpp
+    src/Rio.cpp
+    src/Url.cpp
+    src/Helpers.cpp
+    src/Fonts.cpp
     src/Browser.cpp
-    src/layout.cpp
+    src/InlineLayout.cpp
+    src/BlockLayout.cpp
     src/HTMLParser.cpp
     src/CSSParser.cpp
+    src/Tab.cpp
 )
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})

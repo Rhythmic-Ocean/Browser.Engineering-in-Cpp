@@ -1,14 +1,14 @@
 #include "Browser.hpp"
-#include "Parser.hpp"
 #include "helpers.hpp"
 #include "layout.hpp"
-#include "url.hpp"
-#include <SDL3/SDL_render.h>
-#include <algorithm>
-#include <exception>
-#include <iterator>
-#include <string>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <cmath>
+#include <memory>
 
+using namespace browser;
 void Browser::init() {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     SDL_Log("SDL could not initialize! SDL error: %s\n", SDL_GetError());
@@ -38,89 +38,7 @@ void Browser::init() {
 
   m_window.reset(raw_window);
   m_renderer.reset(raw_renderer);
-  m_scroll_y = 0.0f;
-  m_max_y = 0.0f;
-}
-
-void Browser::start_event() {
-  SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    switch (event.type) {
-    case SDL_EVENT_QUIT:
-      is_Running = false;
-      break;
-    case SDL_EVENT_MOUSE_WHEEL: {
-      m_max_y =
-          std::max(m_document->m_height + 2.0f * static_cast<float>(VSTEP) -
-                       static_cast<float>(m_height),
-                   0.0f);
-      m_scroll_y -= event.wheel.y * 40.0f;
-      if (m_scroll_y < 0.0f)
-        m_scroll_y = 0.0f;
-      if (m_scroll_y > m_max_y) {
-        m_scroll_y = m_max_y;
-      }
-      draw();
-      break;
-    }
-    default:
-      break;
-    }
-  }
-}
-
-void Browser::paint_tree(Layout::Layout *layoutNode) {
-  auto displayVec = layoutNode->paint();
-  for (auto *item : displayVec) {
-    m_displayItems.emplace_back(item);
-  }
-  for (auto &child : layoutNode->m_children) {
-    paint_tree(child.get());
-  }
-}
-
-void Browser::load(URL &url) {
-  std::string response = url.request();
-  Parser::HTMLParser parser{response};
-  m_rootNode.reset(parser.parse()); // layout has to own the root node...
-
-  auto default_css = hlp::get_default_CSS();
-  auto rules = Parser::CSSParser(default_css).parse();
-  std::vector<std::string_view> css_links =
-      get_links(hlp::tree_to_list(m_rootNode.get()));
-  for (auto link : css_links) {
-    auto style_url = url.resolve(link);
-    std::string body{};
-    try {
-      body = style_url.request();
-    } catch (std::exception &exc) {
-      continue;
-    }
-    auto source = Parser::CSSParser(body).parse();
-    rules.insert(rules.end(), std::make_move_iterator(source.begin()),
-                 std::make_move_iterator(source.end()));
-  }
-
-  auto cascade_priority = [](Parser::StyleRule &rule1,
-                             Parser::StyleRule &rule2) {
-    return rule1.selector->priority < rule2.selector->priority;
-  };
-
-  std::ranges::sort(rules, cascade_priority);
-  style(m_rootNode.get(), rules);
-  m_fontCache = std::make_unique<Layout::FontCache>();
-  m_fontCache->init();
-  ctx.textEngine = m_engine.get();
-  ctx.fontCache = m_fontCache.get();
-  ctx.windowHeight = static_cast<float>(m_height);
-  ctx.windowWidth = static_cast<float>(m_width);
-  m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
-  m_document->layout(ctx);
-  paint_tree(m_document.get());
-  while (is_Running) {
-    start_event();
-    draw();
-  }
+  is_Running = true;
 }
 
 void Browser::load_engine() {
@@ -133,80 +51,286 @@ void Browser::load_engine() {
   m_engine.reset(raw_engine);
 }
 
-void Browser::draw() {
+void Browser::ctx_setup() {
+  m_fontCache = std::make_unique<Layout::FontCache>();
+  m_fontCache->init();
+  ctx.textEngine = m_engine.get();
+  ctx.fontCache = m_fontCache.get();
+  ctx.windowHeight = static_cast<float>(m_height);
+  ctx.windowWidth = static_cast<float>(m_width);
+}
 
+void Browser::start_event() {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    switch (event.type) {
+    case SDL_EVENT_QUIT:
+      is_Running = false;
+      break;
+    case SDL_EVENT_MOUSE_WHEEL: {
+      active_tab->scroll(event.wheel.y);
+      draw();
+      break;
+    }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+      click(event.button);
+      break;
+    }
+    // Handling escape, backspace and escape keys!
+    case (SDL_EVENT_KEY_DOWN): {
+      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
+        switch (event.key.key) {
+        case SDLK_ESCAPE: {
+          m_chrome->m_focus = FOCUS::NONE;
+          SDL_StopTextInput(m_window.get());
+          break;
+        }
+        case SDLK_BACKSPACE: {
+          if (!m_chrome->m_address_str.empty()) {
+            m_chrome->m_address_str.pop_back();
+          }
+          break;
+        }
+        case SDLK_RETURN: {
+          m_chrome->m_focus = FOCUS::NONE;
+          SDL_StopTextInput(m_window.get());
+          URL new_url = URL(m_chrome->m_address_str);
+          active_tab->load(std::move(new_url));
+          break;
+        }
+        }
+      }
+      break;
+    }
+    case (SDL_EVENT_TEXT_INPUT): {
+      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
+        std::string str = event.text.text;
+        for (char c : str) {
+          m_chrome->m_address_str.push_back(c);
+        }
+      }
+      break;
+    }
+    default:
+      break;
+    }
+  }
+}
+
+void Browser::draw() {
   SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 255, 255);
   SDL_RenderClear(m_renderer.get());
-  for (auto &cmd : m_displayItems) {
-    if (cmd->m_top > m_scroll_y + static_cast<float>(m_height))
-      break; // if u below the screen just stop
-    if (cmd->m_bottom < m_scroll_y)
-      continue;
-    cmd->execute(m_scroll_y, m_renderer.get());
+  active_tab->draw(m_renderer.get(), m_chrome->m_bottom);
+  auto list = m_chrome->paint();
+  for (size_t i{}; i < list.size(); ++i) {
+    list[i]->execute(0, m_renderer.get());
   }
   SDL_RenderPresent(m_renderer.get());
 }
 
-void Browser::style(Item *node, Parser::StyleSheet &rules) {
-  //--NOTE: This inherite rules applies to all elements by default, and
-  //         is overidden by ANY other rules applied to the elements themseleves
-  for (auto &property : INHERITED_PROPERTIES) {
-    if (node->m_parent) {
-      node->m_style[property.first] = node->m_parent->m_style[property.first];
-    } else {
-      node->m_style[property.first] = property.second;
-    }
-  }
-  //--NOTE: This one's from the style sheet!
-  for (auto &rule : rules) {
-    if (!rule.selector->matches(node))
-      continue;
-    for (auto &property : rule.property) {
-      node->m_style[property.first] = property.second;
-    }
-  }
-  if (node->getType() == ItemType::TAG &&
-      static_cast<Tag *>(node)->m_attributes.contains("style")) {
+void Browser::new_tab(URL url) {
+  TabContext tctx{};
+  tctx.lctx = ctx;
+  tctx.textEngine = m_engine.get();
+  tctx.fontCache = m_fontCache.get();
+  tctx.size = {m_height, m_width};
+  auto new_tab = std::make_unique<Tab>(
+      std::move(tctx), static_cast<float>(m_height) - m_chrome->m_bottom);
+  new_tab->load(std::move(url));
+  active_tab = new_tab.get();
+  tabs.push_back(std::move(new_tab));
+  m_chrome->create_labelText();
+  draw();
+}
 
-    //--INFO: This one's inline styling
-    Tag *tag = static_cast<Tag *>(node);
-    auto pairs = Parser::CSSParser(tag->m_attributes["style"]).body();
-    for (auto pair : pairs) {
-      tag->m_style[pair.first] = pair.second;
-    }
-    //--NOTE: Resolving font size to absolute pixels instead of %
+void Browser::click(SDL_MouseButtonEvent event) {
+  if (event.y < m_chrome->m_bottom)
+    m_chrome->click(event.x, event.y);
+  else {
+    float tab_y = event.y - m_chrome->m_bottom;
+    active_tab->click(event.x, tab_y);
   }
-  if (node->m_style.contains("font-size") &&
-      node->m_style["font-size"].ends_with('%')) {
-    std::string parent_font_size{};
-    if (node->m_parent && node->m_parent->m_style.contains("font-size")) {
-      parent_font_size = node->m_parent->m_style["font-size"];
-    } else {
-      parent_font_size = INHERITED_PROPERTIES["font-size"];
+  draw();
+}
+
+Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
+  auto *fontCache = l_browser->m_fontCache.get();
+  m_font = fontCache->get_font(Layout::FontWeight::REGULAR, 20);
+  m_fontHeight = static_cast<float>(TTF_GetFontLineSkip(m_font));
+  m_padding = 5;
+  m_tabbar_top = 0;
+  m_tabbar_bottom = m_fontHeight + 2 * m_padding;
+  m_urlbar_top = m_tabbar_bottom;
+  m_urlbar_bottom = m_urlbar_top + m_fontHeight + 2 * m_padding;
+  m_bottom = m_urlbar_bottom;
+  int iWidth;
+  TTF_GetStringSize(m_font, "+", 1, &iWidth, nullptr);
+  float plus_width = static_cast<float>(iWidth) + 2 * m_padding;
+  TTF_GetStringSize(m_font, "<", 1, &iWidth, nullptr);
+  float back_width = static_cast<float>(iWidth) + 2 * m_padding;
+  m_newTab_rect = Layout::Rect{m_padding, m_padding, m_padding + plus_width,
+                               m_padding + m_fontHeight};
+  m_back_rect =
+      Layout::Rect{m_padding, m_urlbar_top + m_padding, m_padding + back_width,
+                   m_urlbar_bottom - m_padding};
+  m_address_rect =
+      Layout::Rect{m_back_rect.right + m_padding, m_urlbar_top + m_padding,
+                   WIDTH - m_padding, m_urlbar_bottom - m_padding};
+  m_input_rect = SDL_Rect{
+      static_cast<int>(std::round(m_address_rect.left)),
+      static_cast<int>(std::round(m_address_rect.top)),
+      static_cast<int>(std::round(m_address_rect.right - m_address_rect.left)),
+      static_cast<int>(std::round(m_address_rect.bottom - m_address_rect.top))};
+  auto raw_plus = TTF_CreateText(m_browser->m_engine.get(), m_font, "+", 1);
+  auto raw_back = TTF_CreateText(m_browser->m_engine.get(), m_font, "<", 1);
+  SDL_Color black = Layout::parse_color("black");
+  TTF_SetTextColor(raw_plus, black.r, black.g, black.b, black.a);
+  TTF_SetTextColor(raw_back, black.r, black.g, black.b, black.a);
+  m_plus.reset(raw_plus);
+  m_back.reset(raw_back);
+  m_focus = FOCUS::NONE;
+  auto *raw_address_bar =
+      TTF_CreateText(m_browser->m_engine.get(), m_font, m_address_str.c_str(),
+                     m_address_str.size());
+  TTF_SetTextColor(raw_address_bar, black.r, black.g, black.b, black.a);
+  m_address_bar.reset(raw_address_bar);
+}
+
+Layout::Rect Chrome::tab_rect(size_t i) {
+  float tab_start = m_newTab_rect.right + m_padding;
+  int iWidth;
+  TTF_GetStringSize(m_font, "Tab X", 5, &iWidth, nullptr);
+  float tab_width = static_cast<float>(iWidth) + 2 * m_padding;
+  return Layout::Rect{
+      tab_start + tab_width * static_cast<float>(i), m_tabbar_top,
+      tab_start + tab_width * static_cast<float>(i + 1), m_tabbar_bottom};
+}
+
+std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
+  std::vector<std::unique_ptr<Layout::DrawItem>> cmds{};
+  // Chrome white rect
+  cmds.emplace_back(std::make_unique<Layout::DrawRect>(
+      Layout::Rect{0, 0, static_cast<float>(m_browser->m_width), m_bottom},
+      Layout::parse_color("white")));
+  // Chrome's end line
+  cmds.push_back(std::make_unique<Layout::DrawLine>(
+      0, m_bottom, static_cast<float>(m_browser->m_width), m_bottom,
+      Layout::parse_color("black"), 1));
+  // +'s rectangle' rectangle'
+  auto outline = Layout::DrawOutline::createOutline(
+      m_newTab_rect, Layout::parse_color("white"), Layout::parse_color("black"),
+      1);
+  // the plus text
+  auto newText = std::make_unique<Layout::DrawText>(
+      m_plus.get(), m_newTab_rect.left + m_padding, m_newTab_rect.top);
+  cmds.push_back(std::move(outline));
+  cmds.push_back(std::move(newText));
+  // Different tabs
+  for (size_t i{}; i < m_labelNames.size(); ++i) {
+    auto &tab = m_browser->tabs[i];
+    auto bounds = tab_rect(i);
+    auto leftLine = std::make_unique<Layout::DrawLine>(
+        bounds.left, 0, bounds.left, bounds.bottom,
+        Layout::parse_color("black"), 1);
+    auto rightLine = std::make_unique<Layout::DrawLine>(
+        bounds.right, 0, bounds.right, bounds.bottom,
+        Layout::parse_color("black"), 1);
+    cmds.push_back(std::move(leftLine));
+    cmds.push_back(std::move(rightLine));
+    cmds.push_back(std::make_unique<Layout::DrawText>(m_labelNames[i].get(),
+                                                      bounds.left + m_padding,
+                                                      bounds.top + m_padding));
+
+    if (tab.get() == m_browser->active_tab) {
+      cmds.push_back(std::make_unique<Layout::DrawLine>(
+          0, bounds.bottom, bounds.left, bounds.bottom,
+          Layout::parse_color("red"), 1));
+      cmds.push_back(std::make_unique<Layout::DrawLine>(
+          bounds.right, bounds.bottom, static_cast<float>(m_browser->m_width),
+          bounds.bottom, Layout::parse_color("blue"), 1));
     }
-    auto &str_fontS = node->m_style["font-size"];
-    float font_frac =
-        std::stof(str_fontS.substr(0, str_fontS.size() - 1)) / 100;
-    float parent_px =
-        std::stof(parent_font_size.substr(0, parent_font_size.size() - 2));
-    node->m_style["font-size"] = std::to_string(font_frac * parent_px) + "px";
   }
-  for (auto &child : node->m_children) {
-    style(child.get(), rules);
+
+  // Back Button
+  cmds.push_back(Layout::DrawOutline::createOutline(
+      m_back_rect, Layout::parse_color("white"), Layout::parse_color("black"),
+      1));
+  cmds.push_back(std::make_unique<Layout::DrawText>(
+      m_back.get(), m_back_rect.left + m_padding, m_back_rect.top));
+
+  // Address Bar
+  cmds.push_back(Layout::DrawOutline::createOutline(
+      m_address_rect, Layout::parse_color("white"),
+      Layout::parse_color("black"), 1));
+  if (m_focus == FOCUS::ADDRESS_BAR) {
+    // the actual address bar text that the user's editing
+    TTF_SetTextString(m_address_bar.get(), m_address_str.c_str(),
+                      m_address_str.size());
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        m_address_bar.get(), m_address_rect.left + m_padding,
+        m_address_rect.top));
+    int iWidth, iHeight;
+    TTF_GetTextSize(m_address_bar.get(), &iWidth, &iHeight);
+    float width = static_cast<float>(iWidth);
+    [[maybe_unused]] float height = static_cast<float>(iHeight);
+    // the cursor
+    cmds.push_back(std::make_unique<Layout::DrawLine>(
+        m_address_rect.left + m_padding + width, m_address_rect.top,
+        m_address_rect.left + m_padding + width, m_address_rect.bottom,
+        Layout::parse_color("black"), 1));
+
+  } else {
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        m_browser->active_tab->m_history.back().get_ttfText(
+            m_browser->m_engine.get(), m_font),
+        m_address_rect.left + m_padding, m_address_rect.top));
+  }
+
+  return cmds;
+}
+
+void Chrome::click(float x, float y) {
+  // clicking the '+' sign
+  if (m_newTab_rect.contains_point(x, y)) {
+    m_browser->new_tab(URL("https://browser.engineering/"));
+  }
+  // clicking on '<' back button
+  else if (m_back_rect.contains_point(x, y)) {
+    m_browser->active_tab->go_back();
+  }
+  // clicking on the address bar to type url, and as they type we display!
+  else if (m_address_rect.contains_point(x, y)) {
+    m_focus = FOCUS::ADDRESS_BAR;
+    SDL_StartTextInput(m_browser->m_window.get());
+    m_address_str = "";
+  }
+  // clicking on different tabs for navigation
+  else {
+    for (size_t i{}; i < m_browser->tabs.size(); ++i) {
+      if (tab_rect(i).contains_point(x, y)) {
+        m_browser->active_tab = m_browser->tabs[i].get();
+      }
+    }
   }
 }
 
-std::vector<std::string_view>
-Browser::get_links(const std::vector<Item *> &list) {
-  std::vector<std::string_view> links{};
-  for (auto *node : list) {
-    if ((node->getType() != ItemType::TAG) || node->m_text != "link")
-      continue;
-    auto *tag = static_cast<Tag *>(node);
-    auto &attributes = tag->m_attributes;
-    if (attributes.contains("rel") && attributes["rel"] == "stylesheet" &&
-        attributes.contains("href"))
-      links.push_back(tag->m_attributes["href"]);
+void Chrome::create_labelText() {
+  // if number of labels and tabs are the same just return;
+  if (m_browser->tabs.size() == m_labelNames.size())
+    return;
+  // if number of actual tabs are less than labels, i.e some have been closed,
+  // we pop the labels
+  while (m_browser->tabs.size() < m_labelNames.size()) {
+    m_labelNames.pop_back();
   }
-  return links;
+  // if a new tab's opened
+  while (m_browser->tabs.size() > m_labelNames.size()) {
+    std::string tab_name = "Tab " + std::to_string(m_browser->tabs.size() - 1);
+    auto text = TTF_CreateText(m_browser->m_engine.get(), m_font,
+                               tab_name.c_str(), tab_name.size());
+    SDL_Color black = Layout::parse_color("black");
+    TTF_SetTextColor(text, black.r, black.g, black.b, black.a);
+    m_labelNames.emplace_back(
+        std::unique_ptr<TTF_Text, Layout::TextDeleter>(text));
+  }
 }

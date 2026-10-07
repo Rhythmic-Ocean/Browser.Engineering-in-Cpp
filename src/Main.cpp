@@ -12,14 +12,17 @@
 #include <unistd.h>
 
 int main() {
-  std::string url_str{};
-  std::getline(std::cin, url_str);
+  std::string url_str{"https://browser.engineering/"};
   // std::string url_str{"https://browser.engineering/text.html"};
   URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
     // and TTF
-    Browser b{"Browser"};
-    b.load(url);
+    browser::Browser b{"Browser"};
+    b.new_tab(std::move(url));
+    while (b.is_Running) {
+      b.start_event();
+      b.draw();
+    }
   }
   TTF_Quit();
   SDL_Quit();

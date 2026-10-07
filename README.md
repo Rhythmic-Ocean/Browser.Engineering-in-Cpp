@@ -4,32 +4,23 @@ The original book's implementation is in python.
 
 > **NOTE:** inter chapter commits are done in the branch chpX-working. It's merged with master once I complete the chapter and the executable's functional!!
 
-> This is a learning project, basically my first C++ project after doing learncpp. So probably a lot of errors.
+> This is a learning project, basically my first C++ project after doing learncpp. So probably uses a lot of things that are not best practices.
 
 > I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
-### Current Status (Latest Sept 27)
+### Current Status (Latest Oct 7)
 
-#### Chapter 6 - Completed (Sept 27 2026)
+#### Chapter 7 - Completed (Oct 7 2026)
 
-- Now parses CSS, can render few styles with inline CSS and external CSS.
-- For external CSS, supports tag selectors and descending tag selectors
-- Properties are cascading so child tags automatically inherit their parents properties unless overridden.
-- Has a default browser specific CSS template (see css/Browser.css) that is inherited by all elements unless overridden
-- Re-wrote attribute splitter for HTML Parser, so it's deviates quite a bit from the book's implementation there
-- Proper error handling for cases where parsing fails due to bad html/css inputs
-- Compiled with multiple -W flags (see CMakeLists.txt), and cleaned up all the warnings
+- Links can be selected and navigated through
+- Multi Tab Support
+- Can navigate through history
+- Each word has its own Layout now, allowing per word layout modifications
 - Successful examples presented below:
 
-- Rendering [this](https://browser.engineering/index.html)
+- Example usage on [this](https://browser.engineering/)
 
-
-  ![Output.txt](assets/image/chp6-complete-2.png)
-  
-- Rendering [this](https://browser.engineering/styles.html)
-
-
-  ![Output.txt](assets/image/chp6-complete-1.png)
+  ![Output.txt](assets/gifs/chp7-complete-1.gif)
 
 ### Requirements for anybody wanting to run it
 
@@ -52,4 +43,4 @@ The original book's implementation is in python.
   ./Browser https://browser.engineering/examples/xiyouji.html
   ```
 
-### Next Step: Chapter 7
+### Next Step: Chapter 8

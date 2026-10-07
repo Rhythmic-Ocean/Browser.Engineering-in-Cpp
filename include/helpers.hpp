@@ -14,9 +14,10 @@
 #include <vector>
 
 static constexpr float BASE_FONT_SIZE = 16.0f;
-typedef int FontSize;
+typedef float FontSize;
 inline int HSTEP = 13;
 inline int VSTEP = 14;
+inline int SCROLL_STEP = 100;
 
 static constexpr int WIDTH = 800.0f;
 static constexpr int HEIGHT = 600.0f;
@@ -145,7 +146,12 @@ std::string_view strip(std::string_view str);
 void casefold(std::string &str);
 void print_tree(Item *node, size_t indent = 0);
 std::string get_default_CSS();
-std::vector<Item *> tree_to_list(Item *node);
+template <typename NodeType>
+std::vector<NodeType *> tree_to_list(NodeType *node);
+
+template <typename NodeType>
+void tree_to_list(NodeType *node, std::vector<NodeType *> &list);
+std::array<SDL_FRect, 4> getOutline(SDL_FRect rect, float thinkness);
 } // namespace hlp
 //
 inline std::string C_SDL_GetStrError() { return SDL_GetError(); }

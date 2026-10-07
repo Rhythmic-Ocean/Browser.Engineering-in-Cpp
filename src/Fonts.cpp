@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <cmath>
 
 using namespace Layout;
 void FontCache::init_fontFiles() {
@@ -63,10 +64,8 @@ void FontCache::load_font(FontWeight weight, FontSize size) {
     throw FontCacheException(
         "Failed to create IOStream: " + C_SDL_GetStrError() + "\n");
   }
-  auto *font1 =
-      TTF_OpenFontIO(fileStream1, false, static_cast<float>(size) / 10.0f);
-  auto *font2 =
-      TTF_OpenFontIO(fileStream2, false, static_cast<float>(size) / 10.0f);
+  auto *font1 = TTF_OpenFontIO(fileStream1, false, size);
+  auto *font2 = TTF_OpenFontIO(fileStream2, false, size);
   if (!font1 || !font2) {
     SDL_Log("Failed to open font: %s\n", SDL_GetError());
     throw FontCacheException("Failed to open font: " + C_SDL_GetStrError() +
@@ -79,7 +78,8 @@ void FontCache::load_font(FontWeight weight, FontSize size) {
     throw FontCacheException("Failed to set fallback " + C_SDL_GetStrError() +
                              "\n");
   }
-  font_vec[static_cast<size_t>(weight)][size] = std::move(myFont1);
+  font_vec[static_cast<size_t>(weight)][std::round(size * 10)] =
+      std::move(myFont1);
   return;
 }
 
@@ -92,10 +92,11 @@ void FontCache::init() {
   init_normalFonts();
 }
 
+// Gets fontsize in float. To look for it in font_map multiply by 10 and round
 TTF_Font *FontCache::get_font(FontWeight weight, FontSize size) {
   auto &font_map = font_vec[static_cast<size_t>(weight)];
-  if (font_map.find(size) == font_map.end()) {
+  if (font_map.find(std::round(size * 10)) == font_map.end()) {
     load_font(weight, size);
   }
-  return font_map[size].get();
+  return font_map[std::round(size * 10)].get();
 }
