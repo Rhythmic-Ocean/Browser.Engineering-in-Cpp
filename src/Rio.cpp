@@ -41,22 +41,9 @@
 #include <span>
 #include <unistd.h>
 #define RIO_BUFSIZE 8192
+#include "rio.hpp"
 
-namespace rio {
-
-typedef struct {
-  int rio_fd;
-  int rio_cnt;
-  char *rio_bufptr;
-  char rio_buf[RIO_BUFSIZE];
-} rio_t;
-
-void readinitb(rio_t &rp, int fd) {
-  rp.rio_fd = fd;
-  rp.rio_cnt = 0;
-  rp.rio_bufptr = rp.rio_buf;
-}
-[[nodiscard]] size_t readn(SSL *ssl, std::span<char> usrbuf) {
+ssize_t rio::readn(SSL *ssl, std::span<char> usrbuf) {
   size_t n{usrbuf.size()};
   size_t nleft{n};
   size_t nread{};
@@ -75,9 +62,9 @@ void readinitb(rio_t &rp, int fd) {
       }
     }
   }
-  return (n - nleft); // hw much read from the buffer
+  return static_cast<ssize_t>(n - nleft); // hw much read from the buffer
 }
-[[nodiscard]] ssize_t writen(SSL *ssl, std::span<const char> usrbuf) {
+ssize_t rio::writen(SSL *ssl, std::span<const char> usrbuf) {
   size_t n{usrbuf.size()};
   size_t nleft{n};
   size_t nwritten{};
@@ -102,4 +89,45 @@ void readinitb(rio_t &rp, int fd) {
   return static_cast<ssize_t>(
       n - nleft); // Number of bytes successfully encrypted and written
 }
-} // namespace rio
+
+ssize_t rio::http_writen(int client_fd, std::span<const char> usrbuf) {
+  ssize_t n{static_cast<ssize_t>(usrbuf.size())};
+  ssize_t nleft{n};
+  ssize_t nwrite{};
+  const char *buf{usrbuf.data()};
+  while (nleft > 0) {
+    if ((nwrite = write(client_fd, buf, static_cast<size_t>(nleft))) < 0) {
+      if (errno == EINTR) {
+        nwrite = 0;
+      } else {
+        return -1;
+      }
+    } else if (nwrite == 0) {
+      break;
+    }
+    nleft -= nwrite;
+    buf += nwrite;
+  }
+  return n - nleft; // Number of bytes successfully encrypted and written
+}
+
+ssize_t rio::http_readn(int client_fd, std::span<char> usrbuf) {
+  ssize_t n{static_cast<ssize_t>(usrbuf.size())};
+  ssize_t nleft{n};
+  ssize_t nread{};
+  char *buf{usrbuf.data()};
+  while (nleft > 0) {
+    if ((nread = read(client_fd, buf, static_cast<size_t>(nleft))) < 0) {
+      if (errno == EINTR) {
+        nread = 0;
+      } else {
+        return -1;
+      }
+    } else if (nread == 0) {
+      break;
+    }
+    nleft -= nread;
+    buf += nread;
+  }
+  return n - nleft; /*returning however many of the requested bytes were read*/
+}

@@ -46,7 +46,9 @@ void URL::parse() {
 
 URL::URL(const std::string &url) : m_url{url} {
   parse();
-  m_client = Client(host, scheme);
+  if (scheme == "http" || m_port == "80")
+    is_https = false;
+  m_client = Client(host, m_port, is_https);
 }
 
 std::string URL::request() {
@@ -56,13 +58,22 @@ std::string URL::request() {
   request += "User-Agent: IHateCpp!!\r\n";
   request += "\r\n";
   ssize_t num{};
-  if ((num = rio::writen(m_client.get_ssl_client(), request)) !=
-      static_cast<ssize_t>(request.size())) {
-    throw NetworkException("Failed to send about " + std::to_string(num) +
-                           " chars thru server");
-  }
   std::string response{};
-  get_response(response);
+  if (is_https) {
+    if ((num = rio::writen(m_client.get_ssl_client(), request)) !=
+        static_cast<ssize_t>(request.size())) {
+      throw NetworkException("Failed to send about " + std::to_string(num) +
+                             " chars thru server");
+    }
+    get_response(response);
+  } else {
+    if ((num = rio::http_writen(m_client.client_fd, request)) !=
+        static_cast<ssize_t>(request.size())) {
+      throw NetworkException("Failed to send about " + std::to_string(num) +
+                             " chars thru unsecured http server");
+    }
+    get_http_response(response);
+  }
   size_t indx{};
   std::vector<std::string_view> data{hlp::split(response, "\r\n")};
   std::vector<std::string_view> statusline = hlp::split(data[indx], " ", 2);
@@ -103,6 +114,16 @@ void URL::get_response(std::string &response) {
     response.append(chunk, static_cast<size_t>(n));
   }
 }
+
+void URL::get_http_response(std::string &response) {
+  char chunk[4096];
+  ssize_t n;
+  while ((n = rio::http_readn(m_client.client_fd,
+                              std::span(chunk, sizeof(chunk)))) > 0) {
+    response.append(chunk, static_cast<size_t>(n));
+  }
+}
+
 URL URL::resolve(std::string_view url) {
   std::string resolvedURL{};
   if (url.find("://") != std::string_view ::npos)

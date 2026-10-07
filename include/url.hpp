@@ -18,11 +18,13 @@ public:
   std::string host{};
   std::string path{};
   std::string m_port{};
+  bool is_https{true};
 
 private:
   std::unique_ptr<TTF_Text, Layout::TextDeleter> m_urlText{};
   void parse();
   void get_response(std::string &response);
+  void get_http_response(std::string &response);
   std::unordered_map<std::string, std::string_view>
   parse_response(std::vector<std::string_view> response, size_t &indx);
 

@@ -95,8 +95,8 @@ LayoutType BlockLayout::layout_mode() {
   else if (m_node->getType() == ItemType::TAG &&
            checkBlockTag(m_node->m_children)) {
     return LayoutType::BLOCK;
-    // all of this node's children don't form block layout!
-  } else if (!m_node->m_children.empty())
+    // if the node has children of if it's and input tag
+  } else if (!m_node->m_children.empty() || m_node->m_text == "input")
     return LayoutType::INLINE;
   // web developer's mistake for having an empty block type tag!!
   else
@@ -198,12 +198,42 @@ void BlockLayout::word(Item *node, LayoutContext &ctx) {
   word.clear();
 }
 
+void BlockLayout::input(Item *node, LayoutContext &ctx) {
+  float w = INPUT_WIDTH_PX;
+  if (m_cursor_x + w > m_width)
+    new_line();
+  auto *layout = m_children.back().get();
+  if (layout->getType() != LayoutType::LINE)
+    throw LayoutException(
+        "Error at BlockLayout::make_word(). Type is not LineLayout.");
+  auto *line = static_cast<LineLayout *>(layout);
+  TextLayout *previous_word{nullptr};
+  if (!line->m_children.empty()) {
+    //--NOTE: Only TextLayout are gonna be LineLayout's children so no need to
+    //        check
+    previous_word = static_cast<TextLayout *>(line->m_children.back().get());
+  }
+  auto new_input = std::make_unique<InputLayout>(node, line, previous_word);
+  line->m_children.push_back(std::move(new_input));
+
+  auto &weight = m_node->m_style["font-weight"];
+  auto &size = m_node->m_style["font-size"];
+  auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
+                                       FontCache::get_size(size));
+  int iWidth;
+  TTF_GetStringSize(font, " ", 1, &iWidth, nullptr);
+  m_cursor_x += w + static_cast<float>(iWidth);
+  return;
+}
+
 void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
   if (root->getType() == ItemType::TEXT) {
     word(root, ctx);
   } else {
     if (root->m_text == "br")
       new_line();
+    else if (root->m_text == "input" || root->m_text == "button")
+      input(root, ctx);
     for (auto &child : root->m_children) {
       recurse(child.get(), ctx);
     }

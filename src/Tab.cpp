@@ -193,7 +193,7 @@ void Tab::go_back() {
     m_history.pop_back();
     // Get the prev page's string URL
     //--WARNING: We can't use the stale URL object cuz the connection's already
-    //closed when it did .request back then
+    // closed when it did .request back then
     URL url = URL(m_history.back().m_url);
     // remove the empty index
     m_history.pop_back();

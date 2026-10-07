@@ -1,4 +1,6 @@
+#include "helpers.hpp"
 #include "layout.hpp"
+#include <cassert>
 #include <iostream>
 
 using namespace Layout;
@@ -17,6 +19,7 @@ void LineLayout::layout(LayoutContext &ctx) {
   float max_ascent{}, max_descent{};
   getExtremes(max_ascent, max_descent);
   float baseline = m_start_y + 1.25f * static_cast<float>(max_ascent);
+  // this assumes all children of LineLayout are text
   for (auto &word : m_children) {
     auto *font = static_cast<TextLayout *>(word.get())->font;
     float font_ascent = static_cast<float>(TTF_GetFontAscent(font));
@@ -104,3 +107,79 @@ std::vector<std::unique_ptr<DrawItem>> TextLayout::paint() {
 }
 
 void TextLayout::pprint() { std::cout << m_word << std::endl; }
+
+void InputLayout::layout(LayoutContext &ctx) {
+  // Getting all the styles for input/button text from Browser.css
+  auto icolor = m_node->m_style["color"];
+  auto &weight = m_node->m_style["font-weight"];
+  //--WARNING: Only have one style for nw, stick w/ it. So we ignore this
+  [[maybe_unused]] auto &style = m_node->m_style["font-style"];
+  auto &size = m_node->m_style["font-size"];
+  // creating the TTF_Text and coloring it
+  auto color = parse_color(icolor);
+  font = ctx.fontCache->get_font(FontCache::get_weight(weight),
+                                 FontCache::get_size(size));
+  m_width = INPUT_WIDTH_PX;
+  assert(m_node->getType() == ItemType::TAG &&
+         "Couldn't assert Item's type as Tag at InputLayout::paint()");
+  // Getting the underlying text inside the InputLayout
+  std::string text{};
+  Tag *tag = static_cast<Tag *>(m_node);
+  if (tag->m_text == "input") {
+    if (tag->m_attributes.contains("value")) {
+      text = tag->m_attributes["value"];
+    }
+  } else if (tag->m_text == "button") {
+    if (tag->m_children.size() == 1 &&
+        tag->m_children[0]->getType() == ItemType::TEXT) {
+      text = tag->m_children[0]->m_text;
+    } else {
+      std::cerr << "Ignoring html stuff inside button cuz there's more than "
+                   "one (just text) right nw"
+                << std::endl;
+      text = "";
+    }
+  }
+  m_word = std::move(text);
+  m_text = std::unique_ptr<TTF_Text, TextDeleter>(
+      TTF_CreateText(ctx.textEngine, font, m_word.c_str(), m_word.size()));
+  if (!m_text.get()) {
+    SDL_Log("Couldn't create text: %s. Error: %s\n", m_word.c_str(),
+            SDL_GetError());
+    throw WindowException("Couldn't create text: " + m_word +
+                          ". Error: " + std::string(SDL_GetError()));
+  }
+  TTF_SetTextColor(m_text.get(), color.r, color.g, color.b, color.a);
+
+  if (m_previous) {
+    int iWidth;
+    if (!TTF_GetStringSize(font, " ", 1, &iWidth, nullptr)) {
+      SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", " ",
+              SDL_GetError());
+      throw WindowException(
+          "Couldn't calculate string size of: " + std::string("space") +
+          ". Error: " + std::string(SDL_GetError()));
+    }
+    float Swidth = static_cast<float>(iWidth);
+    m_start_x = m_previous->m_start_x + Swidth + m_previous->m_width;
+  } else {
+    m_start_x = m_parent->m_start_x;
+  }
+  m_height = static_cast<float>(TTF_GetFontLineSkip(font));
+}
+
+std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {
+  std::vector<std::unique_ptr<DrawItem>> cmds{};
+  // Input's tag's input field rectangle
+  std::string bg_color = "transparent";
+  std::string color = m_node->m_style["color"];
+  std::string text = "";
+  if (m_node->m_style.contains("background-color")) {
+    bg_color = m_node->m_style["background-color"];
+    cmds.emplace_back(
+        std::make_unique<DrawRect>(self_rect(), parse_color(bg_color)));
+  }
+  auto txt = std::make_unique<DrawText>(m_text.get(), m_start_x, m_start_y);
+  cmds.push_back(std::move(txt));
+  return cmds;
+}

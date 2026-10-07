@@ -10,6 +10,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -22,6 +23,7 @@ namespace Layout {
 
 static constexpr float HSTEP = 13.0f;
 static constexpr float VSTEP = 13.0f;
+static constexpr float INPUT_WIDTH_PX = 200.0f;
 static constexpr auto BLOCK_ELEMENTS = std::to_array<std::string_view>(
     {"html"sv,    "body"sv,   "article"sv, "section"sv,    "nav"sv,
      "aside"sv,   "h1"sv,     "h2"sv,      "h3"sv,         "h4"sv,
@@ -39,7 +41,7 @@ enum class FontWeight : std::int32_t {
   REGULAR,
   COUNT
 };
-enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT };
+enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT, INPUT };
 
 inline SDL_Color parse_color(std::string name) {
   static const std::unordered_map<std::string, SDL_Color> color_map = {
@@ -248,6 +250,7 @@ class DocumentLayout;
 class BlockLayout;
 class LineLayout;
 class TextLayout;
+class InputLayout;
 
 class Layout {
 public:
@@ -267,6 +270,7 @@ public:
   virtual void layout(LayoutContext &ctx) = 0;
   virtual void pprint() = 0;
   virtual std::vector<std::unique_ptr<DrawItem>> paint() = 0;
+  virtual bool should_paint() { return true; }
   virtual LayoutType getType() = 0;
   virtual ~Layout() = default;
 };
@@ -291,32 +295,43 @@ public:
 
 private:
   void word(Item *node, LayoutContext &ctx);
+  void input(Item *node, LayoutContext &ctx);
   void make_word(Item *node, std::string str, LayoutContext &ctx);
   void recurse(Item *root, LayoutContext &ctx);
   void flush();
   void new_line();
+  bool should_paint() override {
+    if (m_node->getType() == ItemType::TEXT)
+      return true;
+    if (m_node->getType() == ItemType::TAG) {
+
+      if (m_node->m_text != "input" || m_node->m_text != "button")
+        return true;
+    }
+    return false;
+  }
   Rect self_rect();
 
 public:
-  void pprint();
+  void pprint() override;
   LayoutType layout_mode();
   //--WARNING: getType() is different form layout_mode()!!
-  LayoutType getType() { return LayoutType::BLOCK; }
+  LayoutType getType() override { return LayoutType::BLOCK; }
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
-  void layout(LayoutContext &ctx);
-  std::vector<std::unique_ptr<DrawItem>> paint();
+  void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>> paint() override;
   ~BlockLayout() = default;
 };
 
 class LineLayout : public Layout {
 public:
   LineLayout(Item *node, BlockLayout *parent, LineLayout *previous_line);
-  void layout(LayoutContext &ctx);
-  std::vector<std::unique_ptr<DrawItem>> paint();
-  LayoutType getType() { return LayoutType::LINE; }
+  void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>> paint() override;
+  LayoutType getType() override { return LayoutType::LINE; }
   void getExtremes(float &max_ascent, float &max_descent);
-  void pprint();
+  void pprint() override;
 };
 
 class TextLayout : public Layout {
@@ -329,10 +344,33 @@ public:
              TextLayout *previous_word)
       : Layout{node, parent, previous_word}, m_word{std::move(word)} {}
 
-  void layout(LayoutContext &ctx);
-  std::vector<std::unique_ptr<DrawItem>> paint();
-  LayoutType getType() { return LayoutType::TEXT; }
-  void pprint();
+  void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>> paint() override;
+  LayoutType getType() override { return LayoutType::TEXT; }
+  void pprint() override;
+};
+
+// NOTE: Input and TextLayout both live under LineLayout and are treated
+// essentially the same way! Both their heights are calculate at
+// LineLayout::layout() using TextLayout's text height and InputLayout's
+// underlying text's height (which is inherited from Browser.css)
+
+class InputLayout : public Layout {
+  std::string m_word{};
+
+public:
+  TTF_Font *font{};
+  std::unique_ptr<TTF_Text, TextDeleter> m_text{};
+  InputLayout(Item *node, LineLayout *parent, TextLayout *previous_word)
+      : Layout{node, parent, previous_word} {}
+  void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>> paint() override;
+  LayoutType getType() override { return LayoutType::INPUT; }
+  void pprint() override { std::cout << m_word << std::endl; };
+  Rect self_rect() {
+    return Rect{m_start_x, m_start_y, m_start_x + m_width,
+                m_start_y + m_height};
+  }
 };
 
 class LayoutException : public std::runtime_error {

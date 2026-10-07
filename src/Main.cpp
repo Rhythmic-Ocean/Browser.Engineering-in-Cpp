@@ -4,7 +4,6 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <iostream>
 #include <netdb.h>
 #include <string>
 #include <sys/socket.h>
@@ -12,7 +11,7 @@
 #include <unistd.h>
 
 int main() {
-  std::string url_str{"https://browser.engineering/"};
+  std::string url_str{"http://127.0.0.1:8000/"};
   // std::string url_str{"https://browser.engineering/text.html"};
   URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL

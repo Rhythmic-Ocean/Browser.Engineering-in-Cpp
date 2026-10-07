@@ -1,11 +1,13 @@
 #include "client.hpp"
 #include "helpers.hpp"
 #include <memory>
+#include <netdb.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/tls1.h>
 #include <openssl/x509_vfy.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 SSL_CTX *Client::get_ctx() {
@@ -84,8 +86,12 @@ void Client::tls_handshake() {
   }
 }
 
-Client::Client(std::string_view hostname, std::string_view port)
+Client::Client(std::string_view hostname, std::string_view port, bool ishttps)
     : m_hostname{hostname}, m_port{port} {
+  if (!ishttps) {
+    open_clientfd();
+    return;
+  }
   SSL *raw_ssl{SSL_new(get_ctx())};
   if (raw_ssl == NULL) {
     throw NetworkException("Failed to create SSL object\n");
@@ -94,10 +100,31 @@ Client::Client(std::string_view hostname, std::string_view port)
   int sock{create_sock()};
   set_bio(sock);
   if (!SSL_set_tlsext_host_name(ssl.get(), m_hostname.c_str())) {
-    NetworkException("Failed to set the SNI hostname\n");
+    throw NetworkException("Failed to set the SNI hostname\n");
   }
   if (!SSL_set1_host(ssl.get(), m_hostname.c_str())) {
-    NetworkException("Failed to set the certificate verification hostname\n");
+    throw NetworkException(
+        "Failed to set the certificate verification hostname\n");
   }
   tls_handshake();
+}
+
+void Client::open_clientfd() {
+  struct addrinfo *results;
+  if (getaddrinfo(m_hostname.c_str(), m_port.c_str(), nullptr, &results) != 0) {
+    throw NetworkException("Failed at getaddrinfo().\n");
+  }
+  struct addrinfo *result = results;
+  for (; result; result = result->ai_next) {
+    if ((client_fd = socket(result->ai_family, result->ai_socktype,
+                            result->ai_protocol)) < 0) {
+      continue;
+    }
+
+    if (connect(client_fd, result->ai_addr, result->ai_addrlen) != -1)
+      break;
+    close(client_fd);
+  }
+  if (client_fd < 0)
+    throw NetworkException("Failed to open a client connection\n");
 }
