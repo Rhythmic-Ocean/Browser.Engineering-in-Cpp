@@ -8,7 +8,7 @@ The original book's implementation is in python.
 
 > I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
-### Current Status (Latest Sept 27)
+### Current Status (Latest Oct 7)
 
 #### Chapter 7 - Completed (Oct 7 2026)
 
