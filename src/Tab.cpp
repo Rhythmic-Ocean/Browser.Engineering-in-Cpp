@@ -7,6 +7,7 @@
 #include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <exception>
+#include <iostream>
 #include <iterator>
 #include <string>
 
@@ -22,9 +23,11 @@ Tab::Tab(TabContext tctx, float l_tab_height) {
 }
 
 void Tab::paint_tree(Layout::Layout *layoutNode) {
-  auto displayVec = layoutNode->paint();
-  for (auto &item : displayVec) {
-    m_displayItems.push_back(std::move(item));
+  if (layoutNode->should_paint()) {
+    auto displayVec = layoutNode->paint();
+    for (auto &item : displayVec) {
+      m_displayItems.push_back(std::move(item));
+    }
   }
   for (auto &child : layoutNode->m_children) {
     paint_tree(child.get());
@@ -40,7 +43,8 @@ void Tab::load(URL url) {
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
 
   auto default_css = hlp::get_default_CSS();
-  auto rules = Parser::CSSParser(default_css).parse();
+  m_rules.clear();
+  m_rules = Parser::CSSParser(default_css).parse();
   std::vector<std::string_view> css_links =
       get_links(hlp::tree_to_list(m_rootNode.get()));
   for (auto link : css_links) {
@@ -52,22 +56,30 @@ void Tab::load(URL url) {
       continue;
     }
     auto source = Parser::CSSParser(body).parse();
-    rules.insert(rules.end(), std::make_move_iterator(source.begin()),
-                 std::make_move_iterator(source.end()));
+    m_rules.insert(m_rules.end(), std::make_move_iterator(source.begin()),
+                   std::make_move_iterator(source.end()));
   }
+  render();
+  return;
+}
 
+// Responsible for styling the DOM, laying it out and collecting displayItems
+void Tab::render() {
   auto cascade_priority = [](Parser::StyleRule &rule1,
                              Parser::StyleRule &rule2) {
     return rule1.selector->priority < rule2.selector->priority;
   };
 
-  std::ranges::sort(rules, cascade_priority);
-  style(m_rootNode.get(), rules);
+  std::ranges::sort(m_rules, cascade_priority);
+  style(m_rootNode.get(), m_rules);
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
   m_displayItems.clear();
   paint_tree(m_document.get());
-  return;
+  auto list = hlp::tree_to_list(m_document.get());
+  for (auto &layout : list) {
+    std::cout << layout->m_node->m_text << std::endl;
+  }
 }
 
 // NOTE: offset accounts for all the chrome items on the top and forces all
@@ -146,7 +158,8 @@ std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
   return links;
 }
 
-void Tab::click(float x, float y) {
+void Tab::click(float x, float y, SDL_Window *window) {
+  blur();
   URL &l_url = m_history.back();
   y += m_scroll_y;
   std::vector<Layout::Layout *> objects{};
@@ -157,9 +170,12 @@ void Tab::click(float x, float y) {
       objects.push_back(obj);
     }
   }
-  if (objects.empty())
-    return;
-  auto *elt = objects.back()->m_node;
+  Item *elt;
+  if (objects.empty()) {
+    elt = nullptr;
+  } else {
+    elt = objects.back()->m_node;
+  }
   while (elt) {
     if (elt->getType() == ItemType::TAG) {
       auto *tag = static_cast<Tag *>(elt);
@@ -167,6 +183,12 @@ void Tab::click(float x, float y) {
         URL url = l_url.resolve(tag->m_attributes["href"]);
         load(std::move(url));
         return;
+      } else if (tag->m_text == "input") {
+        m_focus = elt;
+        m_focus->focus = true;
+        SDL_StartTextInput(window);
+        tag->m_attributes["value"] = "";
+        render();
       }
     }
     elt = elt->m_parent;
@@ -199,4 +221,28 @@ void Tab::go_back() {
     m_history.pop_back();
     load(std::move(url));
   }
+}
+
+void Tab::handle_special_keys(SDL_Keycode key) {
+  if (m_focus == nullptr)
+    return;
+  auto *tag = static_cast<Tag *>(m_focus);
+  switch (key) {
+  case SDLK_BACKSPACE: {
+    if (!tag->m_attributes["value"].empty()) {
+      tag->m_attributes["value"].pop_back();
+    }
+    break;
+  }
+  }
+  render();
+}
+
+void Tab::handle_input(std::string str) {
+  if (m_focus == nullptr)
+    return;
+  auto *tag = static_cast<Tag *>(m_focus);
+  tag->m_attributes["value"] += str;
+  render();
+  return;
 }

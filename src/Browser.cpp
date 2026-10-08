@@ -78,37 +78,11 @@ void Browser::start_event() {
     }
     // Handling escape, backspace and escape keys!
     case (SDL_EVENT_KEY_DOWN): {
-      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
-        switch (event.key.key) {
-        case SDLK_ESCAPE: {
-          m_chrome->m_focus = FOCUS::NONE;
-          SDL_StopTextInput(m_window.get());
-          break;
-        }
-        case SDLK_BACKSPACE: {
-          if (!m_chrome->m_address_str.empty()) {
-            m_chrome->m_address_str.pop_back();
-          }
-          break;
-        }
-        case SDLK_RETURN: {
-          m_chrome->m_focus = FOCUS::NONE;
-          SDL_StopTextInput(m_window.get());
-          URL new_url = URL(m_chrome->m_address_str);
-          active_tab->load(std::move(new_url));
-          break;
-        }
-        }
-      }
+      handle_special_keys(event.key.key);
       break;
     }
     case (SDL_EVENT_TEXT_INPUT): {
-      if (m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
-        std::string str = event.text.text;
-        for (char c : str) {
-          m_chrome->m_address_str.push_back(c);
-        }
-      }
+      handle_input(event);
       break;
     }
     default:
@@ -144,11 +118,39 @@ void Browser::new_tab(URL url) {
 }
 
 void Browser::click(SDL_MouseButtonEvent event) {
-  if (event.y < m_chrome->m_bottom)
+  SDL_StopTextInput(m_window.get());
+  if (event.y < m_chrome->m_bottom) {
+    m_focus = FOCUS::CHROME;
+    active_tab->blur();
     m_chrome->click(event.x, event.y);
-  else {
+  } else {
+    m_focus = FOCUS::CONTENT;
+    m_chrome->blur();
     float tab_y = event.y - m_chrome->m_bottom;
-    active_tab->click(event.x, tab_y);
+    active_tab->click(event.x, tab_y, m_window.get());
+  }
+  draw();
+}
+
+void Browser::handle_special_keys(SDL_Keycode key) {
+  if (m_focus == FOCUS::CHROME)
+    m_chrome->handle_special_keys(key);
+  else if (m_focus == FOCUS::CONTENT) {
+    active_tab->handle_special_keys(key);
+  } else
+    return;
+  draw();
+}
+
+void Browser::handle_input(const SDL_Event &event) {
+  if (m_focus == FOCUS::CHROME && m_chrome->m_focus == FOCUS::ADDRESS_BAR) {
+    std::string str = event.text.text;
+    for (char c : str) {
+      m_chrome->m_address_str.push_back(c);
+    }
+  } else if (m_focus == FOCUS::CONTENT) {
+    std::string str = event.text.text;
+    active_tab->handle_input(std::move(str));
   }
   draw();
 }
@@ -290,6 +292,13 @@ std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
 }
 
 void Chrome::click(float x, float y) {
+  // clicking on the address bar to type url, and as they type we display!
+  if (m_address_rect.contains_point(x, y)) {
+    m_focus = FOCUS::ADDRESS_BAR;
+    SDL_StartTextInput(m_browser->m_window.get());
+    m_address_str = "";
+    return;
+  }
   // clicking the '+' sign
   if (m_newTab_rect.contains_point(x, y)) {
     m_browser->new_tab(URL("https://browser.engineering/"));
@@ -297,12 +306,6 @@ void Chrome::click(float x, float y) {
   // clicking on '<' back button
   else if (m_back_rect.contains_point(x, y)) {
     m_browser->active_tab->go_back();
-  }
-  // clicking on the address bar to type url, and as they type we display!
-  else if (m_address_rect.contains_point(x, y)) {
-    m_focus = FOCUS::ADDRESS_BAR;
-    SDL_StartTextInput(m_browser->m_window.get());
-    m_address_str = "";
   }
   // clicking on different tabs for navigation
   else {
@@ -312,6 +315,7 @@ void Chrome::click(float x, float y) {
       }
     }
   }
+  m_focus = FOCUS::NONE;
 }
 
 void Chrome::create_labelText() {
@@ -332,5 +336,30 @@ void Chrome::create_labelText() {
     TTF_SetTextColor(text, black.r, black.g, black.b, black.a);
     m_labelNames.emplace_back(
         std::unique_ptr<TTF_Text, Layout::TextDeleter>(text));
+  }
+}
+
+void Chrome::handle_special_keys(SDL_Keycode key) {
+  if (m_focus != FOCUS::ADDRESS_BAR)
+    return;
+  switch (key) {
+  case SDLK_ESCAPE: {
+    m_focus = FOCUS::NONE;
+    SDL_StopTextInput(m_browser->m_window.get());
+    break;
+  }
+  case SDLK_BACKSPACE: {
+    if (!m_address_str.empty()) {
+      m_address_str.pop_back();
+    }
+    break;
+  }
+  case SDLK_RETURN: {
+    m_focus = FOCUS::NONE;
+    SDL_StopTextInput(m_browser->m_window.get());
+    URL new_url = URL(m_address_str);
+    m_browser->active_tab->load(std::move(new_url));
+    break;
+  }
   }
 }

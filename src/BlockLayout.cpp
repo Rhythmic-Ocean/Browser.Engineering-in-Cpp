@@ -234,8 +234,10 @@ void BlockLayout::recurse(Item *root, LayoutContext &ctx) {
       new_line();
     else if (root->m_text == "input" || root->m_text == "button")
       input(root, ctx);
-    for (auto &child : root->m_children) {
-      recurse(child.get(), ctx);
+    else {
+      for (auto &child : root->m_children) {
+        recurse(child.get(), ctx);
+      }
     }
   }
 }

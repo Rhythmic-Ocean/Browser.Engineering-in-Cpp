@@ -121,28 +121,9 @@ void InputLayout::layout(LayoutContext &ctx) {
                                  FontCache::get_size(size));
   m_width = INPUT_WIDTH_PX;
   assert(m_node->getType() == ItemType::TAG &&
-         "Couldn't assert Item's type as Tag at InputLayout::paint()");
-  // Getting the underlying text inside the InputLayout
-  std::string text{};
-  Tag *tag = static_cast<Tag *>(m_node);
-  if (tag->m_text == "input") {
-    if (tag->m_attributes.contains("value")) {
-      text = tag->m_attributes["value"];
-    }
-  } else if (tag->m_text == "button") {
-    if (tag->m_children.size() == 1 &&
-        tag->m_children[0]->getType() == ItemType::TEXT) {
-      text = tag->m_children[0]->m_text;
-    } else {
-      std::cerr << "Ignoring html stuff inside button cuz there's more than "
-                   "one (just text) right nw"
-                << std::endl;
-      text = "";
-    }
-  }
-  m_word = std::move(text);
+         "Couldn't assert Item's type as Tag at InputLayout::layout()");
   m_text = std::unique_ptr<TTF_Text, TextDeleter>(
-      TTF_CreateText(ctx.textEngine, font, m_word.c_str(), m_word.size()));
+      TTF_CreateText(ctx.textEngine, font, "", 0));
   if (!m_text.get()) {
     SDL_Log("Couldn't create text: %s. Error: %s\n", m_word.c_str(),
             SDL_GetError());
@@ -173,13 +154,39 @@ std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {
   // Input's tag's input field rectangle
   std::string bg_color = "transparent";
   std::string color = m_node->m_style["color"];
-  std::string text = "";
   if (m_node->m_style.contains("background-color")) {
     bg_color = m_node->m_style["background-color"];
     cmds.emplace_back(
         std::make_unique<DrawRect>(self_rect(), parse_color(bg_color)));
   }
+  // Getting the underlying text inside the InputLayout
+  std::string text{};
+  Tag *tag = static_cast<Tag *>(m_node);
+  if (tag->m_text == "input") {
+    if (tag->m_attributes.contains("value")) {
+      text = tag->m_attributes["value"];
+      std::cerr << text;
+    }
+  } else if (tag->m_text == "button") {
+    if (tag->m_children.size() == 1 &&
+        tag->m_children[0]->getType() == ItemType::TEXT) {
+      text = tag->m_children[0]->m_text;
+    } else {
+      std::cerr << "Ignoring html stuff inside button cuz there's more than "
+                   "one (just text) right nw"
+                << std::endl;
+      text = "";
+    }
+  }
+  TTF_SetTextString(m_text.get(), text.c_str(), text.size());
   auto txt = std::make_unique<DrawText>(m_text.get(), m_start_x, m_start_y);
   cmds.push_back(std::move(txt));
+  if (m_node->focus) {
+    int iWidth;
+    TTF_GetTextSize(m_text.get(), &iWidth, nullptr);
+    float cx = m_start_x + static_cast<float>(iWidth);
+    cmds.push_back(std::make_unique<DrawLine>(
+        cx, m_start_y, cx, m_start_y + m_height, parse_color("black"), 1));
+  }
   return cmds;
 }

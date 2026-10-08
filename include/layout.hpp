@@ -305,10 +305,10 @@ private:
       return true;
     if (m_node->getType() == ItemType::TAG) {
 
-      if (m_node->m_text != "input" || m_node->m_text != "button")
-        return true;
+      if (m_node->m_text == "input" || m_node->m_text == "button")
+        return false;
     }
-    return false;
+    return true;
   }
   Rect self_rect();
 
