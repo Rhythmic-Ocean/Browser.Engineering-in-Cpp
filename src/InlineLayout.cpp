@@ -165,7 +165,6 @@ std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {
   if (tag->m_text == "input") {
     if (tag->m_attributes.contains("value")) {
       text = tag->m_attributes["value"];
-      std::cerr << text;
     }
   } else if (tag->m_text == "button") {
     if (tag->m_children.size() == 1 &&

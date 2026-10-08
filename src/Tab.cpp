@@ -76,10 +76,6 @@ void Tab::render() {
   m_document->layout(ctx);
   m_displayItems.clear();
   paint_tree(m_document.get());
-  auto list = hlp::tree_to_list(m_document.get());
-  for (auto &layout : list) {
-    std::cout << layout->m_node->m_text << std::endl;
-  }
 }
 
 // NOTE: offset accounts for all the chrome items on the top and forces all
