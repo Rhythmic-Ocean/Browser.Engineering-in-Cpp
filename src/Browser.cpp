@@ -102,7 +102,7 @@ void Browser::draw() {
   SDL_RenderPresent(m_renderer.get());
 }
 
-void Browser::new_tab(URL url) {
+void Browser::new_tab(url::URL url) {
   TabContext tctx{};
   tctx.lctx = ctx;
   tctx.textEngine = m_engine.get();
@@ -301,7 +301,7 @@ void Chrome::click(float x, float y) {
   }
   // clicking the '+' sign
   if (m_newTab_rect.contains_point(x, y)) {
-    m_browser->new_tab(URL("https://browser.engineering/"));
+    m_browser->new_tab(url::URL("https://browser.engineering/"));
   }
   // clicking on '<' back button
   else if (m_back_rect.contains_point(x, y)) {
@@ -357,7 +357,7 @@ void Chrome::handle_special_keys(SDL_Keycode key) {
   case SDLK_RETURN: {
     m_focus = FOCUS::NONE;
     SDL_StopTextInput(m_browser->m_window.get());
-    URL new_url = URL(m_address_str);
+    url::URL new_url = url::URL(m_address_str);
     m_browser->active_tab->load(std::move(new_url));
     break;
   }

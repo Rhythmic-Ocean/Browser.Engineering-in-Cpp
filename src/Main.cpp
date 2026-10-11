@@ -13,7 +13,7 @@
 int main() {
   std::string url_str{"http://127.0.0.1:8000/"};
   // std::string url_str{"https://browser.engineering/text.html"};
-  URL url{url_str};
+  url::URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL
     // and TTF
     browser::Browser b{"Browser"};

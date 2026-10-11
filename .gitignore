@@ -1,4 +1,7 @@
 build/
+Session.vim
+compile_flags.txt
+main
 .cache/
 compile_commands.json
 prac/

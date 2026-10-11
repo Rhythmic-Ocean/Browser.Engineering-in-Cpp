@@ -46,16 +46,17 @@ private:
   std::vector<std::string_view> get_links(const std::vector<Item *> &list);
   void scrolldown();
   void render();
+  void submit_form(Tag *tag);
 
 public:
   void go_back();
-  std::vector<URL> m_history{};
+  std::vector<url::URL> m_history{};
   void click(float x, float y, SDL_Window *window);
   void scroll(float turn);
   void draw(SDL_Renderer *renderer, float offset);
   int m_width{};
   int m_height{};
-  void load(URL url);
+  void load(url::URL url, std::string payload = "");
   Tab(TabContext tctx, float l_tab_height);
   ~Tab() = default;
   void handle_special_keys(SDL_Keycode key);
@@ -134,7 +135,7 @@ private:
 public:
   void draw();
   void start_event();
-  void new_tab(URL url);
+  void new_tab(url::URL url);
   Browser(std::string &&title, Size size = {WIDTH, HEIGHT})
       : m_title{std::move(title)}, m_width{size.width}, m_height{size.height} {
     init();

@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <unordered_map>
 
+using namespace url;
 void URL::parse() {
   size_t scheme_end{m_url.find("://")};
   if (scheme_end == std::string::npos) {
@@ -51,12 +52,22 @@ URL::URL(const std::string &url) : m_url{url} {
   m_client = Client(host, m_port, is_https);
 }
 
-std::string URL::request() {
-  std::string request{"GET " + std::string(path) + " HTTP/1.1\r\n"};
+std::string URL::request(std::string payload) {
+  std::string method;
+  if (payload.empty()) {
+    method = "GET";
+  } else
+    method = "POST";
+  std::string request{method + " " + std::string(path) + " HTTP/1.1\r\n"};
+  if (!payload.empty()) {
+    request += "Content-Length: " + std::to_string(payload.size()) + "\r\n";
+  }
   request += "Host: " + std::string(host) + "\r\n";
   request += "Connection: close\r\n";
   request += "User-Agent: IHateCpp!!\r\n";
   request += "\r\n";
+  if (!payload.empty())
+    request += payload;
   ssize_t num{};
   std::string response{};
   if (is_https) {

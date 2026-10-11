@@ -6,8 +6,8 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_render.h>
 #include <algorithm>
+#include <cassert>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <string>
 
@@ -34,11 +34,11 @@ void Tab::paint_tree(Layout::Layout *layoutNode) {
   }
 }
 
-void Tab::load(URL url) {
+void Tab::load(url::URL url, std::string payload) {
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
   m_history.push_back(std::move(url));
-  URL &l_url = m_history.back();
-  std::string response = l_url.request();
+  url::URL &l_url = m_history.back();
+  std::string response = l_url.request(std::move(payload));
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
 
@@ -156,7 +156,7 @@ std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
 
 void Tab::click(float x, float y, SDL_Window *window) {
   blur();
-  URL &l_url = m_history.back();
+  url::URL &l_url = m_history.back();
   y += m_scroll_y;
   std::vector<Layout::Layout *> objects{};
   auto list = hlp::tree_to_list(m_document.get());
@@ -176,15 +176,29 @@ void Tab::click(float x, float y, SDL_Window *window) {
     if (elt->getType() == ItemType::TAG) {
       auto *tag = static_cast<Tag *>(elt);
       if (tag->m_text == "a" && tag->m_attributes.contains("href")) {
-        URL url = l_url.resolve(tag->m_attributes["href"]);
+        url::URL url = l_url.resolve(tag->m_attributes["href"]);
         load(std::move(url));
         return;
+        // when the user clicks on input's box
       } else if (tag->m_text == "input") {
         m_focus = elt;
         m_focus->focus = true;
         SDL_StartTextInput(window);
         tag->m_attributes["value"] = "";
         render();
+      }
+      // when button's clicked we bubble up the DOM until we get the form and
+      // the action it wants us to perfrom
+      else if (tag->m_text == "button") {
+        while (elt) {
+          assert(elt->getType() == ItemType::TAG && "Encountered non-tag item "
+                                                    "while bubbling up from "
+                                                    "button.");
+          tag = static_cast<Tag *>(elt);
+          if (tag->m_text == "form" && tag->m_attributes.contains("action")) {
+            submit_form(tag);
+          }
+        }
       }
     }
     elt = elt->m_parent;
@@ -212,7 +226,7 @@ void Tab::go_back() {
     // Get the prev page's string URL
     //--WARNING: We can't use the stale URL object cuz the connection's already
     // closed when it did .request back then
-    URL url = URL(m_history.back().m_url);
+    url::URL url = url::URL(m_history.back().m_url);
     // remove the empty index
     m_history.pop_back();
     load(std::move(url));
@@ -241,4 +255,32 @@ void Tab::handle_input(std::string str) {
   tag->m_attributes["value"] += str;
   render();
   return;
+}
+
+void Tab::submit_form(Tag *tag) {
+  std::vector<Tag *> inputTags{};
+  std::vector<Item *> nodes = hlp::tree_to_list(static_cast<Item *>(tag));
+  for (auto &node : nodes) {
+    if (node->m_text == "input") {
+      Tag *inputTag = static_cast<Tag *>(node);
+      if (inputTag->m_attributes.contains("name"))
+        inputTags.push_back(inputTag);
+    }
+  }
+
+  std::string body = "";
+  std::string amp = "";
+  for (auto &input : inputTags) {
+    std::string name =
+        url::PercentageEncoding::encode(input->m_attributes["name"]);
+    std::string value = "";
+    if (input->m_attributes.contains("value")) {
+      value = url::PercentageEncoding::encode(input->m_attributes["value"]);
+    }
+    body += amp + name + "=" + value;
+    amp = "&";
+  }
+  url::URL &url = m_history.back();
+  url::URL newUrl = url.resolve(tag->m_attributes["action"]);
+  load(std::move(newUrl), std::move(body));
 }
