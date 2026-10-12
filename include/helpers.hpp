@@ -55,6 +55,7 @@ struct Item {
   std::string m_text{};
   std::vector<std::unique_ptr<Item>> m_children{};
   std::unordered_map<std::string, std::string> m_style{};
+  bool focus = false;
   Item *m_parent{};
   Item(std::string &&text, Item *parent)
       : m_text{std::move(text)}, m_parent{parent} {}

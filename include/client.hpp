@@ -16,9 +16,13 @@ class Client {
   void set_bio(int sock);
   void tls_handshake();
 
+  // http handlers
+  void open_clientfd();
+
 public:
+  [[maybe_unused]] int client_fd; // if it's http
   Client(std::string_view hostname = "www.google.com",
-         std::string_view port = "https");
+         std::string_view port = "https", bool ishttps = true);
   Client(const Client &client) = delete;
   Client &operator=(const Client &client) = delete;
   Client(Client &&other) noexcept = default;

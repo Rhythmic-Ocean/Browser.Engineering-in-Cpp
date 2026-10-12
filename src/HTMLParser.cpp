@@ -2,6 +2,7 @@
 #include "helpers.hpp"
 #include <cctype>
 #include <functional>
+#include <iostream>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -214,11 +215,15 @@ std::vector<std::string> HTMLParser::parse_attrib(std::string &body) {
       }
       l_word += '=';
       whiteSpace(body, indx);
-      literal(body, indx, '"');
-      l_word += '"';
-      l_word += word(body, indx, true);
-      literal(body, indx, '"');
-      l_word += '"';
+      if (!is_literal(body, indx, '"')) {
+        l_word += word(body, indx, false);
+      } else {
+        literal(body, indx, '"');
+        l_word += '"';
+        l_word += word(body, indx, true);
+        literal(body, indx, '"');
+        l_word += '"';
+      }
       attributes.push_back(l_word);
       l_word.clear();
     } catch (WindowException &exception) {

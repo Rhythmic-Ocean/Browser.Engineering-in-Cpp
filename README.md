@@ -8,19 +8,17 @@ The original book's implementation is in python.
 
 > I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
-### Current Status (Latest Oct 7)
+### Current Status (Latest Oct 12)
 
-#### Chapter 7 - Completed (Oct 7 2026)
+#### Chapter 8 - Completed (Oct 12 2026)
 
-- Links can be selected and navigated through
-- Multi Tab Support
-- Can navigate through history
-- Each word has its own Layout now, allowing per word layout modifications
-- Successful examples presented below:
+- Supports basic POST requests.
+- Server/ directory had a minimal static server to test the Browser
+- Supports HTML Form as well as Input and Buttom Widgets
+- Supports Percentage Encoding/Decoding, not completly but it's self-implemented so works mostly
 
-- Example usage on [this](https://browser.engineering/)
-
-  ![Output.txt](assets/gifs/chp7-complete-1.gif)
+- Minimal POST request demo:
+  ![Output.txt](assets/gifs/chp8-complete-1.gif)
 
 ### Requirements for anybody wanting to run it
 
@@ -29,18 +27,41 @@ The original book's implementation is in python.
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
 
-### Steps
+### Steps (On Linux)
 
 - Fork the repo
-- Run the following on your linux system:
+- Clone it and get inside the directory
+
+```
+  git clone https://github.com/<your-username>/Browser.Engineering-in-Cpp
+  cd Browser.Engineering-in-Cpp
+```
+
+- First build and run the server on port 8000:
+
+```
+ cd Server
+ g++ -std=c++20 -o server riolib.cpp server.cpp
+ ./server 8000
+```
+
+- Then build and run the Browser (in another terminal on project's root directory):
 
   ```
-  git clone https://github.com/<your-username>/Browser.Engineering-in-Cpp
-  cd Browser
   cmake -B build
   cmake --build build
   cd build
-  ./Browser https://browser.engineering/examples/xiyouji.html
+  ./Browser
   ```
 
-### Next Step: Chapter 8
+- The Browser will automatically take you to your localhost:8000, if you wanna navigate external websites (only <https://browser.engineering/> even works somewhat right now, anything else could most likely just crash the browser), just edit the link in the URL tab
+
+### Next Step: Chapter 9
+
+### Credits (Other Places I got some codes from)
+
+- The minimal Server inside Server/ is modified from the TINY Server Implementation in [CS:APP book](https://csapp.cs.cmu.edu/3e/students.html) Chapter 11: Network Programming
+- include/rio.hpp and include/rio.cpp is also modified version of the Robust Input Output (RIO) library implemented in [CS:APP book](https://csapp.cs.cmu.edu/3e/students.html) Chapter 10 System-Level I/O
+- The percentage encoding/decoding implemented here (at include/url.hpp and server/riolib.hpp) are taken and somewhat modified from here [Github](https://github.com/gofer/percent_encoding)
+- The OpenSSL configuration for TLS handshake was almost entirely copied from [OpenSSL-TLS-Client-Block Guide](https://docs.openssl.org/master/man7/ossl-guide-tls-client-block/#setting-the-servers-hostname)
+- The multibyte character parsing algorithm at src/BlockLayout.cpp was heavily AI Assisted [Gemini](https://gemini.google.com)
