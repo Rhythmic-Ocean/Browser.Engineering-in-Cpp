@@ -100,7 +100,7 @@ void do_it(int fd) {
                 << usrbuf << std::endl;
       exit(1);
     }
-    body = std::move(buf);
+    body = riolib::PercentageDecoding::decode(std::move(buf));
   }
   auto [status, response_body] = do_request(method, uri, headers, body);
   std::string response = "HTTP/1.0 " + status + "\r\n";
@@ -176,12 +176,20 @@ std::string show_comments() {
   return out;
 }
 
+/* NOTE: std::view::split returns std::ranges::split_view which is basically
+       a lazy range of std::ranges::subranges which references the string like
+        std::string_view (in our case) with const char* and size inside.
+*       So if we were to just pass the field.data() into std::string, it will
+        just be const char* and std::string wouldn't know where to put the null
+        terminator
+*       So we pass both the field.data() and the size
+  */
 std::unordered_map<std::string, std::string>
 form_decode(std::string_view body) {
   std::unordered_map<std::string, std::string> params{};
   for (auto field : std::views::split(body, '&')) {
-    std::string f = field.data();
-    int indx = f.find('=');
+    std::string f = std::string(field.data(), field.size());
+    size_t indx = f.find('=');
     std::string ke = f.substr(0, indx);
     params[ke] = f.substr(indx + 1);
   }

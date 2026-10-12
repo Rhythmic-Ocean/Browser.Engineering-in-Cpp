@@ -197,8 +197,11 @@ void Tab::click(float x, float y, SDL_Window *window) {
           tag = static_cast<Tag *>(elt);
           if (tag->m_text == "form" && tag->m_attributes.contains("action")) {
             submit_form(tag);
+            break;
           }
+          elt = elt->m_parent;
         }
+        break;
       }
     }
     elt = elt->m_parent;

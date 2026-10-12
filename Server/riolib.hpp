@@ -1,7 +1,6 @@
 #include <asm-generic/errno-base.h>
 #include <span>
 #include <stddef.h>
-#include <stdio.h>
 #include <string>
 #include <unistd.h>
 
@@ -22,4 +21,27 @@ ssize_t rio_readnp(rio_t *rp, std::span<char> usrbuf);
 ssize_t rio_readn(int fd, std::span<char> usrbuf);
 ssize_t rio_writen(int fd, std::span<char> usrbuf);
 int open_listenfd(std::span<char> port_str);
+
+class PercentageDecoding {
+public:
+  static std::string decode(const std::string &str) {
+    std::string buf = "";
+    for (int i{}; i < str.size(); ++i) {
+      if (str[i] == '+') {
+        buf += " ";
+      } else if (str[i] == '%') {
+        if (i + 2 < str.size()) {
+          std::string hex(&str[i] + 1, 2);
+          i += 2;
+          int x1 = std::stoi(hex, nullptr, 16);
+          buf += x1;
+        }
+      } else {
+
+        buf += str[i];
+      }
+    }
+    return buf;
+  }
+};
 } // namespace riolib
