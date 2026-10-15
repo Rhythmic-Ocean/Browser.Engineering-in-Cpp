@@ -2,6 +2,7 @@
 
 #include "Parser.hpp"
 #include "helpers.hpp"
+#include "jsContext.hpp"
 #include "layout.hpp"
 #include "url.hpp"
 #include <SDL3/SDL_events.h>
@@ -36,6 +37,7 @@ private:
   std::unique_ptr<Layout::Layout> m_document{};
   float tab_height{};
   Item *m_focus{nullptr};
+  jsContext::JSContext m_js{};
 
   inline static float m_scroll_y;
   inline static float m_max_y;
@@ -43,7 +45,8 @@ private:
 
   void paint_tree(Layout::Layout *layoutNode);
   void style(Item *node, Parser::StyleSheet &rules);
-  std::vector<std::string_view> get_links(const std::vector<Item *> &list);
+  std::vector<std::string_view> get_css_links(const std::vector<Item *> &list);
+  std::vector<std::string_view> get_js_links(const std::vector<Item *> &list);
   void scrolldown();
   void render();
   void submit_form(Tag *tag);

@@ -26,17 +26,22 @@ set(_SOURCE_DIR
     src/HTMLParser.cpp
     src/CSSParser.cpp
     src/Tab.cpp
+    src/jsContext.cpp
 )
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 
+add_library(duktape STATIC externals/src/duktape.c)
+
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         include
+        externals/include
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
+        duktape
         OpenSSL::SSL
         OpenSSL::Crypto
         SDL3::SDL3

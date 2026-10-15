@@ -7,7 +7,9 @@
 #include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <cassert>
+#include <duk_config.h>
 #include <exception>
+#include <iostream>
 #include <iterator>
 #include <string>
 
@@ -45,8 +47,22 @@ void Tab::load(url::URL url, std::string payload) {
   auto default_css = hlp::get_default_CSS();
   m_rules.clear();
   m_rules = Parser::CSSParser(default_css).parse();
-  std::vector<std::string_view> css_links =
-      get_links(hlp::tree_to_list(m_rootNode.get()));
+  std::vector<Item *> itemList{hlp::tree_to_list(m_rootNode.get())};
+  // Extract all JS Links
+  std::vector<std::string_view> js_links = get_js_links(itemList);
+  // Extract all CSS links and apply to DOM
+  for (auto link : js_links) {
+    auto script_url = l_url.resolve(link);
+    std::string body{};
+    try {
+      body = script_url.request();
+    } catch (std::exception &exc) {
+      continue;
+    }
+    m_js.run(body);
+  }
+  std::cout << duk_get_int(m_js.ctx.get(), -1) << std::endl;
+  std::vector<std::string_view> css_links = get_css_links(itemList);
   for (auto link : css_links) {
     auto style_url = l_url.resolve(link);
     std::string body{};
@@ -93,7 +109,8 @@ void Tab::draw(SDL_Renderer *renderer, float offset) {
 
 void Tab::style(Item *node, Parser::StyleSheet &rules) {
   //--NOTE: This inherite rules applies to all elements by default, and
-  //         is overidden by ANY other rules applied to the elements themseleves
+  //         is overidden by ANY other rules applied to the elements
+  //         themseleves
   for (auto &property : INHERITED_PROPERTIES) {
     if (node->m_parent) {
       node->m_style[property.first] = node->m_parent->m_style[property.first];
@@ -140,7 +157,8 @@ void Tab::style(Item *node, Parser::StyleSheet &rules) {
   }
 }
 
-std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
+std::vector<std::string_view>
+Tab::get_css_links(const std::vector<Item *> &list) {
   std::vector<std::string_view> links{};
   for (auto *node : list) {
     if ((node->getType() != ItemType::TAG) || node->m_text != "link")
@@ -150,6 +168,20 @@ std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
     if (attributes.contains("rel") && attributes["rel"] == "stylesheet" &&
         attributes.contains("href"))
       links.push_back(tag->m_attributes["href"]);
+  }
+  return links;
+}
+
+std::vector<std::string_view>
+Tab::get_js_links(const std::vector<Item *> &list) {
+  std::vector<std::string_view> links{};
+  for (auto *node : list) {
+    if ((node->getType() != ItemType::TAG) || node->m_text != "script")
+      continue;
+    auto *tag = static_cast<Tag *>(node);
+    auto &attributes = tag->m_attributes;
+    if (attributes.contains("src"))
+      links.push_back(tag->m_attributes["src"]);
   }
   return links;
 }
@@ -227,7 +259,8 @@ void Tab::go_back() {
     // pop back current page's URL
     m_history.pop_back();
     // Get the prev page's string URL
-    //--WARNING: We can't use the stale URL object cuz the connection's already
+    //--WARNING: We can't use the stale URL object cuz the connection's
+    // already
     // closed when it did .request back then
     url::URL url = url::URL(m_history.back().m_url);
     // remove the empty index
