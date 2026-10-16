@@ -10,6 +10,7 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <memory>
+#include <optional>
 
 namespace browser {
 
@@ -28,16 +29,17 @@ struct TabContext {
 
 class Tab {
 public:
+  std::unique_ptr<Item> m_rootNode{};
+
 private:
   Layout::LayoutContext ctx{};
   Parser::StyleSheet m_rules{};
-  std::unique_ptr<Item> m_rootNode{};
   TTF_TextEngine *m_engine{};
   Layout::FontCache *m_fontCache{};
   std::unique_ptr<Layout::Layout> m_document{};
   float tab_height{};
   Item *m_focus{nullptr};
-  jsContext::JSContext m_js{};
+  std::optional<jsContext::JSContext> m_js{};
 
   inline static float m_scroll_y;
   inline static float m_max_y;

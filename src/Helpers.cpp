@@ -57,6 +57,18 @@ std::string hlp::get_default_CSS() {
   return ss.str();
 }
 
+std::string hlp::get_default_JS() {
+  std::filesystem::path jsPath =
+      std::filesystem::path(PROJECT_ROOT_DIR) / "js" / "Browser.js";
+  std::ifstream file(jsPath);
+  if (!file.is_open()) {
+    throw WindowException("Couldn't open Browser's base CSS template\n");
+  }
+  std::ostringstream ss;
+  ss << file.rdbuf();
+  return ss.str();
+}
+
 template <typename NodeType>
 void hlp::tree_to_list(NodeType *node, std::vector<NodeType *> &list) {
   list.push_back(node);

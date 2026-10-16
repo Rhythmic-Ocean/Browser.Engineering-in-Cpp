@@ -1,5 +1,13 @@
+#pragma once
+
 #include "duktape.h"
+#include "helpers.hpp"
 #include <memory>
+#include <unordered_map>
+
+namespace browser {
+class Tab;
+}
 
 namespace jsContext {
 
@@ -21,12 +29,11 @@ public:
 class JSContext {
 
 public:
+  std::unordered_map<Item *, int> node_to_handler{};
+  std::unordered_map<int, Item *> handler_to_node{};
+  browser::Tab *tab{};
   std::unique_ptr<duk_context, DukDeleter> ctx;
-  JSContext() : ctx{duk_create_heap_default()} {
-    if (!ctx) {
-      throw JSException("Unable to initialize duktape context\n");
-    }
-  }
+  JSContext(browser::Tab *tab);
 
   void run(const std::string &code);
 };

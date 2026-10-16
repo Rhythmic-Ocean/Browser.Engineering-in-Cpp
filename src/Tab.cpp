@@ -9,7 +9,6 @@
 #include <cassert>
 #include <duk_config.h>
 #include <exception>
-#include <iostream>
 #include <iterator>
 #include <string>
 
@@ -37,16 +36,17 @@ void Tab::paint_tree(Layout::Layout *layoutNode) {
 }
 
 void Tab::load(url::URL url, std::string payload) {
+  // load JSContext
+  m_js.emplace(this);
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
   m_history.push_back(std::move(url));
   url::URL &l_url = m_history.back();
   std::string response = l_url.request(std::move(payload));
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
-
-  auto default_css = hlp::get_default_CSS();
-  m_rules.clear();
-  m_rules = Parser::CSSParser(default_css).parse();
+  //
+  auto runtime_js = hlp::get_default_JS();
+  m_js->run(runtime_js);
   std::vector<Item *> itemList{hlp::tree_to_list(m_rootNode.get())};
   // Extract all JS Links
   std::vector<std::string_view> js_links = get_js_links(itemList);
@@ -59,9 +59,12 @@ void Tab::load(url::URL url, std::string payload) {
     } catch (std::exception &exc) {
       continue;
     }
-    m_js.run(body);
+    m_js->run(body);
   }
-  std::cout << duk_get_int(m_js.ctx.get(), -1) << std::endl;
+
+  auto default_css = hlp::get_default_CSS();
+  m_rules.clear();
+  m_rules = Parser::CSSParser(default_css).parse();
   std::vector<std::string_view> css_links = get_css_links(itemList);
   for (auto link : css_links) {
     auto style_url = l_url.resolve(link);
