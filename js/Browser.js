@@ -52,7 +52,7 @@ Node.prototype.dispatchEvent = function (type) {
  * eg: var node = new Node(4);
  *     node.innerHTML = "<p>Hello</p>"
  * */
-Objet.defineProperty(Node.prototype, 'innerHTML', {
+Object.defineProperty(Node.prototype, 'innerHTML', {
   set: function (s) {
     //Duk/C API that runs when innerHTML's assgined to
     innerHTML_set(this.handle, s.toString());

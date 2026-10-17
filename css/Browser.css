@@ -13,6 +13,11 @@ input {
   background-color: lightblue;
 }
 
+strong {
+  font-weight: bold;
+  color: red;
+}
+
 button {
   font-size: 16px;
   font-weight: normal;

@@ -107,13 +107,23 @@ JSContext::JSContext(browser::Tab *l_tab) : ctx{duk_create_heap_default()} {
 
   duk_push_c_function(ctx.get(), JSBindings::getAttribute, 2);
   duk_put_global_string(ctx.get(), "getAttribute");
+
+  duk_push_c_function(ctx.get(), JSBindings::innerHTML_set, 2);
+  duk_put_global_string(ctx.get(), "innerHTML_set");
 }
 
 void JSContext::run(const std::string &code) {
   // returns non zero value on error and stores error message on top of stack.
   // We examin the stack top and report the JS error
-  if (duk_peval_lstring(ctx.get(), code.data(), code.size()) != 0) {
-    JSException("JS Error: " + std::string(duk_safe_to_string(ctx.get(), -1)));
+  try {
+    // returns non zero value on error and stores error message on top of stack.
+    // We examin the stack top and report the JS error
+    if (duk_peval_lstring(ctx.get(), code.data(), code.size()) != 0) {
+      JSException("JS Error: " +
+                  std::string(duk_safe_to_string(ctx.get(), -1)));
+    }
+  } catch (std::exception &except) {
+    std::print(stderr, "Unable to evaluate the following script:\n {}", code);
   }
 }
 

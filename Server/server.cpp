@@ -1,6 +1,8 @@
 #include "riolib.hpp"
 #include <cassert>
 #include <fcntl.h>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <netdb.h>
 #include <ranges>
@@ -19,6 +21,7 @@
 
 #define MAXLEN 4096
 #define MAXBUF 4096
+#define MY_DIR "/home/rhythmic_ocean/Desktop/Browser/Server"
 
 static std::vector<std::string> ENTRIES{};
 
@@ -166,6 +169,8 @@ int parse_uri(char *uri, char *filename, char *cgiargs) {
 
 std::string show_comments() {
   std::string out = "<!doctype html>";
+  out += "<script src=/comment.js > < / script > ";
+  out += "<strong></strong>";
   out += "<form action=add method=post>";
   out += "<p><input name=guest></p>";
   out += "<p><button>Sign the book!</button></p>";
@@ -209,6 +214,18 @@ std::string not_found(std::string_view url, std::string_view method) {
   return out;
 }
 
+std::string get_file(std::string str) {
+  std::filesystem::path jsPath = std::filesystem::path(MY_DIR) / str;
+  std::ifstream file(jsPath);
+  if (!file.is_open()) {
+    std::cerr << ("Unable to open " + std::string(jsPath) + "\n");
+    return "";
+  }
+  std::ostringstream ss;
+  ss << file.rdbuf();
+  return ss.str();
+}
+
 std::pair<std::string, std::string>
 do_request(std::string_view method, std::string_view url,
            std::unordered_map<std::string, std::string> &headers,
@@ -218,6 +235,8 @@ do_request(std::string_view method, std::string_view url,
   } else if (method == "POST" && url == "/add") {
     auto params = form_decode(body);
     return {"200 OK", add_entry(params)};
+  } else if (method == "GET" && url == "/comment.js") {
+    return {"200 OK", get_file(std::move("comment.js"))};
   } else {
     return {"404 Not Found", not_found(url, method)};
   }
