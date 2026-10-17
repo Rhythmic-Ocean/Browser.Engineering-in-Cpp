@@ -1,2 +1,28 @@
-<script src=test1.js></script>
-dsfsf
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Input Validation Test</title>
+</head>
+
+<body>
+  <script src=test1.js></script>
+  <h1>Testing querySelectorAll</h1>
+
+  <form>
+    <p>Username:</p>
+    <input name="username" value="John">
+
+    <p>Bio (over 100 characters):</p>
+    <input name="bio"
+      value="This is a very long biography intended to test our JavaScript input validation code. It contains well over one hundred characters and should trigger a warning.">
+
+    <p>Email:</p>
+    <input name="email" value="john@example.com">
+
+    <p>Age:</p>
+    <input name="age" value="21">
+  </form>
+</body>
+
+</html>

@@ -31,10 +31,12 @@ class JSContext {
 public:
   std::unordered_map<Item *, int> node_to_handler{};
   std::unordered_map<int, Item *> handler_to_node{};
+
   browser::Tab *tab{};
   std::unique_ptr<duk_context, DukDeleter> ctx;
   JSContext(browser::Tab *tab);
 
   void run(const std::string &code);
+  void dispatch_event(std::string type, Item *etl);
 };
 } // namespace jsContext

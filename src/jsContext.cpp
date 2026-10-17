@@ -4,20 +4,49 @@
 #include "duktape.h"
 #include "helpers.hpp"
 #include <duk_config.h>
-#include <exception>
 #include <print>
 
 using namespace jsContext;
 
 class JSBindings {
 public:
+  static duk_ret_t innerHTML_set(duk_context *ctx) {
+    JSContext *js = getJSContext(ctx);
+    std::string str{
+        std::format("<html><body>{}</body></html>", duk_get_string(ctx, -1))};
+    int handle = duk_get_int(ctx, -2);
+
+    auto doc = Parser::HTMLParser(str).parse();
+    auto &new_nodes = doc->m_children[0]->m_children;
+    auto elt = js->handler_to_node[handle];
+    for (auto &node : new_nodes) {
+      elt->m_children.push_back(std::move(node));
+    }
+    for (auto &child : elt->m_children) {
+      child->m_parent = elt;
+    }
+    js->tab->render();
+    return 0;
+  }
+
+  static duk_ret_t getAttribute(duk_context *ctx) {
+    JSContext *js = getJSContext(ctx);
+    std::string attr = duk_get_string(ctx, -1);
+    int handle = duk_get_int(ctx, -2);
+    Tag *tag = static_cast<Tag *>(js->handler_to_node[handle]);
+    if (tag->m_attributes.contains(attr)) {
+      duk_push_string(ctx, tag->m_attributes[attr].c_str());
+    } else {
+
+      duk_push_undefined(ctx);
+    }
+    return 1;
+  }
+
   static duk_ret_t querySelectorAll(duk_context *ctx) {
+    JSContext *js = getJSContext(ctx);
     std::string selector_text = duk_safe_to_string(ctx, -1);
     auto selector = Parser::CSSParser(selector_text).selector();
-    duk_push_heap_stash(ctx);
-    duk_get_prop_string(ctx, -1, "js_context");
-    JSContext *js = static_cast<JSContext *>(duk_get_pointer(ctx, -1));
-    duk_pop_2(ctx);
     browser::Tab *tab = js->tab;
     auto nodes = hlp::tree_to_list(tab->m_rootNode.get());
     duk_idx_t arr_indx = duk_push_array(ctx);
@@ -50,6 +79,14 @@ public:
     }
     return nth_map[item];
   }
+
+  static JSContext *getJSContext(duk_context *ctx) {
+    duk_push_heap_stash(ctx);
+    duk_get_prop_string(ctx, -1, "js_context");
+    JSContext *js = static_cast<JSContext *>(duk_get_pointer(ctx, -1));
+    duk_pop_2(ctx);
+    return js;
+  }
 };
 
 JSContext::JSContext(browser::Tab *l_tab) : ctx{duk_create_heap_default()} {
@@ -67,17 +104,31 @@ JSContext::JSContext(browser::Tab *l_tab) : ctx{duk_create_heap_default()} {
 
   duk_push_c_function(ctx.get(), JSBindings::querySelectorAll, 1);
   duk_put_global_string(ctx.get(), "querySelectorAll");
+
+  duk_push_c_function(ctx.get(), JSBindings::getAttribute, 2);
+  duk_put_global_string(ctx.get(), "getAttribute");
 }
 
 void JSContext::run(const std::string &code) {
-  try {
-    // returns non zero value on error and stores error message on top of stack.
-    // We examin the stack top and report the JS error
-    if (duk_peval_lstring(ctx.get(), code.data(), code.size()) != 0) {
-      JSException("JS Error: " +
-                  std::string(duk_safe_to_string(ctx.get(), -1)));
-    }
-  } catch (std::exception &except) {
-    std::print(stderr, "Unable to evaluate the following script:\n {}", code);
+  // returns non zero value on error and stores error message on top of stack.
+  // We examin the stack top and report the JS error
+  if (duk_peval_lstring(ctx.get(), code.data(), code.size()) != 0) {
+    JSException("JS Error: " + std::string(duk_safe_to_string(ctx.get(), -1)));
   }
+}
+
+void JSContext::dispatch_event(std::string type, Item *etl) {
+  int handle = -1;
+  if (node_to_handler.contains(etl)) {
+    handle = node_to_handler[etl];
+  }
+  std::string eval_string =
+      std::format("new Node({}).dispatchEvent(\"{}\")", handle, type);
+  if (duk_peval_lstring(ctx.get(), eval_string.c_str(), eval_string.size()) !=
+      0) {
+    std::println(stderr, "Failed dispatching event:{} for the Tag: {}", type,
+                 etl->m_text);
+    std::println(stderr, "Error: {}", duk_safe_to_string(ctx.get(), -1));
+  }
+  duk_pop(ctx.get());
 }

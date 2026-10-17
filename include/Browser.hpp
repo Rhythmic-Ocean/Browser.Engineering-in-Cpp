@@ -50,10 +50,10 @@ private:
   std::vector<std::string_view> get_css_links(const std::vector<Item *> &list);
   std::vector<std::string_view> get_js_links(const std::vector<Item *> &list);
   void scrolldown();
-  void render();
   void submit_form(Tag *tag);
 
 public:
+  void render();
   void go_back();
   std::vector<url::URL> m_history{};
   void click(float x, float y, SDL_Window *window);
