@@ -32,10 +32,10 @@ public:
   std::unique_ptr<Item> m_rootNode{};
 
 private:
+  Layout::FontCache *m_fontCache{};
   Layout::LayoutContext ctx{};
   Parser::StyleSheet m_rules{};
   TTF_TextEngine *m_engine{};
-  Layout::FontCache *m_fontCache{};
   std::unique_ptr<Layout::Layout> m_document{};
   float tab_height{};
   Item *m_focus{nullptr};
@@ -113,6 +113,7 @@ public:
 
 class Browser {
 public:
+  std::unique_ptr<Layout::FontCache> m_fontCache{};
   std::vector<std::unique_ptr<Tab>> tabs{};
   Tab *active_tab{};
   std::unique_ptr<TTF_Text, Layout::TextDeleter> url_name{};
@@ -121,7 +122,6 @@ public:
   std::unique_ptr<SDL_Window, WindowDeleter> m_window;
   std::unique_ptr<SDL_Renderer, RendererDeleter> m_renderer;
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine{};
-  std::unique_ptr<Layout::FontCache> m_fontCache{};
   bool is_Running;
   int m_width{};
   int m_height{};
