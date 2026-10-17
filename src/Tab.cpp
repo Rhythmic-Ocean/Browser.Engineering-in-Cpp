@@ -212,13 +212,15 @@ void Tab::click(float x, float y, SDL_Window *window) {
     if (elt->getType() == ItemType::TAG) {
       auto *tag = static_cast<Tag *>(elt);
       if (tag->m_text == "a" && tag->m_attributes.contains("href")) {
-        m_js->dispatch_event("click", elt);
+        if (m_js->dispatch_event("click", elt))
+          return;
         url::URL url = l_url.resolve(tag->m_attributes["href"]);
         load(std::move(url));
         return;
         // when the user clicks on input's box
       } else if (tag->m_text == "input") {
-        m_js->dispatch_event("click", elt);
+        if (m_js->dispatch_event("click", elt))
+          return;
         m_focus = elt;
         m_focus->focus = true;
         SDL_StartTextInput(window);
@@ -228,7 +230,8 @@ void Tab::click(float x, float y, SDL_Window *window) {
       // when button's clicked we bubble up the DOM until we get the form and
       // the action it wants us to perfrom
       else if (tag->m_text == "button") {
-        m_js->dispatch_event("click", elt);
+        if (m_js->dispatch_event("click", elt))
+          return;
         while (elt) {
           assert(elt->getType() == ItemType::TAG && "Encountered non-tag item "
                                                     "while bubbling up from "
@@ -279,7 +282,8 @@ void Tab::go_back() {
 void Tab::handle_special_keys(SDL_Keycode key) {
   if (m_focus == nullptr)
     return;
-  m_js->dispatch_event("keydown", m_focus);
+  if (m_js->dispatch_event("keydown", m_focus))
+    return;
   auto *tag = static_cast<Tag *>(m_focus);
   switch (key) {
   case SDLK_BACKSPACE: {
@@ -295,7 +299,8 @@ void Tab::handle_special_keys(SDL_Keycode key) {
 void Tab::handle_input(std::string str) {
   if (m_focus == nullptr)
     return;
-  m_js->dispatch_event("keydown", m_focus);
+  if (m_js->dispatch_event("keydown", m_focus))
+    return;
   auto *tag = static_cast<Tag *>(m_focus);
   tag->m_attributes["value"] += str;
   render();
@@ -303,7 +308,8 @@ void Tab::handle_input(std::string str) {
 }
 
 void Tab::submit_form(Tag *tag) {
-  m_js->dispatch_event("submit", tag);
+  if (m_js->dispatch_event("submit", tag))
+    return;
   std::vector<Tag *> inputTags{};
   std::vector<Item *> nodes = hlp::tree_to_list(static_cast<Item *>(tag));
   for (auto &node : nodes) {

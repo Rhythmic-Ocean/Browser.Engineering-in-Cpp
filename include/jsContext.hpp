@@ -37,6 +37,6 @@ public:
   JSContext(browser::Tab *tab);
 
   void run(const std::string &code);
-  void dispatch_event(std::string type, Item *etl);
+  bool dispatch_event(std::string type, Item *etl);
 };
 } // namespace jsContext

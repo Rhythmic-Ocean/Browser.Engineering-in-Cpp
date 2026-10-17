@@ -202,7 +202,7 @@ form_decode(std::string_view body) {
 }
 
 std::string add_entry(std::unordered_map<std::string, std::string> &params) {
-  if (params.contains("guest")) {
+  if (params.contains("guest") && params["guest"].size() <= 100) {
     ENTRIES.emplace_back(params["guest"] + " was here!!");
   }
   return show_comments();

@@ -127,18 +127,21 @@ void JSContext::run(const std::string &code) {
   }
 }
 
-void JSContext::dispatch_event(std::string type, Item *etl) {
+bool JSContext::dispatch_event(std::string type, Item *etl) {
   int handle = -1;
   if (node_to_handler.contains(etl)) {
     handle = node_to_handler[etl];
   }
-  std::string eval_string =
-      std::format("new Node({}).dispatchEvent(\"{}\")", handle, type);
+  std::string eval_string = std::format(
+      "new Node({}).dispatchEvent(new Event(\"{}\"))", handle, type);
   if (duk_peval_lstring(ctx.get(), eval_string.c_str(), eval_string.size()) !=
       0) {
     std::println(stderr, "Failed dispatching event:{} for the Tag: {}", type,
                  etl->m_text);
     std::println(stderr, "Error: {}", duk_safe_to_string(ctx.get(), -1));
   }
+  bool def = duk_get_boolean(ctx.get(), -1);
   duk_pop(ctx.get());
+  // flipping it, so if they want default, we return false, else we return true
+  return !def;
 }

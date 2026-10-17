@@ -1,6 +1,7 @@
 #include "helpers.hpp"
 #include "layout.hpp"
 #include <cassert>
+#include <cmath>
 #include <iostream>
 
 using namespace Layout;
@@ -177,11 +178,24 @@ std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {
       text = "";
     }
   }
+
+  int iWidth;
   TTF_SetTextString(m_text.get(), text.c_str(), text.size());
+
+  TTF_GetTextSize(m_text.get(), &iWidth, nullptr);
+  // Reseat m_text if text size is too big to fit in the default input box
+  float fWidth = static_cast<float>(iWidth);
+  if (fWidth != 0 && fWidth > INPUT_WIDTH_PX) {
+    float shrink_by = INPUT_WIDTH_PX / fWidth;
+    size_t display_text_num = static_cast<size_t>(
+        std::round(static_cast<float>(text.size()) * shrink_by));
+    TTF_SetTextString(m_text.get(), text.substr(0, display_text_num).c_str(),
+                      text.size());
+  }
+
   auto txt = std::make_unique<DrawText>(m_text.get(), m_start_x, m_start_y);
   cmds.push_back(std::move(txt));
   if (m_node->focus) {
-    int iWidth;
     TTF_GetTextSize(m_text.get(), &iWidth, nullptr);
     float cx = m_start_x + static_cast<float>(iWidth);
     cmds.push_back(std::make_unique<DrawLine>(
