@@ -24,16 +24,18 @@ The original book's implementation is in python.
 - Fixed some memory bug involving destructor precedence (TTF_Fonts were getting destroyed before some TTF_Text causing the Browser to hang during close unless u forcefully kill it.)
 
 - Minimal Browser API usage demo:
- 
+
   ![Output.txt](assets/gifs/chp9-complete-1.gif)
 
-### Requirements for anybody wanting to run it 
+### Requirements for anybody wanting to run it
+
 (Only works on Linux for now)
 
 - CMake >= 4.3.0
 - C++20 capable compiler
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
+- GCC >= 16.2.1
 
 > NOTE: Duktape engine has been included with CMAKE and is under externals/
 
@@ -76,4 +78,3 @@ The original book's implementation is in python.
 - The percentage encoding/decoding implemented here (at include/url.hpp and server/riolib.hpp) are taken and somewhat modified from here [Github](https://github.com/gofer/percent_encoding)
 - The OpenSSL configuration for TLS handshake was almost entirely copied from [OpenSSL-TLS-Client-Block Guide](https://docs.openssl.org/master/man7/ossl-guide-tls-client-block/#setting-the-servers-hostname)
 - The multibyte character parsing algorithm at src/BlockLayout.cpp was heavily AI Assisted [Gemini](https://gemini.google.com)
-

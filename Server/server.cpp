@@ -1,10 +1,14 @@
+#include "Random.hpp"
 #include "riolib.hpp"
 #include <cassert>
+#include <climits>
 #include <fcntl.h>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <netdb.h>
+#include <random>
 #include <ranges>
 #include <sstream>
 #include <stdio.h>
@@ -23,16 +27,37 @@
 #define MAXBUF 4096
 #define MY_DIR "/home/rhythmic_ocean/Desktop/Browser/Server"
 
-static std::vector<std::string> ENTRIES{};
+typedef std::unordered_map<std::string, std::string> SessionData;
+std::unordered_map<std::string, SessionData> SESSIONS{};
+/*
+ * token:{
+ *      "user" = username
+ * }
+ *
+ *
+ * eg:
+ * "60000"{
+ *      "user" = "smone"
+ * }
+ * */
+std::unordered_map<std::string, std::string> LOGINS{
+    {"smthingsmthing", "smonesmone"},
+    {"othersmthing", "othersmone"},
+};
+
+static std::vector<std::string> ENTRIES{"Ligma Balls by YoursTruely"};
 
 void do_it(int fd);
 std::unordered_map<std::string, std::string> read_headers(rio_t *rp);
-int parse_uri(char *uri, char *filename, char *cgiargs);
 std::pair<std::string, std::string>
-do_request(std::string_view method, std::string_view url,
+do_request(SessionData &session, std::string_view method, std::string_view url,
            std::unordered_map<std::string, std::string> &headers,
            std::string_view body);
-std::string show_comments();
+std::string show_comments(SessionData &session);
+std::string login_form(SessionData &session);
+std::pair<std::string, std::string>
+do_login(SessionData &session,
+         std::unordered_map<std::string, std::string> &params);
 
 extern char **environ;
 
@@ -95,6 +120,12 @@ void do_it(int fd) {
   assert((method == "GET" || method == "POST") && "Method not GET or POST");
   std::unordered_map<std::string, std::string> headers = read_headers(&rio);
   std::string body{};
+  std::string token{};
+  if (headers.contains("cookie")) {
+    token = headers["cookie"].substr(std::string("token=").size());
+  } else {
+    token = std::to_string(Random::get<int>(0, INT_MAX));
+  }
   if (headers.contains("content-length")) {
     int length = std::stoi(headers["content-length"]);
     std::string buf(length, '\0');
@@ -105,8 +136,13 @@ void do_it(int fd) {
     }
     body = riolib::PercentageDecoding::decode(std::move(buf));
   }
-  auto [status, response_body] = do_request(method, uri, headers, body);
+  auto &session = SESSIONS[token];
+  auto [status, response_body] =
+      do_request(session, method, uri, headers, body);
   std::string response = "HTTP/1.0 " + status + "\r\n";
+  if (!headers.contains("cookie")) {
+    response += std::format("Set-Cookie: token={}\r\n", token);
+  }
   response +=
       "Content-Length: " + std::to_string(response_body.size()) + "\r\n";
   response += "\r\n" + response_body;
@@ -142,39 +178,18 @@ std::unordered_map<std ::string, std::string> read_headers(rio_t *rp) {
   return headers;
 }
 
-int parse_uri(char *uri, char *filename, char *cgiargs) {
-  char *ptr;
-
-  if (!strstr(uri, "cgi-bin")) { // means they are static content
-    strcpy(cgiargs, "");
-    strcpy(filename, ".");
-    strcat(filename, uri);
-    if (uri[strlen(uri) - 1] == '/') {
-      strcat(filename, "home.html");
-    }
-    return 1;
-  } else { // means dynamic content
-    ptr = strchr(uri, '?');
-    if (*ptr) {
-      strcpy(cgiargs, ptr + 1);
-      *ptr = '\0';
-    } else {
-      strcpy(cgiargs, "");
-    }
-    strcpy(filename, ".");
-    strcat(filename, uri);
-    return 0;
-  }
-}
-
-std::string show_comments() {
+std::string show_comments(SessionData &session) {
   std::string out = "<!doctype html>";
-  out += "<script src=/comment.js > < / script > ";
-  out += "<strong></strong>";
-  out += "<form action=add method=post>";
-  out += "<p><input name=guest></p>";
-  out += "<p><button>Sign the book!</button></p>";
-  out += "</form>";
+  if (session.contains("user")) {
+    out += "<strong></strong>";
+    out += "<h1>Hello, " + session["user"] + "</h1>";
+    out += "<form action=add method=post>";
+    out += "<p><input name=guest></p>";
+    out += "<p><button>Sign the book!</button></p>";
+    out += "</form>";
+  } else {
+    out += "<a href=/login>Sign in to write in the guest book</a>";
+  }
   for (auto &entry : ENTRIES) {
     out += "<p>" + entry + "</p>";
   }
@@ -201,11 +216,14 @@ form_decode(std::string_view body) {
   return params;
 }
 
-std::string add_entry(std::unordered_map<std::string, std::string> &params) {
+std::string add_entry(SessionData &session,
+                      std::unordered_map<std::string, std::string> &params) {
+  if (!session.contains("user"))
+    return "";
   if (params.contains("guest") && params["guest"].size() <= 100) {
-    ENTRIES.emplace_back(params["guest"] + " was here!!");
+    ENTRIES.emplace_back(params["guest"] + " by " + session["user"]);
   }
-  return show_comments();
+  return show_comments(session);
 }
 
 std::string not_found(std::string_view url, std::string_view method) {
@@ -227,17 +245,49 @@ std::string get_file(std::string str) {
 }
 
 std::pair<std::string, std::string>
-do_request(std::string_view method, std::string_view url,
+do_request(SessionData &session, std::string_view method, std::string_view url,
            std::unordered_map<std::string, std::string> &headers,
            std::string_view body) {
   if (method == "GET" && url == "/") {
-    return {"200 OK", show_comments()};
+    return {"200 OK", show_comments(session)};
+  } else if (method == "POST" && url == "/") {
+    auto params = form_decode(body);
+    return do_login(session, params);
+  } else if (method == "GET" && url == "/login") {
+    return {"200 OK", login_form(session)};
   } else if (method == "POST" && url == "/add") {
     auto params = form_decode(body);
-    return {"200 OK", add_entry(params)};
+    return {"200 OK", add_entry(session, params)};
   } else if (method == "GET" && url == "/comment.js") {
     return {"200 OK", get_file(std::move("comment.js"))};
   } else {
     return {"404 Not Found", not_found(url, method)};
+  }
+}
+
+std::string login_form(SessionData &session) {
+  std::string body{};
+  body = "<!doctype html>";
+  body += "<form action=/ method=post>";
+  body += "<p>Username: <input name=username></p>";
+  body += "<p>Password: <input name=password type=password></p>";
+  body += "<p><button>Log in</button></p>";
+  body += "</form>";
+  return body;
+}
+
+std::pair<std::string, std::string>
+do_login(SessionData &session,
+         std::unordered_map<std::string, std::string> &params) {
+  std::string username = params["username"];
+  std::string password = params["password"];
+  if (LOGINS.contains(username) && LOGINS[username] == password) {
+    session["user"] = username;
+    return {"200 OK", show_comments(session)};
+  } else {
+    std::string out{};
+    out = "<!doctype html>";
+    out += std::format("<h1>Invalid password for {}</h1>", username);
+    return {"401 Unauthorized", out};
   }
 }
