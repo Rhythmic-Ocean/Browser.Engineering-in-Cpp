@@ -75,12 +75,12 @@ class CSSParser {
   void literal(char literal);
   std::pair<std::string, std::string> pair();
   std::optional<char> ignore_until(const std::string &literals);
-  Selector *selector();
 
 public:
   CSSParser(std::string_view body) : m_body{body} {}
   std::unordered_map<std::string, std::string> body();
   StyleSheet parse();
+  Selector *selector();
 };
 
 class HTMLParser {

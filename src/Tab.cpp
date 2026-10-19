@@ -7,6 +7,7 @@
 #include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <cassert>
+#include <duk_config.h>
 #include <exception>
 #include <iterator>
 #include <string>
@@ -35,18 +36,37 @@ void Tab::paint_tree(Layout::Layout *layoutNode) {
 }
 
 void Tab::load(url::URL url, std::string payload) {
+  // load JSContext
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
   m_history.push_back(std::move(url));
   url::URL &l_url = m_history.back();
   std::string response = l_url.request(std::move(payload));
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
+  //
+  auto runtime_js = hlp::get_default_JS();
+  std::vector<Item *> itemList{hlp::tree_to_list(m_rootNode.get())};
+
+  m_js.emplace(this);
+  m_js->run(runtime_js);
+  // Extract all JS Links
+  std::vector<std::string_view> js_links = get_js_links(itemList);
+  // Extract all CSS links and apply to DOM
+  for (auto link : js_links) {
+    auto script_url = l_url.resolve(link);
+    std::string body{};
+    try {
+      body = script_url.request();
+    } catch (std::exception &exc) {
+      continue;
+    }
+    m_js->run(body);
+  }
 
   auto default_css = hlp::get_default_CSS();
   m_rules.clear();
   m_rules = Parser::CSSParser(default_css).parse();
-  std::vector<std::string_view> css_links =
-      get_links(hlp::tree_to_list(m_rootNode.get()));
+  std::vector<std::string_view> css_links = get_css_links(itemList);
   for (auto link : css_links) {
     auto style_url = l_url.resolve(link);
     std::string body{};
@@ -93,7 +113,8 @@ void Tab::draw(SDL_Renderer *renderer, float offset) {
 
 void Tab::style(Item *node, Parser::StyleSheet &rules) {
   //--NOTE: This inherite rules applies to all elements by default, and
-  //         is overidden by ANY other rules applied to the elements themseleves
+  //         is overidden by ANY other rules applied to the elements
+  //         themseleves
   for (auto &property : INHERITED_PROPERTIES) {
     if (node->m_parent) {
       node->m_style[property.first] = node->m_parent->m_style[property.first];
@@ -140,7 +161,8 @@ void Tab::style(Item *node, Parser::StyleSheet &rules) {
   }
 }
 
-std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
+std::vector<std::string_view>
+Tab::get_css_links(const std::vector<Item *> &list) {
   std::vector<std::string_view> links{};
   for (auto *node : list) {
     if ((node->getType() != ItemType::TAG) || node->m_text != "link")
@@ -150,6 +172,20 @@ std::vector<std::string_view> Tab::get_links(const std::vector<Item *> &list) {
     if (attributes.contains("rel") && attributes["rel"] == "stylesheet" &&
         attributes.contains("href"))
       links.push_back(tag->m_attributes["href"]);
+  }
+  return links;
+}
+
+std::vector<std::string_view>
+Tab::get_js_links(const std::vector<Item *> &list) {
+  std::vector<std::string_view> links{};
+  for (auto *node : list) {
+    if ((node->getType() != ItemType::TAG) || node->m_text != "script")
+      continue;
+    auto *tag = static_cast<Tag *>(node);
+    auto &attributes = tag->m_attributes;
+    if (attributes.contains("src"))
+      links.push_back(tag->m_attributes["src"]);
   }
   return links;
 }
@@ -176,11 +212,15 @@ void Tab::click(float x, float y, SDL_Window *window) {
     if (elt->getType() == ItemType::TAG) {
       auto *tag = static_cast<Tag *>(elt);
       if (tag->m_text == "a" && tag->m_attributes.contains("href")) {
+        if (m_js->dispatch_event("click", elt))
+          return;
         url::URL url = l_url.resolve(tag->m_attributes["href"]);
         load(std::move(url));
         return;
         // when the user clicks on input's box
       } else if (tag->m_text == "input") {
+        if (m_js->dispatch_event("click", elt))
+          return;
         m_focus = elt;
         m_focus->focus = true;
         SDL_StartTextInput(window);
@@ -190,6 +230,8 @@ void Tab::click(float x, float y, SDL_Window *window) {
       // when button's clicked we bubble up the DOM until we get the form and
       // the action it wants us to perfrom
       else if (tag->m_text == "button") {
+        if (m_js->dispatch_event("click", elt))
+          return;
         while (elt) {
           assert(elt->getType() == ItemType::TAG && "Encountered non-tag item "
                                                     "while bubbling up from "
@@ -227,7 +269,8 @@ void Tab::go_back() {
     // pop back current page's URL
     m_history.pop_back();
     // Get the prev page's string URL
-    //--WARNING: We can't use the stale URL object cuz the connection's already
+    //--WARNING: We can't use the stale URL object cuz the connection's
+    // already
     // closed when it did .request back then
     url::URL url = url::URL(m_history.back().m_url);
     // remove the empty index
@@ -238,6 +281,8 @@ void Tab::go_back() {
 
 void Tab::handle_special_keys(SDL_Keycode key) {
   if (m_focus == nullptr)
+    return;
+  if (m_js->dispatch_event("keydown", m_focus))
     return;
   auto *tag = static_cast<Tag *>(m_focus);
   switch (key) {
@@ -254,6 +299,8 @@ void Tab::handle_special_keys(SDL_Keycode key) {
 void Tab::handle_input(std::string str) {
   if (m_focus == nullptr)
     return;
+  if (m_js->dispatch_event("keydown", m_focus))
+    return;
   auto *tag = static_cast<Tag *>(m_focus);
   tag->m_attributes["value"] += str;
   render();
@@ -261,6 +308,8 @@ void Tab::handle_input(std::string str) {
 }
 
 void Tab::submit_form(Tag *tag) {
+  if (m_js->dispatch_event("submit", tag))
+    return;
   std::vector<Tag *> inputTags{};
   std::vector<Item *> nodes = hlp::tree_to_list(static_cast<Item *>(tag));
   for (auto &node : nodes) {

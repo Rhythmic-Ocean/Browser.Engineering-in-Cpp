@@ -2,7 +2,6 @@
 #include "helpers.hpp"
 #include <cctype>
 #include <functional>
-#include <iostream>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -175,7 +174,6 @@ std::string word(std::string &body, size_t &indx, bool inQuotes) {
 
 bool is_literal(std::string &body, size_t &indx, char l_literal) {
   if (indx < body.size() && body[indx] == l_literal) {
-    ++indx;
     return true;
   }
   return false;
@@ -214,6 +212,7 @@ std::vector<std::string> HTMLParser::parse_attrib(std::string &body) {
         continue;
       }
       l_word += '=';
+      ++indx;
       whiteSpace(body, indx);
       if (!is_literal(body, indx, '"')) {
         l_word += word(body, indx, false);

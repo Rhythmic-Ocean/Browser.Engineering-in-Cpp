@@ -8,17 +8,23 @@ The original book's implementation is in python.
 
 > I aim to have as little AI generated code as possible in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work.
 
-### Current Status (Latest Oct 12)
+### Current Status (Latest Oct 17)
 
-#### Chapter 8 - Completed (Oct 12 2026)
+#### Chapter 9 - Completed (Oct 17 2026)
 
-- Supports basic POST requests.
-- Server/ directory had a minimal static server to test the Browser
-- Supports HTML Form as well as Input and Buttom Widgets
-- Supports Percentage Encoding/Decoding, not completly but it's self-implemented so works mostly
+- Integrated an EMCAScript E5/E5.1 compliant JS engine->[Duktape](https://duktape.org/)
+- The following basic Browser API have been implemented:
+  - console.log()
+  - document.querySelectAll()
+  - Node.getAttribute()
+  - Node.addEventListener
+  - Node.innerHTML
+- The Server also serves comment.js as specified in the book with the above API demos
+- Made the text inside input box auto scroll once there's too much to fit (demoed below!)
+- Fixed some memory bug involving destructor precedence (TTF_Fonts were getting destroyed before some TTF_Text causing the Browser to hang during close unless u forcefully kill it.)
 
-- Minimal POST request demo:
-  ![Output.txt](assets/gifs/chp8-complete-1.gif)
+- Minimal Browser API usage demo:
+  ![Output.txt](assets/gifs/chp9-complete-1.gif)
 
 ### Requirements for anybody wanting to run it
 
@@ -26,6 +32,7 @@ The original book's implementation is in python.
 - C++20 capable compiler
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
+  > NOTE: Duktape engine has been included with CMAKE and is under externals/
 
 ### Steps (On Linux)
 

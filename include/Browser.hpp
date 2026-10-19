@@ -2,6 +2,7 @@
 
 #include "Parser.hpp"
 #include "helpers.hpp"
+#include "jsContext.hpp"
 #include "layout.hpp"
 #include "url.hpp"
 #include <SDL3/SDL_events.h>
@@ -9,6 +10,7 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <memory>
+#include <optional>
 
 namespace browser {
 
@@ -27,15 +29,17 @@ struct TabContext {
 
 class Tab {
 public:
+  std::unique_ptr<Item> m_rootNode{};
+
 private:
+  Layout::FontCache *m_fontCache{};
   Layout::LayoutContext ctx{};
   Parser::StyleSheet m_rules{};
-  std::unique_ptr<Item> m_rootNode{};
   TTF_TextEngine *m_engine{};
-  Layout::FontCache *m_fontCache{};
   std::unique_ptr<Layout::Layout> m_document{};
   float tab_height{};
   Item *m_focus{nullptr};
+  std::optional<jsContext::JSContext> m_js{};
 
   inline static float m_scroll_y;
   inline static float m_max_y;
@@ -43,12 +47,13 @@ private:
 
   void paint_tree(Layout::Layout *layoutNode);
   void style(Item *node, Parser::StyleSheet &rules);
-  std::vector<std::string_view> get_links(const std::vector<Item *> &list);
+  std::vector<std::string_view> get_css_links(const std::vector<Item *> &list);
+  std::vector<std::string_view> get_js_links(const std::vector<Item *> &list);
   void scrolldown();
-  void render();
   void submit_form(Tag *tag);
 
 public:
+  void render();
   void go_back();
   std::vector<url::URL> m_history{};
   void click(float x, float y, SDL_Window *window);
@@ -108,6 +113,7 @@ public:
 
 class Browser {
 public:
+  std::unique_ptr<Layout::FontCache> m_fontCache{};
   std::vector<std::unique_ptr<Tab>> tabs{};
   Tab *active_tab{};
   std::unique_ptr<TTF_Text, Layout::TextDeleter> url_name{};
@@ -116,7 +122,6 @@ public:
   std::unique_ptr<SDL_Window, WindowDeleter> m_window;
   std::unique_ptr<SDL_Renderer, RendererDeleter> m_renderer;
   std::unique_ptr<TTF_TextEngine, EngineDeleter> m_engine{};
-  std::unique_ptr<Layout::FontCache> m_fontCache{};
   bool is_Running;
   int m_width{};
   int m_height{};
