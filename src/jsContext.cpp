@@ -19,6 +19,7 @@ public:
     auto doc = Parser::HTMLParser(str).parse();
     auto &new_nodes = doc->m_children[0]->m_children;
     auto elt = js->handler_to_node[handle];
+    elt->m_children.clear();
     for (auto &node : new_nodes) {
       elt->m_children.push_back(std::move(node));
     }

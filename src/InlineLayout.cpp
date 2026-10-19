@@ -189,7 +189,8 @@ std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {
     float shrink_by = INPUT_WIDTH_PX / fWidth;
     size_t display_text_num = static_cast<size_t>(
         std::round(static_cast<float>(text.size()) * shrink_by));
-    TTF_SetTextString(m_text.get(), text.substr(0, display_text_num).c_str(),
+    TTF_SetTextString(m_text.get(),
+                      text.substr(text.size() - display_text_num).c_str(),
                       text.size());
   }
 

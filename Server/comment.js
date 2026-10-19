@@ -6,6 +6,8 @@ function lengthCheck() {
   allow_submit = value.length <= 100;
   if (!allow_submit) {
     strong.innerHTML = "Comment too long!";
+  } else {
+    strong.innerHTML = "";
   }
 }
 
