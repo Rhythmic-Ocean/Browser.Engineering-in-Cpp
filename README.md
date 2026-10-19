@@ -24,17 +24,20 @@ The original book's implementation is in python.
 - Fixed some memory bug involving destructor precedence (TTF_Fonts were getting destroyed before some TTF_Text causing the Browser to hang during close unless u forcefully kill it.)
 
 - Minimal Browser API usage demo:
+ 
   ![Output.txt](assets/gifs/chp9-complete-1.gif)
 
-### Requirements for anybody wanting to run it
+### Requirements for anybody wanting to run it 
+(Only works on Linux for now)
 
 - CMake >= 4.3.0
 - C++20 capable compiler
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
-  > NOTE: Duktape engine has been included with CMAKE and is under externals/
 
-### Steps (On Linux)
+> NOTE: Duktape engine has been included with CMAKE and is under externals/
+
+### Steps
 
 - Fork the repo
 - Clone it and get inside the directory
@@ -63,12 +66,14 @@ The original book's implementation is in python.
 
 - The Browser will automatically take you to your localhost:8000, if you wanna navigate external websites (only <https://browser.engineering/> even works somewhat right now, anything else could most likely just crash the browser), just edit the link in the URL tab
 
-### Next Step: Chapter 9
+### Next Step: Chapter 10
 
 ### Credits (Other Places I got some codes from)
 
+- [Duktape](https://duktape.org/) and their example programs at their [Github](https://github.com/svaarala/duktape) were really helpful!
 - The minimal Server inside Server/ is modified from the TINY Server Implementation in [CS:APP book](https://csapp.cs.cmu.edu/3e/students.html) Chapter 11: Network Programming
 - include/rio.hpp and include/rio.cpp is also modified version of the Robust Input Output (RIO) library implemented in [CS:APP book](https://csapp.cs.cmu.edu/3e/students.html) Chapter 10 System-Level I/O
 - The percentage encoding/decoding implemented here (at include/url.hpp and server/riolib.hpp) are taken and somewhat modified from here [Github](https://github.com/gofer/percent_encoding)
 - The OpenSSL configuration for TLS handshake was almost entirely copied from [OpenSSL-TLS-Client-Block Guide](https://docs.openssl.org/master/man7/ossl-guide-tls-client-block/#setting-the-servers-hostname)
 - The multibyte character parsing algorithm at src/BlockLayout.cpp was heavily AI Assisted [Gemini](https://gemini.google.com)
+
