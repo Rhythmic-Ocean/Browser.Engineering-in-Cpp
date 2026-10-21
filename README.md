@@ -32,7 +32,7 @@ The original book's implementation is in python.
 (Only works on Linux for now)
 
 - CMake >= 4.3.0
-- C++20 capable compiler
+- C++23 capable compiler (remove instances of std::print/println usage to make it C++20 compilable)
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
 - GCC >= 16.2.1

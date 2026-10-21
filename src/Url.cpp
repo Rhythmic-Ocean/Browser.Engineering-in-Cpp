@@ -5,6 +5,7 @@
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <cassert>
+#include <format>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -14,6 +15,12 @@
 #include <unordered_map>
 
 using namespace url;
+
+std::unordered_map<std::string, std::string> &getCookieJar() {
+  static std::unordered_map<std::string, std::string> COOKIE_JAR{};
+  return COOKIE_JAR;
+}
+
 void URL::parse() {
   size_t scheme_end{m_url.find("://")};
   if (scheme_end == std::string::npos) {
@@ -34,6 +41,7 @@ void URL::parse() {
   if (path_start == std::string::npos) {
     host = std::string_view(m_url).substr(host_start);
     path = "/";
+    m_url += "/";
   } else {
     host = std::string_view(m_url).substr(host_start, path_start - host_start);
     path = std::string_view(m_url).substr(path_start);
@@ -64,6 +72,11 @@ std::string URL::request(std::string payload) {
   }
   request += "Host: " + std::string(host) + "\r\n";
   request += "Connection: close\r\n";
+
+  if (getCookieJar().contains(host)) {
+    request += std::format("Cookie: {}\r\n", getCookieJar()[host]);
+  }
+
   request += "User-Agent: IHateCpp!!\r\n";
   request += "\r\n";
   if (!payload.empty())
@@ -92,8 +105,16 @@ std::string URL::request(std::string payload) {
       std::make_tuple(statusline[0], statusline[1], statusline[2]);
   ++indx;
   auto response_headers{parse_response(data, indx)};
-  assert(response_headers.find("transfer-encoding") == response_headers.end());
-  assert(response_headers.find("content-encoding") == response_headers.end());
+  assert(!response_headers.contains("transfer-encoding") &&
+         "HTTP response contains transfer-encoding parameter");
+  assert(!response_headers.contains("content-encoding") &&
+         "HTTP response contains content-encoding parameter");
+
+  if (response_headers.contains("set-cookie")) {
+    getCookieJar()[host] = std::move(response_headers["set-cookie"]);
+    response_headers.erase("set-cookie");
+  }
+
   auto content_view{data[indx].data()};
   return response.substr(response.find(content_view));
 }
