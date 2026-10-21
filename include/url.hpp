@@ -41,6 +41,7 @@ public:
   std::string request(std::string payload = "");
   URL resolve(std::string_view url);
   TTF_Text *get_ttfText(TTF_TextEngine *engine, TTF_Font *font);
+  std::string origin() const;
 
   friend std::ostream &operator<<(std::ostream &out, const URL &url);
 };

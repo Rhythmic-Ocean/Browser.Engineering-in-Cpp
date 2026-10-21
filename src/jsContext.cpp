@@ -10,6 +10,25 @@ using namespace jsContext;
 
 class JSBindings {
 public:
+  static duk_ret_t XMLHttpRequest_send(duk_context *ctx) {
+    JSContext *js = getJSContext(ctx);
+    std::string body = {};
+    if (duk_get_string(ctx, -1) != nullptr) {
+      body = duk_get_string(ctx, -1);
+    }
+    std::string url = duk_get_string(ctx, -2);
+    std::string method = duk_get_string(ctx, -3);
+    url::URL full_url = js->tab->m_history.back().resolve(url);
+
+    if (full_url.origin() != js->tab->m_history.back().origin()) {
+      throw JSException("Cross-origin XHR requests not allowed!");
+    }
+
+    auto out = full_url.request(body);
+    duk_push_string(ctx, out.c_str());
+    return 1;
+  }
+
   static duk_ret_t innerHTML_set(duk_context *ctx) {
     JSContext *js = getJSContext(ctx);
     std::string str{
@@ -111,6 +130,9 @@ JSContext::JSContext(browser::Tab *l_tab) : ctx{duk_create_heap_default()} {
 
   duk_push_c_function(ctx.get(), JSBindings::innerHTML_set, 2);
   duk_put_global_string(ctx.get(), "innerHTML_set");
+
+  duk_push_c_function(ctx.get(), JSBindings::XMLHttpRequest_send, 3);
+  duk_put_global_string(ctx.get(), "XMLHttpRequest_send");
 }
 
 void JSContext::run(const std::string &code) {

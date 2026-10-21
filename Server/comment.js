@@ -13,7 +13,10 @@ function lengthCheck() {
 
 var form = document.querySelectorAll("form")[0]
 form.addEventListener("submit", function (e) {
-  if (!allow_submit) e.preventDefault();
+  e.preventDefault();
+  x = new XMLHttpRequest();
+  x.open("GET", "http://127.0.0.1:8000/", false);
+  x.send();
 })
 
 var inputs = document.querySelectorAll("input");

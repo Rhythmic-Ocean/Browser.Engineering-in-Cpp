@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 #include <netdb.h>
-#include <random>
 #include <ranges>
 #include <sstream>
 #include <stdio.h>
@@ -180,6 +179,7 @@ std::unordered_map<std ::string, std::string> read_headers(rio_t *rp) {
 
 std::string show_comments(SessionData &session) {
   std::string out = "<!doctype html>";
+  out += "<script src=\"comment.js\"></script>";
   if (session.contains("user")) {
     out += "<strong></strong>";
     out += "<h1>Hello, " + session["user"] + "</h1>";
@@ -193,6 +193,7 @@ std::string show_comments(SessionData &session) {
   for (auto &entry : ENTRIES) {
     out += "<p>" + entry + "</p>";
   }
+  out += "</html>";
   return out;
 }
 

@@ -204,3 +204,7 @@ TTF_Text *URL::get_ttfText(TTF_TextEngine *engine, TTF_Font *font) {
   }
   return m_urlText.get();
 }
+
+std::string URL::origin() const {
+  return {scheme + "://" + host + ":" + m_port};
+}
