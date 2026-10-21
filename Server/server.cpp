@@ -181,6 +181,8 @@ std::string show_comments(SessionData &session) {
   std::string out = "<!doctype html>";
   out += "<script src=\"comment.js\"></script>";
   if (session.contains("user")) {
+    auto nonce = Random::get(0, 10000000);
+    session["nonce"] = nonce;
     out += "<strong></strong>";
     out += "<h1>Hello, " + session["user"] + "</h1>";
     out += "<form action=add method=post>";
@@ -220,6 +222,9 @@ form_decode(std::string_view body) {
 std::string add_entry(SessionData &session,
                       std::unordered_map<std::string, std::string> &params) {
   if (!session.contains("user"))
+    return "";
+  if (!session.contains("nonce") || !params.contains("nonce") ||
+      session["nonce"] != params["nonce"])
     return "";
   if (params.contains("guest") && params["guest"].size() <= 100) {
     ENTRIES.emplace_back(params["guest"] + " by " + session["user"]);
