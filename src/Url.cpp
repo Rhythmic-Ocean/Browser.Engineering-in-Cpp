@@ -8,6 +8,7 @@
 #include <format>
 #include <iostream>
 #include <ostream>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -111,7 +112,15 @@ std::string URL::request(std::string payload) {
          "HTTP response contains content-encoding parameter");
 
   if (response_headers.contains("set-cookie")) {
-    getCookieJar()[host] = std::move(response_headers["set-cookie"]);
+    auto cookie = std::move(response_headers["set-cookie"]);
+    if (cookie.contains(';')) {
+      size_t indx = cookie.find(';');
+      auto rest = cookie.substr(indx + 1);
+      constexpr char delim = ';';
+      for (auto param : std::views::split(rest, delim)) {
+      }
+    }
+    getCookieJar()[host] = cookie;
     response_headers.erase("set-cookie");
   }
 
