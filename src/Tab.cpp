@@ -7,9 +7,12 @@
 #include <SDL3/SDL_render.h>
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <duk_config.h>
 #include <exception>
 #include <iterator>
+#include <print>
+#include <ranges>
 #include <string>
 
 using namespace browser;
@@ -40,7 +43,25 @@ void Tab::load(url::URL url, std::string payload) {
   m_scroll_y = 0; // resetting scroll to top of page everytime new page's loaded
   m_history.push_back(std::move(url));
   url::URL &l_url = m_history.back();
-  std::string response = l_url.request(std::move(payload));
+
+  auto [headers, response] = l_url.request(l_url, std::move(payload));
+  allowed_origins.clear();
+
+  if (headers.contains("content-security-policy")) {
+    auto vew = std::views::split(headers["content-security-policy"], ' ');
+    std::vector<std::string> policies{};
+    for (auto v : vew) {
+      policies.push_back({v.begin(), v.end()});
+    }
+    if (!policies.empty() && policies[0] == "default-src") {
+      allowed_origins.clear();
+      for (auto &origins : policies | std::views::drop(1)) {
+        url::URL tempUrl = url::URL(origins);
+        allowed_origins.push_back(tempUrl.origin());
+      }
+    }
+  }
+
   Parser::HTMLParser parser{response};
   m_rootNode.reset(parser.parse()); // layout has to own the root node...
   //
@@ -51,12 +72,16 @@ void Tab::load(url::URL url, std::string payload) {
   m_js->run(runtime_js);
   // Extract all JS Links
   std::vector<std::string_view> js_links = get_js_links(itemList);
-  // Extract all CSS links and apply to DOM
+  // Extract all JS src and execute
   for (auto link : js_links) {
     auto script_url = l_url.resolve(link);
+    if (!allowed_request(script_url)) {
+      std::println(stderr, "Blocked script {} due to CSP", script_url.origin());
+      continue;
+    }
     std::string body{};
     try {
-      body = script_url.request();
+      body = script_url.request(l_url).second;
     } catch (std::exception &exc) {
       continue;
     }
@@ -71,7 +96,7 @@ void Tab::load(url::URL url, std::string payload) {
     auto style_url = l_url.resolve(link);
     std::string body{};
     try {
-      body = style_url.request();
+      body = style_url.request(l_url).second;
     } catch (std::exception &exc) {
       continue;
     }
@@ -335,4 +360,10 @@ void Tab::submit_form(Tag *tag) {
   url::URL &url = m_history.back();
   url::URL newUrl = url.resolve(tag->m_attributes["action"]);
   load(std::move(newUrl), std::move(body));
+}
+
+bool Tab::allowed_request(const url::URL &l_url) {
+  return allowed_origins.empty() ||
+         std::ranges::find(allowed_origins, (l_url.origin())) !=
+             allowed_origins.end();
 }

@@ -30,6 +30,7 @@ struct TabContext {
 class Tab {
 public:
   std::unique_ptr<Item> m_rootNode{};
+  std::vector<std::string> allowed_origins{};
 
 private:
   Layout::FontCache *m_fontCache{};
@@ -73,6 +74,7 @@ public:
       render();
     }
   }
+  bool allowed_request(const url::URL &l_url);
 };
 
 class Browser;

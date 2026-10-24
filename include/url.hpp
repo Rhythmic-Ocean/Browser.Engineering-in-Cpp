@@ -11,6 +11,10 @@
 #include <vector>
 
 namespace url {
+
+typedef std::unordered_map<std::string, std::string> Headers;
+typedef std::string Body;
+
 class URL {
   Client m_client{};
 
@@ -27,7 +31,7 @@ private:
   void parse();
   void get_response(std::string &response);
   void get_http_response(std::string &response);
-  std::unordered_map<std::string, std::string_view>
+  std::unordered_map<std::string, std::string>
   parse_response(std::vector<std::string_view> response, size_t &indx);
 
 public:
@@ -38,7 +42,8 @@ public:
   URL(URL &&) noexcept = default;
   URL &operator=(URL &&) noexcept = default;
   ~URL() = default;
-  std::string request(std::string payload = "");
+  std::pair<Headers, Body> request(url::URL &referral,
+                                   std::string payload = "");
   URL resolve(std::string_view url);
   TTF_Text *get_ttfText(TTF_TextEngine *engine, TTF_Font *font);
   std::string origin() const;

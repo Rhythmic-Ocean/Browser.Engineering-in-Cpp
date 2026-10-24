@@ -31,10 +31,25 @@ std::string_view hlp::strip(std::string_view str) {
   return str.substr(start, end - start + 1);
 }
 
+std::string hlp::strip(std::string &&str) {
+  auto start = str.find_first_not_of(" \t\n\r\f\v");
+  if (start == std::string_view::npos)
+    return "";
+  auto end = str.find_last_not_of(" \t\n\r\f\v");
+  return str.substr(start, end - start + 1);
+}
+
 void hlp::casefold(std::string &stri) {
   for (char &c : stri) {
     c = static_cast<char>(std::tolower(c));
   }
+}
+
+std::string hlp::casefold(std::string &&stri) {
+  for (char &c : stri) {
+    c = static_cast<char>(std::tolower(c));
+  }
+  return stri;
 }
 
 void hlp::print_tree(Item *node, size_t indent) {

@@ -94,6 +94,18 @@ int main(int argc, char **argv) {
   }
 }
 
+std::string html_escape(std::string str) {
+  std::string response{};
+  for (char c : str) {
+    if (c == '<')
+      response += "&lt";
+    else if (c == '>')
+      response += "&gt";
+    response += c;
+  }
+  return response;
+}
+
 void casefold(std::string &stri) {
   for (char &c : stri) {
     c = static_cast<char>(std::tolower(c));
@@ -140,8 +152,10 @@ void do_it(int fd) {
       do_request(session, method, uri, headers, body);
   std::string response = "HTTP/1.0 " + status + "\r\n";
   if (!headers.contains("cookie")) {
-    response += std::format("Set-Cookie: token={}\r\n", token);
+    response += std::format("Set-Cookie: token={}; SameSite=Lax\r\n", token);
   }
+  response += std::format(
+      "Content-Security-Policy: default-src http://127.0.0.1:8000\r\n");
   response +=
       "Content-Length: " + std::to_string(response_body.size()) + "\r\n";
   response += "\r\n" + response_body;
@@ -179,21 +193,22 @@ std::unordered_map<std ::string, std::string> read_headers(rio_t *rp) {
 
 std::string show_comments(SessionData &session) {
   std::string out = "<!doctype html>";
-  out += "<script src=\"comment.js\"></script>";
+  out += "<script src=comment.js></script>";
   if (session.contains("user")) {
     auto nonce = Random::get(0, 10000000);
-    session["nonce"] = nonce;
+    session["nonce"] = std::to_string(nonce);
     out += "<strong></strong>";
     out += "<h1>Hello, " + session["user"] + "</h1>";
     out += "<form action=add method=post>";
     out += "<p><input name=guest></p>";
+    out += "<input name=nonce type=hidden value=" + std::to_string(nonce) + ">";
     out += "<p><button>Sign the book!</button></p>";
     out += "</form>";
   } else {
     out += "<a href=/login>Sign in to write in the guest book</a>";
   }
   for (auto &entry : ENTRIES) {
-    out += "<p>" + entry + "</p>";
+    out += "<p>" + html_escape(entry) + "</p>";
   }
   out += "</html>";
   return out;
@@ -222,10 +237,10 @@ form_decode(std::string_view body) {
 std::string add_entry(SessionData &session,
                       std::unordered_map<std::string, std::string> &params) {
   if (!session.contains("user"))
-    return "";
+    return "no in sessioin";
   if (!session.contains("nonce") || !params.contains("nonce") ||
       session["nonce"] != params["nonce"])
-    return "";
+    return "invalid nonce";
   if (params.contains("guest") && params["guest"].size() <= 100) {
     ENTRIES.emplace_back(params["guest"] + " by " + session["user"]);
   }

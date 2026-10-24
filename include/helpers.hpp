@@ -144,7 +144,9 @@ namespace hlp {
 std::vector<std::string_view> split(std::string_view str, std::string delim,
                                     size_t nums = INT_MAX);
 std::string_view strip(std::string_view str);
+std::string strip(std::string &&str);
 void casefold(std::string &str);
+std::string casefold(std::string &&stri);
 void print_tree(Item *node, size_t indent = 0);
 std::string get_default_CSS();
 std::string get_default_JS();

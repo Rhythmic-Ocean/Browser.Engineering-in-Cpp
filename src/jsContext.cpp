@@ -18,13 +18,18 @@ public:
     }
     std::string url = duk_get_string(ctx, -2);
     std::string method = duk_get_string(ctx, -3);
-    url::URL full_url = js->tab->m_history.back().resolve(url);
+    url::URL &cur_url = js->tab->m_history.back();
+    url::URL full_url = cur_url.resolve(url);
 
-    if (full_url.origin() != js->tab->m_history.back().origin()) {
+    if (full_url.origin() != cur_url.origin()) {
       throw JSException("Cross-origin XHR requests not allowed!");
     }
 
-    auto out = full_url.request(body);
+    if (!js->tab->allowed_request(full_url)) {
+      throw JSException("Corss-origin XHR blocked by CSP");
+    }
+
+    auto [_, out] = full_url.request(cur_url, body);
     duk_push_string(ctx, out.c_str());
     return 1;
   }

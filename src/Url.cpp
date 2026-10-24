@@ -14,11 +14,16 @@
 #include <tuple>
 #include <unistd.h>
 #include <unordered_map>
+#include <utility>
 
 using namespace url;
 
-std::unordered_map<std::string, std::string> &getCookieJar() {
-  static std::unordered_map<std::string, std::string> COOKIE_JAR{};
+typedef std::unordered_map<std::string, std::string> Params;
+typedef std::string Cookie;
+typedef std::string Host;
+
+std::unordered_map<Host, std::pair<Cookie, Params>> &getCookieJar() {
+  static std::unordered_map<Host, std::pair<Cookie, Params>> COOKIE_JAR{};
   return COOKIE_JAR;
 }
 
@@ -58,10 +63,10 @@ URL::URL(const std::string &url) : m_url{url} {
   parse();
   if (scheme == "http" || m_port == "80")
     is_https = false;
-  m_client = Client(host, m_port, is_https);
 }
 
-std::string URL::request(std::string payload) {
+std::pair<Headers, Body> URL::request(url::URL &referrer, std::string payload) {
+  m_client = Client(host, m_port, is_https);
   std::string method;
   if (payload.empty()) {
     method = "GET";
@@ -75,7 +80,17 @@ std::string URL::request(std::string payload) {
   request += "Connection: close\r\n";
 
   if (getCookieJar().contains(host)) {
-    request += std::format("Cookie: {}\r\n", getCookieJar()[host]);
+    auto &params = getCookieJar()[host].second;
+    bool allow_cookie = true;
+    if (params.contains("samesite") && params["samesite"] == "lax") {
+      std::cout << params["samesite"] << std::endl;
+      std::cout << "smthing" << std::endl;
+      if (method != "GET")
+        allow_cookie = (host == referrer.host);
+    }
+    if (allow_cookie) {
+      request += std::format("Cookie: {}\r\n", getCookieJar()[host].first);
+    }
   }
 
   request += "User-Agent: IHateCpp!!\r\n";
@@ -106,31 +121,45 @@ std::string URL::request(std::string payload) {
       std::make_tuple(statusline[0], statusline[1], statusline[2]);
   ++indx;
   auto response_headers{parse_response(data, indx)};
-  assert(!response_headers.contains("transfer-encoding") &&
-         "HTTP response contains transfer-encoding parameter");
-  assert(!response_headers.contains("content-encoding") &&
-         "HTTP response contains content-encoding parameter");
+  // assert(!response_headers.contains("transfer-encoding") &&
+  //        "HTTP response contains transfer-encoding parameter");
+  // assert(!response_headers.contains("content-encoding") &&
+  //        "HTTP response contains content-encoding parameter");
 
   if (response_headers.contains("set-cookie")) {
-    auto cookie = std::move(response_headers["set-cookie"]);
+    auto cookie = std::string(std::move(response_headers["set-cookie"]));
+    std::unordered_map<std::string, std::string> params{};
     if (cookie.contains(';')) {
-      size_t indx = cookie.find(';');
-      auto rest = cookie.substr(indx + 1);
+      size_t indx1 = cookie.find(';');
+      std::string rest = cookie.substr(indx1 + 1);
+      cookie = cookie.substr(0, indx1);
       constexpr char delim = ';';
       for (auto param : std::views::split(rest, delim)) {
+        std::string str =
+            hlp::casefold(std::string(param.begin(), param.end()));
+        if (str.contains('=')) {
+          size_t indx2 = str.find('=');
+          params[hlp::casefold(hlp::strip(str.substr(0, indx2)))] =
+              hlp::casefold(hlp::strip(str.substr(indx2 + 1)));
+        } else {
+          params[hlp::strip(std::move(str))] = "true";
+        }
       }
     }
-    getCookieJar()[host] = cookie;
     response_headers.erase("set-cookie");
+    std::unordered_map<Host, std::pair<Cookie, Params>> &cookieJar =
+        getCookieJar();
+    cookieJar[host] = std::pair{cookie, params};
   }
 
   auto content_view{data[indx].data()};
-  return response.substr(response.find(content_view));
+  return {std::move(response_headers),
+          response.substr(response.find(content_view))};
 }
 
-std::unordered_map<std::string, std::string_view>
+std::unordered_map<std::string, std::string>
 URL::parse_response(std::vector<std::string_view> response, size_t &indx) {
-  std::unordered_map<std::string, std::string_view> response_headers{};
+  std::unordered_map<std::string, std::string> response_headers{};
   while (true) {
     auto line = response[indx];
     if (line == "") {
@@ -141,7 +170,7 @@ URL::parse_response(std::vector<std::string_view> response, size_t &indx) {
     auto [header, value] =
         std::make_tuple(std::string(header_val[0]), std::string(header_val[1]));
     hlp::casefold(header);
-    response_headers[header] = hlp::strip(value);
+    response_headers[header] = hlp::strip(std::move(value));
     ++indx;
   }
   return response_headers;
