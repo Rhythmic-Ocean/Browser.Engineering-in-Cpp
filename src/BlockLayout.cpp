@@ -1,3 +1,4 @@
+#include "UnicodeDecoder.hpp"
 #include "helpers.hpp"
 #include "layout.hpp"
 #include <SDL3/SDL_rect.h>
@@ -141,61 +142,10 @@ void BlockLayout::layout(LayoutContext &ctx) {
 //--INFO: relative x postion of the text gets set in word/make_word.
 //        absolute x and y position gets set at flush()
 void BlockLayout::word(Item *node, LayoutContext &ctx) {
-  std::string &str = node->m_text;
-  std::string word{};
-  for (size_t c = 0; c < str.size(); ++c) {
-    unsigned char byte = static_cast<unsigned char>(str[c]);
-    /*--NOTE: Collapsing consecutive whitespaces into a single space.
-              Important to note that the whitespaces we see in webpages are
-              the result of tags, not excess ones from plain text in a .html
-              file!!*/
-    if (std::isspace(byte)) {
-      if (!word.empty()) {
-        make_word(node, std::move(word), ctx);
-        word.clear();
-      }
-      while (c < str.size() &&
-             std::isspace(static_cast<unsigned char>(str[c]))) {
-        ++c;
-      }
-      --c;
-      continue;
-    }
-    /*--NOTE: To support multi-byte unicode characters. Multi-byte characters
-              stores how many bytes it's made up of in it's first byte as
-              follows:
-              - 0xxxxxxx -> 1 byte chars has first bit set 0, rest of 7 bits
-                store info.
-                That's why we & the byte with 0x10000000, and if it gives 0x00
-                it's a one byte char
-              - 11xxxxxx -> this first byte pattern is for 2 byte chars
-              - 111xxxxx -> this first byte pattern is for 3 byte chars
-              - 1111xxxx -> this first byte pattern is for 4 byte chars
-     */
-    if ((byte & 0x80) == 0x00) { // & with 0x10000000
-      word += str[c];
-    } else {
-      if (!word.empty()) { // if the char is no 1 byte then we immediatly
-                           // clear the buffer and start a new item
-        make_word(node, std::move(word), ctx);
-        word.clear();
-      }
-      size_t char_length = 2;
-      if ((byte & 0xF0) == 0xE0) // & w/ 0x11110000
-        char_length = 3;
-      else if ((byte & 0xF8) == 0xF0) //& w/ 0x11111000
-        char_length = 4;
-      std::string utf8_char = str.substr(c, char_length);
-      // each of the multi byte char are treated as seperate display item
-      make_word(node, std::move(utf8_char), ctx);
-      utf8_char.clear();
-      c += (char_length - 1); // as the enclosing for loop performs ++c next
-    }
+  std::vector<std::string> codepoints = UTF8::word_seperator(node->m_text);
+  for (auto &str : codepoints) {
+    make_word(node, std::move(str), ctx);
   }
-  // Flush the remaining chars from buffer
-  if (!word.empty())
-    make_word(node, std::move(word), ctx);
-  word.clear();
 }
 
 void BlockLayout::input(Item *node, LayoutContext &ctx) {

@@ -83,8 +83,6 @@ std::pair<Headers, Body> URL::request(url::URL &referrer, std::string payload) {
     auto &params = getCookieJar()[host].second;
     bool allow_cookie = true;
     if (params.contains("samesite") && params["samesite"] == "lax") {
-      std::cout << params["samesite"] << std::endl;
-      std::cout << "smthing" << std::endl;
       if (method != "GET")
         allow_cookie = (host == referrer.host);
     }

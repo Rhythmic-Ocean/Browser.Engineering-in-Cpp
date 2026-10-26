@@ -242,7 +242,9 @@ std::string add_entry(SessionData &session,
       session["nonce"] != params["nonce"])
     return "invalid nonce";
   if (params.contains("guest") && params["guest"].size() <= 100) {
-    ENTRIES.emplace_back(params["guest"] + " by " + session["user"]);
+    std::string str = std::format("{} by {}", params["guest"], session["user"]);
+    std::cout << str << std::endl;
+    ENTRIES.emplace_back(std::move(str));
   }
   return show_comments(session);
 }
