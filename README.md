@@ -8,7 +8,7 @@ The original book's implementation is in Python.
 
 ### Current Status (Latest Oct 26)
 
-#### Chapter 9 - Completed (Oct 26 2026)
+#### Chapter 10 - Completed (Oct 26 2026)
 
 - Added appropriate Cookie policy aligned with basic Web Security to handle CRS, SOP, CSRF and Cross site scripting cases.
 - Rewrote the UTF-8 based word seperator at src/BlockLayout.cpp to be more robust and handle corrupt unicode characters. (Code hugely inspired from [Flexible and Economical UTF-8 Decoder](https://bjoern.hoehrmann.de/utf-8/decoder/dfa/)
