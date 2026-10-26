@@ -134,13 +134,6 @@ void BlockLayout::layout(LayoutContext &ctx) {
   }
 }
 
-/*
---WARNING: The multi-byte parsing algorithm in the following functioin was
-           generated with heavy AI assistance. Extensive line-by-line notes for
-           explanative purpose.
- */
-//--INFO: relative x postion of the text gets set in word/make_word.
-//        absolute x and y position gets set at flush()
 void BlockLayout::word(Item *node, LayoutContext &ctx) {
   std::vector<std::string> codepoints = UTF8::word_seperator(node->m_text);
   for (auto &str : codepoints) {
