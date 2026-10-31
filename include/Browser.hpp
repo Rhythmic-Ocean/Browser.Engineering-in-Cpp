@@ -9,6 +9,8 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <include/core/SkAlphaType.h>
+#include <include/core/SkSurface.h>
 #include <memory>
 #include <optional>
 
@@ -133,7 +135,7 @@ public:
 
 private:
   std::unique_ptr<Chrome> m_chrome{nullptr};
-
+  sk_sp<SkSurface> rootSurface;
   void init();
   void load_engine();
   void ctx_setup();

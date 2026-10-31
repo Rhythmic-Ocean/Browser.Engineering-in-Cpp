@@ -1,5 +1,6 @@
 #pragma once
 
+#include "colorMap.hpp"
 #include "helpers.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_oldnames.h>
@@ -10,6 +11,8 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
 #include <cstdint>
+#include <include/core/SkColor.h>
+#include <include/core/SkColorType.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -43,24 +46,16 @@ enum class FontWeight : std::int32_t {
 };
 enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT, INPUT };
 
-inline SDL_Color parse_color(std::string name) {
-  static const std::unordered_map<std::string, SDL_Color> color_map = {
-      {"transparent", {0, 0, 0, 0}},       {"white", {255, 255, 255, 255}},
-      {"black", {0, 0, 0, 255}},           {"red", {255, 0, 0, 255}},
-      {"green", {0, 128, 0, 255}},         {"blue", {0, 0, 255, 255}},
-      {"gray", {128, 128, 128, 255}},      {"grey", {128, 128, 128, 255}},
-      {"lightblue", {173, 216, 230, 255}}, {"lightgray", {211, 211, 211, 255}},
-      {"orange", {255, 165, 0, 255}},      {"yellow", {255, 255, 0, 255}},
-      {"purple", {128, 0, 128, 255}}};
-
-  hlp::casefold(name);
-  auto it = color_map.find(name);
-
-  if (it != color_map.end()) {
-    return it->second;
+inline SkColor parseColor(std::string color) {
+  int r{}, g{}, b{};
+  if (color.starts_with('#') && color.size() == 7) {
+    r = std::stoi(color.substr(1, 2), 0, 16);
+    g = std::stoi(color.substr(3, 2), 0, 16);
+    b = std::stoi(color.substr(5, 2), 0, 16);
+  } else if (ColorMap::NAMED_COLORS.contains(color)) {
+    parseColor(ColorMap::NAMED_COLORS[color]);
   }
-
-  return SDL_Color{0, 0, 0, 255};
+  return SkColorSetRGB(r, g, b);
 }
 
 //--WARNING: Deleters!!

@@ -10,6 +10,11 @@
 
 using namespace browser;
 void Browser::init() {
+
+  rootSurface = SkSurfaces::Raster(
+      SkImageInfo::Make(m_width, m_height, SkColorType::kRGBA_8888_SkColorType,
+                        SkAlphaType::kUnpremul_SkAlphaType));
+
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
     SDL_Log("SDL could not initialize! SDL error: %s\n", SDL_GetError());
     throw WindowException("SDL Initialization failed: " +
@@ -35,6 +40,17 @@ void Browser::init() {
     throw WindowException("SDL_SetRenderVSync failed: " +
                           std::string(SDL_GetError()));
   }
+
+  SkPixmap pixMap;
+  sk_sp<SkImage> image = rootSurface->makeImageSnapshot();
+  image->peekPixels(&pixMap);
+  SDL_Surface *sdl_surface =
+      SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_RGBA32,
+                            pixMap.writable_addr(), 4 * m_width);
+  auto rect = SDL_Rect{0, 0, m_width, m_height};
+  auto *window_surface = SDL_GetWindowSurface(raw_window);
+  SDL_BlitSurface(sdl_surface, &rect, window_surface, &rect);
+  SDL_UpdateWindowSurface(raw_window);
 
   m_window.reset(raw_window);
   m_renderer.reset(raw_renderer);

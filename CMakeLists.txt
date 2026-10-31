@@ -12,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(OpenSSL REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(SDL3_ttf REQUIRED)
+find_package(Freetype REQUIRED)
 
 set(_SOURCE_DIR
     src/Main.cpp
@@ -33,6 +34,15 @@ add_executable(${PROJECT_NAME} ${_SOURCE_DIR})
 
 add_library(duktape STATIC externals/src/duktape.c)
 
+add_library(skia STATIC IMPORTED)
+
+set_target_properties(skia PROPERTIES
+  IMPORTED_LOCATION
+  "${CMAKE_SOURCE_DIR}/externals/skia/out/Static/libskia.a"
+  INTERFACE_INCLUDE_DIRECTORIES
+  "${CMAKE_SOURCE_DIR}/externals/skia"
+)
+
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         include
@@ -42,10 +52,12 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         duktape
+        skia
         OpenSSL::SSL
         OpenSSL::Crypto
         SDL3::SDL3
         SDL3_ttf::SDL3_ttf
+        ${FREETYPE_LIBRARIES}
 )
 
 target_compile_definitions(${PROJECT_NAME}
