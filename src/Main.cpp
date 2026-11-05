@@ -11,7 +11,8 @@
 #include <unistd.h>
 
 int main() {
-  std::string url_str{"https://browser.engineering/examples/xiyouji.html"};
+  std::string url_str{
+      "https://browser.engineering/examples/example11-rounded-background.html"};
   // std::string url_str{"https://browser.engineering/text.html"};
   url::URL url{url_str};
   { // scope guards so SDL windows and rednerer are destroyed before we quit SDL

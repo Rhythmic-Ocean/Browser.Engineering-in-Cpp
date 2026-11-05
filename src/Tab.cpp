@@ -20,7 +20,6 @@ using namespace browser;
 Tab::Tab(TabContext tctx, float l_tab_height) {
   tab_height = l_tab_height;
   ctx = std::move(tctx.lctx);
-  m_engine = tctx.textEngine;
   m_fontCache = tctx.fontCache;
   m_height = tctx.size.height;
   m_width = tctx.size.width;
@@ -125,14 +124,14 @@ void Tab::render() {
 
 // NOTE: offset accounts for all the chrome items on the top and forces all
 // DrawItems to be drawm below it
-void Tab::draw(SDL_Renderer *renderer, float offset) {
+void Tab::draw(SkCanvas *canvas, float offset) {
   for (size_t i{}; i < m_displayItems.size(); ++i) {
     auto &cmd = m_displayItems[i];
-    if (cmd->original.top > m_scroll_y + tab_height)
+    if (cmd->rect.top() > m_scroll_y + tab_height)
       break; // if u below the screen just stop
-    if (cmd->original.bottom < m_scroll_y)
+    if (cmd->rect.bottom() < m_scroll_y)
       continue;
-    cmd->execute(m_scroll_y - offset, renderer);
+    cmd->execute(m_scroll_y - offset, canvas);
   }
 }
 

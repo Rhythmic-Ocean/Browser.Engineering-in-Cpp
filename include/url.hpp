@@ -1,7 +1,6 @@
 #pragma once
 
 #include "client.hpp"
-#include "layout.hpp"
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <format>
@@ -27,7 +26,6 @@ public:
   bool is_https{true};
 
 private:
-  std::unique_ptr<TTF_Text, Layout::TextDeleter> m_urlText{};
   void parse();
   void get_response(std::string &response);
   void get_http_response(std::string &response);
@@ -45,7 +43,6 @@ public:
   std::pair<Headers, Body> request(url::URL &referral,
                                    std::string payload = "");
   URL resolve(std::string_view url);
-  TTF_Text *get_ttfText(TTF_TextEngine *engine, TTF_Font *font);
   std::string origin() const;
 
   friend std::ostream &operator<<(std::ostream &out, const URL &url);

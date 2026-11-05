@@ -13,6 +13,7 @@ find_package(OpenSSL REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(SDL3_ttf REQUIRED)
 find_package(Freetype REQUIRED)
+find_package(Fontconfig REQUIRED)
 
 set(_SOURCE_DIR
     src/Main.cpp
@@ -57,7 +58,9 @@ target_link_libraries(${PROJECT_NAME}
         OpenSSL::Crypto
         SDL3::SDL3
         SDL3_ttf::SDL3_ttf
-        ${FREETYPE_LIBRARIES}
+        Freetype::Freetype
+        Fontconfig::Fontconfig
+
 )
 
 target_compile_definitions(${PROJECT_NAME}

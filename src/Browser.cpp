@@ -4,8 +4,10 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_video.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <cmath>
+#include <include/core/SkPixmap.h>
 #include <memory>
 
 using namespace browser;
@@ -25,52 +27,20 @@ void Browser::init() {
     throw WindowException("TTF Initialization failed: " +
                           std::string(SDL_GetError()));
   }
-  SDL_Window *raw_window = nullptr;
-  SDL_Renderer *raw_renderer = nullptr;
+  SDL_Window *raw_window =
+      SDL_CreateWindow(m_title.c_str(), m_width, m_height, 0);
 
-  if (!SDL_CreateWindowAndRenderer(m_title.c_str(), m_width, m_height, 0,
-                                   &raw_window, &raw_renderer)) {
-    SDL_Log("SDL_CreateWindowAndRenderer failed: %s\n", SDL_GetError());
-    throw WindowException("SDL_CreateWindowAndRenderer failed: " +
+  if (!raw_window) {
+    SDL_Log("SDL_CreateWindow failed: %s\n", SDL_GetError());
+    throw WindowException("SDL_CreateWindow failed: " +
                           std::string(SDL_GetError()));
   }
-
-  if (!SDL_SetRenderVSync(raw_renderer, 1)) {
-    SDL_Log("SDL_SetRenderVSync failed: %s\n", SDL_GetError());
-    throw WindowException("SDL_SetRenderVSync failed: " +
-                          std::string(SDL_GetError()));
-  }
-
-  SkPixmap pixMap;
-  sk_sp<SkImage> image = rootSurface->makeImageSnapshot();
-  image->peekPixels(&pixMap);
-  SDL_Surface *sdl_surface =
-      SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_RGBA32,
-                            pixMap.writable_addr(), 4 * m_width);
-  auto rect = SDL_Rect{0, 0, m_width, m_height};
-  auto *window_surface = SDL_GetWindowSurface(raw_window);
-  SDL_BlitSurface(sdl_surface, &rect, window_surface, &rect);
-  SDL_UpdateWindowSurface(raw_window);
-
   m_window.reset(raw_window);
-  m_renderer.reset(raw_renderer);
   is_Running = true;
-}
-
-void Browser::load_engine() {
-  TTF_TextEngine *raw_engine{TTF_CreateRendererTextEngine(m_renderer.get())};
-  if (!raw_engine) {
-    SDL_Log("Couldn't create text engine: %s\n", SDL_GetError());
-    throw WindowException(
-        "Couldn't create text engine: " + std::string(SDL_GetError()) + "\n");
-  }
-  m_engine.reset(raw_engine);
 }
 
 void Browser::ctx_setup() {
   m_fontCache = std::make_unique<Layout::FontCache>();
-  m_fontCache->init();
-  ctx.textEngine = m_engine.get();
   ctx.fontCache = m_fontCache.get();
   ctx.windowHeight = static_cast<float>(m_height);
   ctx.windowWidth = static_cast<float>(m_width);
@@ -108,20 +78,30 @@ void Browser::start_event() {
 }
 
 void Browser::draw() {
-  SDL_SetRenderDrawColor(m_renderer.get(), 255, 255, 255, 255);
-  SDL_RenderClear(m_renderer.get());
-  active_tab->draw(m_renderer.get(), m_chrome->m_bottom);
+  SkCanvas *canvas = rootSurface->getCanvas();
+  canvas->clear(SK_ColorWHITE);
+
   auto list = m_chrome->paint();
   for (size_t i{}; i < list.size(); ++i) {
-    list[i]->execute(0, m_renderer.get());
+    list[i]->execute(0, canvas);
   }
-  SDL_RenderPresent(m_renderer.get());
+  active_tab->draw(canvas, m_chrome->m_bottom);
+
+  SkPixmap pixMap;
+  auto skia_image = rootSurface->makeImageSnapshot();
+  skia_image->peekPixels(&pixMap);
+  SDL_Surface *sdl_surface =
+      SDL_CreateSurfaceFrom(m_width, m_height, SDL_PIXELFORMAT_RGBA32,
+                            pixMap.writable_addr(), 4 * m_width);
+  SDL_Rect rect = SDL_Rect(0, 0, m_width, m_height);
+  auto window_surface = SDL_GetWindowSurface(m_window.get());
+  SDL_BlitSurface(sdl_surface, &rect, window_surface, &rect);
+  SDL_UpdateWindowSurface(m_window.get());
 }
 
 void Browser::new_tab(url::URL url) {
   TabContext tctx{};
   tctx.lctx = ctx;
-  tctx.textEngine = m_engine.get();
   tctx.fontCache = m_fontCache.get();
   tctx.size = {m_height, m_width};
   auto new_tab = std::make_unique<Tab>(
@@ -173,74 +153,54 @@ void Browser::handle_input(const SDL_Event &event) {
 
 Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
   auto *fontCache = l_browser->m_fontCache.get();
-  m_font = fontCache->get_font(Layout::FontWeight::REGULAR, 20);
-  m_fontHeight = static_cast<float>(TTF_GetFontLineSkip(m_font));
+  m_font = fontCache->get_font(Layout::FontCache::get_weight("regular"), 20.0f);
+  m_fontHeight = m_font.getMetrics(&m_fontMetrics);
   m_padding = 5;
   m_tabbar_top = 0;
   m_tabbar_bottom = m_fontHeight + 2 * m_padding;
   m_urlbar_top = m_tabbar_bottom;
   m_urlbar_bottom = m_urlbar_top + m_fontHeight + 2 * m_padding;
   m_bottom = m_urlbar_bottom;
-  int iWidth;
-  TTF_GetStringSize(m_font, "+", 1, &iWidth, nullptr);
-  float plus_width = static_cast<float>(iWidth) + 2 * m_padding;
-  TTF_GetStringSize(m_font, "<", 1, &iWidth, nullptr);
-  float back_width = static_cast<float>(iWidth) + 2 * m_padding;
-  m_newTab_rect = Layout::Rect{m_padding, m_padding, m_padding + plus_width,
-                               m_padding + m_fontHeight};
-  m_back_rect =
-      Layout::Rect{m_padding, m_urlbar_top + m_padding, m_padding + back_width,
-                   m_urlbar_bottom - m_padding};
+  float plus_width = Layout::FontCache::getUTF8Width(m_font, "+");
+  float back_width = Layout::FontCache::getUTF8Width(m_font, "<");
+  m_newTab_rect = SkRect{m_padding, m_padding, 3 * m_padding + plus_width,
+                         m_padding + m_fontHeight};
+  m_back_rect = SkRect{m_padding, m_urlbar_top + m_padding,
+                       3 * m_padding + back_width, m_urlbar_bottom - m_padding};
   m_address_rect =
-      Layout::Rect{m_back_rect.right + m_padding, m_urlbar_top + m_padding,
-                   WIDTH - m_padding, m_urlbar_bottom - m_padding};
-  m_input_rect = SDL_Rect{
-      static_cast<int>(std::round(m_address_rect.left)),
-      static_cast<int>(std::round(m_address_rect.top)),
-      static_cast<int>(std::round(m_address_rect.right - m_address_rect.left)),
-      static_cast<int>(std::round(m_address_rect.bottom - m_address_rect.top))};
-  auto raw_plus = TTF_CreateText(m_browser->m_engine.get(), m_font, "+", 1);
-  auto raw_back = TTF_CreateText(m_browser->m_engine.get(), m_font, "<", 1);
-  SDL_Color black = Layout::parse_color("black");
-  TTF_SetTextColor(raw_plus, black.r, black.g, black.b, black.a);
-  TTF_SetTextColor(raw_back, black.r, black.g, black.b, black.a);
-  m_plus.reset(raw_plus);
-  m_back.reset(raw_back);
+      SkRect{m_back_rect.right() + m_padding, m_urlbar_top + m_padding,
+             WIDTH - m_padding, m_urlbar_bottom - m_padding};
+  m_plus = "+";
+  m_back = "<";
   m_focus = FOCUS::NONE;
-  auto *raw_address_bar =
-      TTF_CreateText(m_browser->m_engine.get(), m_font, m_address_str.c_str(),
-                     m_address_str.size());
-  TTF_SetTextColor(raw_address_bar, black.r, black.g, black.b, black.a);
-  m_address_bar.reset(raw_address_bar);
 }
 
-Layout::Rect Chrome::tab_rect(size_t i) {
-  float tab_start = m_newTab_rect.right + m_padding;
-  int iWidth;
-  TTF_GetStringSize(m_font, "Tab X", 5, &iWidth, nullptr);
-  float tab_width = static_cast<float>(iWidth) + 2 * m_padding;
-  return Layout::Rect{
+SkRect Chrome::tab_rect(size_t i) {
+  float tab_start = m_newTab_rect.right() + m_padding;
+  float tab_width =
+      Layout::FontCache::getUTF8Width(m_font, "Tab X") + 2 * m_padding;
+  return SkRect::MakeLTRB(
       tab_start + tab_width * static_cast<float>(i), m_tabbar_top,
-      tab_start + tab_width * static_cast<float>(i + 1), m_tabbar_bottom};
+      tab_start + tab_width * static_cast<float>(i + 1), m_tabbar_bottom);
 }
 
 std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
   std::vector<std::unique_ptr<Layout::DrawItem>> cmds{};
   // Chrome white rect
   cmds.emplace_back(std::make_unique<Layout::DrawRect>(
-      Layout::Rect{0, 0, static_cast<float>(m_browser->m_width), m_bottom},
-      Layout::parse_color("white")));
+      SkRect{0, 0, static_cast<float>(m_browser->m_width), m_bottom}, "white"));
   // Chrome's end line
   cmds.push_back(std::make_unique<Layout::DrawLine>(
-      0, m_bottom, static_cast<float>(m_browser->m_width), m_bottom,
-      Layout::parse_color("black"), 1));
+      0, m_bottom, static_cast<float>(m_browser->m_width), m_bottom, "black",
+      1));
   // +'s rectangle' rectangle'
-  auto outline = Layout::DrawOutline::createOutline(
-      m_newTab_rect, Layout::parse_color("white"), Layout::parse_color("black"),
-      1);
+  auto outline =
+      std::make_unique<Layout::DrawOutline>(m_newTab_rect, "black", 1);
+
   // the plus text
   auto newText = std::make_unique<Layout::DrawText>(
-      m_plus.get(), m_newTab_rect.left + m_padding, m_newTab_rect.top);
+      m_plus, text_color, m_font, m_newTab_rect.left() + m_padding,
+      m_newTab_rect.top());
   cmds.push_back(std::move(outline));
   cmds.push_back(std::move(newText));
   // Different tabs
@@ -248,60 +208,50 @@ std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
     auto &tab = m_browser->tabs[i];
     auto bounds = tab_rect(i);
     auto leftLine = std::make_unique<Layout::DrawLine>(
-        bounds.left, 0, bounds.left, bounds.bottom,
-        Layout::parse_color("black"), 1);
+        bounds.left(), 0, bounds.left(), bounds.bottom(), "black", 1);
     auto rightLine = std::make_unique<Layout::DrawLine>(
-        bounds.right, 0, bounds.right, bounds.bottom,
-        Layout::parse_color("black"), 1);
+        bounds.right(), 0, bounds.right(), bounds.bottom(), "black", 1);
     cmds.push_back(std::move(leftLine));
     cmds.push_back(std::move(rightLine));
-    cmds.push_back(std::make_unique<Layout::DrawText>(m_labelNames[i].get(),
-                                                      bounds.left + m_padding,
-                                                      bounds.top + m_padding));
+    cmds.push_back(std::make_unique<Layout::DrawText>(
+        m_labelNames[i], text_color, m_font, bounds.left() + m_padding,
+        bounds.top() + m_padding));
 
     if (tab.get() == m_browser->active_tab) {
       cmds.push_back(std::make_unique<Layout::DrawLine>(
-          0, bounds.bottom, bounds.left, bounds.bottom,
-          Layout::parse_color("red"), 1));
+          0, bounds.bottom(), bounds.left(), bounds.bottom(), "red", 1));
       cmds.push_back(std::make_unique<Layout::DrawLine>(
-          bounds.right, bounds.bottom, static_cast<float>(m_browser->m_width),
-          bounds.bottom, Layout::parse_color("blue"), 1));
+          bounds.right(), bounds.bottom(),
+          static_cast<float>(m_browser->m_width), bounds.bottom(), "blue", 1));
     }
   }
 
   // Back Button
-  cmds.push_back(Layout::DrawOutline::createOutline(
-      m_back_rect, Layout::parse_color("white"), Layout::parse_color("black"),
-      1));
+  cmds.push_back(
+      std::make_unique<Layout::DrawOutline>(m_back_rect, "black", 1));
   cmds.push_back(std::make_unique<Layout::DrawText>(
-      m_back.get(), m_back_rect.left + m_padding, m_back_rect.top));
+      m_back, text_color, m_font, m_back_rect.left() + m_padding,
+      m_back_rect.top()));
 
   // Address Bar
-  cmds.push_back(Layout::DrawOutline::createOutline(
-      m_address_rect, Layout::parse_color("white"),
-      Layout::parse_color("black"), 1));
+  cmds.push_back(
+      std::make_unique<Layout::DrawOutline>(m_address_rect, "black", 1));
   if (m_focus == FOCUS::ADDRESS_BAR) {
     // the actual address bar text that the user's editing
-    TTF_SetTextString(m_address_bar.get(), m_address_str.c_str(),
-                      m_address_str.size());
     cmds.push_back(std::make_unique<Layout::DrawText>(
-        m_address_bar.get(), m_address_rect.left + m_padding,
-        m_address_rect.top));
-    int iWidth, iHeight;
-    TTF_GetTextSize(m_address_bar.get(), &iWidth, &iHeight);
-    float width = static_cast<float>(iWidth);
-    [[maybe_unused]] float height = static_cast<float>(iHeight);
+        m_address_str, text_color, m_font, m_address_rect.left() + m_padding,
+        m_address_rect.top()));
+    float width = Layout::FontCache::getUTF8Width(m_font, m_address_str);
     // the cursor
     cmds.push_back(std::make_unique<Layout::DrawLine>(
-        m_address_rect.left + m_padding + width, m_address_rect.top,
-        m_address_rect.left + m_padding + width, m_address_rect.bottom,
-        Layout::parse_color("black"), 1));
+        m_address_rect.left() + m_padding + width, m_address_rect.top(),
+        m_address_rect.left() + m_padding + width, m_address_rect.bottom(),
+        "black", 1));
 
   } else {
     cmds.push_back(std::make_unique<Layout::DrawText>(
-        m_browser->active_tab->m_history.back().get_ttfText(
-            m_browser->m_engine.get(), m_font),
-        m_address_rect.left + m_padding, m_address_rect.top));
+        m_browser->active_tab->m_history.back().m_url, text_color, m_font,
+        m_address_rect.left() + m_padding, m_address_rect.top()));
   }
 
   return cmds;
@@ -309,24 +259,24 @@ std::vector<std::unique_ptr<Layout::DrawItem>> Chrome::paint() {
 
 void Chrome::click(float x, float y) {
   // clicking on the address bar to type url, and as they type we display!
-  if (m_address_rect.contains_point(x, y)) {
+  if (m_address_rect.contains(x, y)) {
     m_focus = FOCUS::ADDRESS_BAR;
     SDL_StartTextInput(m_browser->m_window.get());
     m_address_str = "";
     return;
   }
   // clicking the '+' sign
-  if (m_newTab_rect.contains_point(x, y)) {
+  if (m_newTab_rect.contains(x, y)) {
     m_browser->new_tab(url::URL("https://browser.engineering/"));
   }
   // clicking on '<' back button
-  else if (m_back_rect.contains_point(x, y)) {
+  else if (m_back_rect.contains(x, y)) {
     m_browser->active_tab->go_back();
   }
   // clicking on different tabs for navigation
   else {
     for (size_t i{}; i < m_browser->tabs.size(); ++i) {
-      if (tab_rect(i).contains_point(x, y)) {
+      if (tab_rect(i).contains(x, y)) {
         m_browser->active_tab = m_browser->tabs[i].get();
       }
     }
@@ -346,12 +296,7 @@ void Chrome::create_labelText() {
   // if a new tab's opened
   while (m_browser->tabs.size() > m_labelNames.size()) {
     std::string tab_name = "Tab " + std::to_string(m_browser->tabs.size() - 1);
-    auto text = TTF_CreateText(m_browser->m_engine.get(), m_font,
-                               tab_name.c_str(), tab_name.size());
-    SDL_Color black = Layout::parse_color("black");
-    TTF_SetTextColor(text, black.r, black.g, black.b, black.a);
-    m_labelNames.emplace_back(
-        std::unique_ptr<TTF_Text, Layout::TextDeleter>(text));
+    m_labelNames.emplace_back(tab_name);
   }
 }
 

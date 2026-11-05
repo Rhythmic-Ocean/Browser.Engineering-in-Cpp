@@ -1,102 +1,42 @@
-#include "helpers.hpp"
 #include "layout.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <cmath>
+#include <exception>
+#include <include/core/SkFont.h>
+#include <include/core/SkFontStyle.h>
+#include <include/core/SkScalar.h>
 
 using namespace Layout;
-void FontCache::init_fontFiles() {
-  const std::string fontPath1{"../assets/fonts/OpenSans-Regular.ttf"};
-  const std::string fontPath2{"../assets/fonts/OpenSans-Italic.ttf"};
-  const std::string fallbackPath1{"../assets/fonts/NotoSansSC-Regular.ttf"};
-  const std::string fontPath3{"../assets/fonts/OpenSans-Bold.ttf"};
-  const std::string fontPath4{"../assets/fonts/OpenSans-BoldItalic.ttf"};
-  const std::string fallbackPath2{"../assets/fonts/NotoSansSC-Bold.ttf"};
-  load_fontFiles(FontWeight::REGULAR, fontPath1, fallbackPath1);
-  load_fontFiles(FontWeight::ITALICS, fontPath2, fallbackPath1);
-  load_fontFiles(FontWeight::BOLD, fontPath3, fallbackPath2);
-  load_fontFiles(FontWeight::BOLD_ITALICS, fontPath4, fallbackPath2);
-  return;
+
+SkFont FontCache::get_font(SkFontStyle style, SkScalar size,
+                           const std::string &family) {
+  std::string key = family + "_" + std::to_string(style.weight()) + "_" +
+                    std::to_string(style.slant());
+
+  auto it = m_fontMap.find(key);
+  if (it != m_fontMap.end()) {
+    return SkFont{it->second, size}; // Cache hit!
+  }
+
+  // Cache miss: query the OS font manager
+  sk_sp<SkTypeface> typeface =
+      m_fontMgr->legacyMakeTypeface(family.c_str(), style);
+  if (!typeface) {
+    typeface = m_fontMgr->legacyMakeTypeface("", SkFontStyle()); // fallback
+  }
+
+  m_fontMap[key] = typeface;
+  return SkFont{typeface, size};
 }
 
-void FontCache::init_normalFonts() {
-  auto &size = INHERITED_PROPERTIES["font-size"];
-  auto acSize = get_size(size);
-  load_font(FontWeight::REGULAR, acSize);
-  load_font(FontWeight::BOLD, acSize);
-  load_font(FontWeight::ITALICS, acSize);
-  load_font(FontWeight::BOLD_ITALICS, acSize);
-  return;
-}
-
-void FontCache::load_fontFiles(FontWeight style, const std::string &primary,
-                               const std::string &fallback) {
-  FontFile Fontfile1{};
-  FontFile Fontfile2{};
-  Font myFont1{};
-  Font myFont2{};
-  size_t fileSize1{};
-  size_t fileSize2{};
-  auto *file1 = SDL_LoadFile(primary.c_str(), &fileSize1);
-  auto *file2 = SDL_LoadFile(fallback.c_str(), &fileSize2);
-  if (!file1 || !file2) {
-    SDL_Log("Failed to load font file: %s", SDL_GetError());
-    throw FontCacheException("Filed to load font file: " + C_SDL_GetStrError() +
-                             "\n");
+SkFont FontCache::get_font(SkFontStyle style, const std::string &size,
+                           const std::string &family) {
+  SkScalar sze;
+  try {
+    sze = std::stof(size.c_str());
+  } catch (std::exception &exception) {
+    sze = 16.0f;
   }
-  Fontfile1.reset(new myFile{file1, fileSize1});
-  Fontfile2.reset(new myFile{file2, fileSize2});
-  fontFile_map[style] = {std::move(Fontfile1), std::move(Fontfile2)};
-  return;
-}
-
-void FontCache::load_font(FontWeight weight, FontSize size) {
-  Font myFont1{};
-  Font myFont2{};
-  auto &[fontFile1, fontFile2] = fontFile_map[weight];
-  auto *fileStream1 =
-      SDL_IOFromConstMem(fontFile1.get()->fontFile, fontFile1.get()->file_size);
-  auto *fileStream2 =
-      SDL_IOFromConstMem(fontFile2.get()->fontFile, fontFile2.get()->file_size);
-  if (!fileStream1 || !fileStream2) {
-    SDL_Log("Failed to create IOStream: %s\n", SDL_GetError());
-    throw FontCacheException(
-        "Failed to create IOStream: " + C_SDL_GetStrError() + "\n");
-  }
-  auto *font1 = TTF_OpenFontIO(fileStream1, false, size);
-  auto *font2 = TTF_OpenFontIO(fileStream2, false, size);
-  if (!font1 || !font2) {
-    SDL_Log("Failed to open font: %s\n", SDL_GetError());
-    throw FontCacheException("Failed to open font: " + C_SDL_GetStrError() +
-                             "\n");
-  }
-  myFont1.reset(font1);
-  if (!TTF_AddFallbackFont(font1, font2)) {
-    myFont2.reset(font2);
-    SDL_Log("Failed to set fallback %s\n", SDL_GetError());
-    throw FontCacheException("Failed to set fallback " + C_SDL_GetStrError() +
-                             "\n");
-  }
-  font_vec[static_cast<size_t>(weight)][std::round(size * 10)] =
-      std::move(myFont1);
-  return;
-}
-
-FontCache::FontCache() {}
-
-//--WARNING: Gotta initialize these seperatly at Browser::load AFTER SDL_INIT
-//            cuz we are using some SDL functions.
-void FontCache::init() {
-  init_fontFiles();
-  init_normalFonts();
-}
-
-// Gets fontsize in float. To look for it in font_map multiply by 10 and round
-TTF_Font *FontCache::get_font(FontWeight weight, FontSize size) {
-  auto &font_map = font_vec[static_cast<size_t>(weight)];
-  if (font_map.find(std::round(size * 10)) == font_map.end()) {
-    load_font(weight, size);
-  }
-  return font_map[std::round(size * 10)].get();
+  return get_font(style, sze, family);
 }
