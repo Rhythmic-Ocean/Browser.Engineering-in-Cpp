@@ -223,12 +223,17 @@ void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
 std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
   std::vector<std::unique_ptr<DrawItem>> cmds{};
   std::string bg_color = "transparent";
-  if (m_node->m_style.contains("background-color")) {
+
+  if (m_node->m_style.contains("background-color"))
+    bg_color = m_node->m_style["background-color"];
+  else if (m_node->m_style.contains("background"))
+    bg_color = m_node->m_style["background"];
+
+  if (bg_color != "transparent") {
     float radius = (m_node->m_style.contains("border-radius"))
                        ? std::stof(m_node->m_style["border-radius"].substr(
                              0, m_node->m_style["border-radius"].size() - 2))
                        : 0.0f;
-    bg_color = m_node->m_style["background-color"];
     cmds.emplace_back(
         std::make_unique<DrawRRect>(self_rect(), radius, bg_color));
   }

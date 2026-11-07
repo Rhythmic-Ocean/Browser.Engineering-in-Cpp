@@ -30,6 +30,7 @@
 #include <include/ports/SkFontScanner_FreeType.h>
 #include <iostream>
 #include <memory>
+#include <print>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -82,26 +83,6 @@ inline SkColor parseColor(const std::string &color) {
 
 inline SkColor parseColor(std::string_view color) {
   return parseColor(std::string(color));
-}
-
-inline SDL_Color parse_color(std::string name) {
-  static const std::unordered_map<std::string, SDL_Color> color_map = {
-      {"transparent", {0, 0, 0, 0}},       {"white", {255, 255, 255, 255}},
-      {"black", {0, 0, 0, 255}},           {"red", {255, 0, 0, 255}},
-      {"green", {0, 128, 0, 255}},         {"blue", {0, 0, 255, 255}},
-      {"gray", {128, 128, 128, 255}},      {"grey", {128, 128, 128, 255}},
-      {"lightblue", {173, 216, 230, 255}}, {"lightgray", {211, 211, 211, 255}},
-      {"orange", {255, 165, 0, 255}},      {"yellow", {255, 255, 0, 255}},
-      {"purple", {128, 0, 128, 255}}};
-
-  hlp::casefold(name);
-  auto it = color_map.find(name);
-
-  if (it != color_map.end()) {
-    return it->second;
-  }
-
-  return SDL_Color{0, 0, 0, 255};
 }
 
 //--WARNING: Deleters!!
