@@ -18,42 +18,42 @@ using namespace Layout;
 /*--NOTE: DrawItem's member function definitions
           Each item is rendered individually here
 */
-void DrawText::execute(float scroll_y, SkCanvas *canvas) {
+void DrawText::execute(SkCanvas *canvas) {
   SkPaint paint;
   paint.isAntiAlias();
   paint.setColor(parseColor(m_color));
   paint.setColor(parseColor(m_color));
 
-  float baseline = rect.top() - scroll_y - m_fontMetrics.fAscent;
+  float baseline = rect.top() - m_fontMetrics.fAscent;
 
   canvas->drawString(std::string(m_text).c_str(), rect.left(), baseline, m_font,
                      paint);
 }
 
-void DrawRect::execute(float scroll_y, SkCanvas *canvas) {
+void DrawRect::execute(SkCanvas *canvas) {
   SkPaint paint;
   paint.setColor(parseColor(m_color));
-  canvas->drawRect(rect.makeOffset(0, -scroll_y), paint);
+  canvas->drawRect(rect, paint);
 }
 
-void DrawRRect::execute(float scroll_y, SkCanvas *canvas) {
+void DrawRRect::execute(SkCanvas *canvas) {
   SkPaint paint;
   paint.setColor(parseColor(m_color));
-  canvas->drawRRect(rrect.makeOffset(1, -scroll_y), paint);
+  canvas->drawRRect(rrect, paint);
 }
 
-void DrawOutline::execute(float scroll_y, SkCanvas *canvas) {
+void DrawOutline::execute(SkCanvas *canvas) {
   SkPaint paint;
   paint.setColor(parseColor(m_color));
   paint.setStrokeWidth(m_thickness);
   paint.setStyle(SkPaint::kStroke_Style);
-  canvas->drawRect(rect.makeOffset(0, -scroll_y), paint);
+  canvas->drawRect(rect, paint);
 }
 
-void DrawLine::execute(float scroll_y, SkCanvas *canvas) {
+void DrawLine::execute(SkCanvas *canvas) {
   SkPathBuilder pathBuilder;
-  pathBuilder.moveTo(rect.left(), rect.top() - scroll_y)
-      .lineTo(rect.right(), rect.bottom() - scroll_y);
+  pathBuilder.moveTo(rect.left(), rect.top())
+      .lineTo(rect.right(), rect.bottom());
   SkPaint paint;
   paint.setColor(parseColor(m_color));
   paint.setStrokeWidth(m_thickness);

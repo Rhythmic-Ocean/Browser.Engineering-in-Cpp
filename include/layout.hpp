@@ -167,7 +167,7 @@ enum class DrawType { RECT, TEXT, OUTLINE, LINE };
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
   SkRect rect{};
-  virtual void execute(float scroll_y, SkCanvas *canvas) = 0;
+  virtual void execute(SkCanvas *canvas) = 0;
   virtual DrawType getType() = 0;
   virtual ~DrawItem() = default;
 };
@@ -190,7 +190,7 @@ struct DrawText : public DrawItem {
         SkRect::MakeLTRB(x1, y1, x1 + txtWidth,
                          y1 - m_fontMetrics.fAscent + m_fontMetrics.fDescent);
   }
-  void execute(float scroll_y, SkCanvas *canvas) override;
+  void execute(SkCanvas *canvas) override;
 };
 
 struct DrawRect : public DrawItem {
@@ -199,7 +199,7 @@ struct DrawRect : public DrawItem {
     rect = std::move(l_rect);
   }
   DrawType getType() override { return DrawType::RECT; }
-  void execute(float scroll_y, SkCanvas *canvas) override;
+  void execute(SkCanvas *canvas) override;
 };
 
 struct DrawRRect : public DrawItem {
@@ -211,7 +211,7 @@ struct DrawRRect : public DrawItem {
     rrect = SkRRect::MakeRectXY(rect, radius, radius);
   }
   DrawType getType() override { return DrawType::RECT; }
-  void execute(float scroll_y, SkCanvas *canvas) override;
+  void execute(SkCanvas *canvas) override;
 };
 
 struct DrawOutline : public DrawItem {
@@ -226,7 +226,7 @@ struct DrawOutline : public DrawItem {
 
   DrawType getType() override { return DrawType::OUTLINE; }
 
-  void execute(float scroll_y, SkCanvas *canvas) override;
+  void execute(SkCanvas *canvas) override;
 };
 
 struct DrawLine : public DrawItem {
@@ -240,7 +240,7 @@ struct DrawLine : public DrawItem {
   }
 
   DrawType getType() override { return DrawType::LINE; }
-  void execute(float scroll_y, SkCanvas *canvas) override;
+  void execute(SkCanvas *canvas) override;
 };
 
 class Layout;

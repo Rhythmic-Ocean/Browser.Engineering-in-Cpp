@@ -7,7 +7,14 @@
 #include <SDL3/SDL_surface.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <cmath>
+#include <include/core/SkAlphaType.h>
+#include <include/core/SkColor.h>
+#include <include/core/SkColorType.h>
+#include <include/core/SkImageInfo.h>
 #include <include/core/SkPixmap.h>
+#include <include/core/SkRect.h>
+#include <include/core/SkSurface.h>
 #include <memory>
 
 using namespace browser;
@@ -55,6 +62,7 @@ void Browser::start_event() {
       break;
     case SDL_EVENT_MOUSE_WHEEL: {
       active_tab->scroll(event.wheel.y);
+      raster_tab();
       draw();
       break;
     }
@@ -81,11 +89,22 @@ void Browser::draw() {
   SkCanvas *canvas = rootSurface->getCanvas();
   canvas->clear(SK_ColorWHITE);
 
-  auto list = m_chrome->paint();
-  for (size_t i{}; i < list.size(); ++i) {
-    list[i]->execute(0, canvas);
-  }
-  active_tab->draw(canvas, m_chrome->m_bottom);
+  SkRect tab_rect =
+      SkRect::MakeLTRB(0, m_chrome->m_bottom, static_cast<float>(m_width),
+                       static_cast<float>(m_height));
+  float tab_offset = m_chrome->m_bottom - active_tab->m_scroll_y;
+  canvas->save();
+  canvas->clipRect(tab_rect);
+  canvas->translate(0, tab_offset);
+  m_tabSurface->draw(canvas, 0, 0);
+  canvas->restore();
+
+  SkRect chrome_rect =
+      SkRect::MakeLTRB(0, 0, static_cast<float>(m_width), m_chrome->m_bottom);
+  canvas->save();
+  canvas->clipRect(chrome_rect);
+  m_chromeSurface->draw(canvas, 0, 0);
+  canvas->restore();
 
   SkPixmap pixMap;
   auto skia_image = rootSurface->makeImageSnapshot();
@@ -110,6 +129,8 @@ void Browser::new_tab(url::URL url) {
   active_tab = new_tab.get();
   tabs.push_back(std::move(new_tab));
   m_chrome->create_labelText();
+  raster_chrome();
+  raster_tab();
   draw();
 }
 
@@ -119,20 +140,32 @@ void Browser::click(SDL_MouseButtonEvent event) {
     m_focus = FOCUS::CHROME;
     active_tab->blur();
     m_chrome->click(event.x, event.y);
+    raster_chrome();
   } else {
-    m_focus = FOCUS::CONTENT;
-    m_chrome->blur();
+    if (m_focus != FOCUS::CONTENT) {
+      m_focus = FOCUS::CONTENT;
+      m_chrome->blur();
+      raster_chrome();
+    }
+    std::string url = active_tab->m_history.back().origin();
     float tab_y = event.y - m_chrome->m_bottom;
     active_tab->click(event.x, tab_y, m_window.get());
+    if (active_tab->m_history.back().origin() != url) {
+      raster_chrome();
+    }
+    raster_tab();
   }
   draw();
 }
 
 void Browser::handle_special_keys(SDL_Keycode key) {
-  if (m_focus == FOCUS::CHROME)
+  if (m_focus == FOCUS::CHROME) {
     m_chrome->handle_special_keys(key);
-  else if (m_focus == FOCUS::CONTENT) {
+    raster_chrome();
+
+  } else if (m_focus == FOCUS::CONTENT) {
     active_tab->handle_special_keys(key);
+    raster_tab();
   } else
     return;
   draw();
@@ -144,11 +177,36 @@ void Browser::handle_input(const SDL_Event &event) {
     for (char c : str) {
       m_chrome->m_address_str.push_back(c);
     }
+    raster_chrome();
   } else if (m_focus == FOCUS::CONTENT) {
     std::string str = event.text.text;
     active_tab->handle_input(std::move(str));
+    raster_tab();
   }
   draw();
+}
+
+void Browser::raster_tab() {
+  int tab_height = static_cast<int>(
+      ceil(active_tab->m_document->m_height + 2 * Layout::VSTEP));
+  if (!m_tabSurface || tab_height != m_tabSurface->height()) {
+    m_tabSurface = SkSurfaces::Raster(SkImageInfo::Make(
+        m_width, tab_height, SkColorType::kRGBA_8888_SkColorType,
+        SkAlphaType::kPremul_SkAlphaType));
+  }
+  SkCanvas *canvas = m_tabSurface->getCanvas();
+  canvas->clear(SK_ColorWHITE);
+  active_tab->raster(canvas);
+}
+
+void Browser::raster_chrome() {
+  SkCanvas *canvas = m_chromeSurface->getCanvas();
+  canvas->clear(SK_ColorWHITE);
+
+  auto list = m_chrome->paint();
+  for (size_t i{}; i < list.size(); ++i) {
+    list[i]->execute(canvas);
+  }
 }
 
 Chrome::Chrome(Browser *l_browser) : m_browser{l_browser} {
@@ -272,6 +330,8 @@ void Chrome::click(float x, float y) {
   // clicking on '<' back button
   else if (m_back_rect.contains(x, y)) {
     m_browser->active_tab->go_back();
+    m_browser->raster_chrome();
+    m_browser->raster_tab();
   }
   // clicking on different tabs for navigation
   else {

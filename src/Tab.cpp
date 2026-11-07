@@ -124,14 +124,14 @@ void Tab::render() {
 
 // NOTE: offset accounts for all the chrome items on the top and forces all
 // DrawItems to be drawm below it
-void Tab::draw(SkCanvas *canvas, float offset) {
+void Tab::raster(SkCanvas *canvas) {
   for (size_t i{}; i < m_displayItems.size(); ++i) {
     auto &cmd = m_displayItems[i];
     if (cmd->rect.top() > m_scroll_y + tab_height)
       break; // if u below the screen just stop
     if (cmd->rect.bottom() < m_scroll_y)
       continue;
-    cmd->execute(m_scroll_y - offset, canvas);
+    cmd->execute(canvas);
   }
 }
 

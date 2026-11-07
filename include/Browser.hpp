@@ -33,17 +33,17 @@ class Tab {
 public:
   std::unique_ptr<Item> m_rootNode{};
   std::vector<std::string> allowed_origins{};
+  std::unique_ptr<Layout::Layout> m_document{};
+  inline static float m_scroll_y;
 
 private:
   Layout::FontCache *m_fontCache{};
   Layout::LayoutContext ctx{};
   Parser::StyleSheet m_rules{};
-  std::unique_ptr<Layout::Layout> m_document{};
   float tab_height{};
   Item *m_focus{nullptr};
   std::optional<jsContext::JSContext> m_js{};
 
-  inline static float m_scroll_y;
   inline static float m_max_y;
   std::vector<std::unique_ptr<Layout::DrawItem>> m_displayItems{};
 
@@ -60,7 +60,7 @@ public:
   std::vector<url::URL> m_history{};
   void click(float x, float y, SDL_Window *window);
   void scroll(float turn);
-  void draw(SkCanvas *canvas, float offset);
+  void raster(SkCanvas *canvas);
   int m_width{};
   int m_height{};
   void load(url::URL url, std::string payload = "");
@@ -129,10 +129,14 @@ public:
   void handle_special_keys(SDL_Keycode key);
   void handle_input(const SDL_Event &event);
   FOCUS m_focus{FOCUS::NONE};
+  void raster_tab();
+  void raster_chrome();
 
 private:
   std::unique_ptr<Chrome> m_chrome{nullptr};
   sk_sp<SkSurface> rootSurface;
+  sk_sp<SkSurface> m_chromeSurface;
+  sk_sp<SkSurface> m_tabSurface;
   void init();
   void ctx_setup();
   void click(SDL_MouseButtonEvent event);
@@ -146,6 +150,10 @@ public:
     init();
     ctx_setup();
     m_chrome = std::make_unique<Chrome>(this);
+    m_chromeSurface = SkSurfaces::Raster(SkImageInfo::Make(
+        m_width, static_cast<int>(ceil(m_chrome->m_bottom)),
+        SkColorType::kRGBA_8888_SkColorType, SkAlphaType::kPremul_SkAlphaType));
+    m_tabSurface = nullptr;
   }
 };
 
