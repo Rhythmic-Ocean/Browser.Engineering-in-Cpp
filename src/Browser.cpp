@@ -62,7 +62,6 @@ void Browser::start_event() {
       break;
     case SDL_EVENT_MOUSE_WHEEL: {
       active_tab->scroll(event.wheel.y);
-      raster_tab();
       draw();
       break;
     }
@@ -115,6 +114,7 @@ void Browser::draw() {
   SDL_Rect rect = SDL_Rect(0, 0, m_width, m_height);
   auto window_surface = SDL_GetWindowSurface(m_window.get());
   SDL_BlitSurface(sdl_surface, &rect, window_surface, &rect);
+  SDL_DestroySurface(sdl_surface);
   SDL_UpdateWindowSurface(m_window.get());
 }
 

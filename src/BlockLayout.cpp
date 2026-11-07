@@ -20,31 +20,30 @@ using namespace Layout;
 */
 void DrawText::execute(SkCanvas *canvas) {
   SkPaint paint;
-  paint.isAntiAlias();
-  paint.setColor(parseColor(m_color));
-  paint.setColor(parseColor(m_color));
+  paint.setAntiAlias(true);
+  paint.setColor(m_color);
 
   float baseline = rect.top() - m_fontMetrics.fAscent;
 
-  canvas->drawString(std::string(m_text).c_str(), rect.left(), baseline, m_font,
-                     paint);
+  canvas->drawSimpleText(m_text.data(), m_text.size(), SkTextEncoding::kUTF8,
+                         rect.left(), baseline, m_font, paint);
 }
 
 void DrawRect::execute(SkCanvas *canvas) {
   SkPaint paint;
-  paint.setColor(parseColor(m_color));
+  paint.setColor(m_color);
   canvas->drawRect(rect, paint);
 }
 
 void DrawRRect::execute(SkCanvas *canvas) {
   SkPaint paint;
-  paint.setColor(parseColor(m_color));
+  paint.setColor(m_color);
   canvas->drawRRect(rrect, paint);
 }
 
 void DrawOutline::execute(SkCanvas *canvas) {
   SkPaint paint;
-  paint.setColor(parseColor(m_color));
+  paint.setColor(m_color);
   paint.setStrokeWidth(m_thickness);
   paint.setStyle(SkPaint::kStroke_Style);
   canvas->drawRect(rect, paint);
@@ -55,7 +54,7 @@ void DrawLine::execute(SkCanvas *canvas) {
   pathBuilder.moveTo(rect.left(), rect.top())
       .lineTo(rect.right(), rect.bottom());
   SkPaint paint;
-  paint.setColor(parseColor(m_color));
+  paint.setColor(m_color);
   paint.setStrokeWidth(m_thickness);
   paint.setStyle(SkPaint::kStroke_Style);
 

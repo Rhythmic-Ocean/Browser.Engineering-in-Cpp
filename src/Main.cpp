@@ -21,7 +21,6 @@ int main() {
     b.new_tab(std::move(url));
     while (b.is_Running) {
       b.start_event();
-      b.draw();
     }
   }
   TTF_Quit();

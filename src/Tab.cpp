@@ -127,10 +127,6 @@ void Tab::render() {
 void Tab::raster(SkCanvas *canvas) {
   for (size_t i{}; i < m_displayItems.size(); ++i) {
     auto &cmd = m_displayItems[i];
-    if (cmd->rect.top() > m_scroll_y + tab_height)
-      break; // if u below the screen just stop
-    if (cmd->rect.bottom() < m_scroll_y)
-      continue;
     cmd->execute(canvas);
   }
 }

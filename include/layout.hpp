@@ -62,11 +62,18 @@ enum class FontWeight : std::int32_t {
 enum class LayoutType { DOCUMENT, BLOCK, INLINE, LINE, TEXT, INPUT };
 
 inline SkColor parseColor(const std::string &color) {
-  int r{}, g{}, b{};
+  unsigned int r{}, g{}, b{};
   if (color.starts_with('#') && color.size() == 7) {
-    r = std::stoi(color.substr(1, 2), 0, 16);
-    g = std::stoi(color.substr(3, 2), 0, 16);
-    b = std::stoi(color.substr(5, 2), 0, 16);
+    std::from_chars(color.data() + 1, color.data() + 3, r, 16);
+    std::from_chars(color.data() + 3, color.data() + 5, g, 16);
+    std::from_chars(color.data() + 5, color.data() + 7, b, 16);
+  } else if (color.starts_with('#') && color.size() == 9) {
+    std::from_chars(color.data() + 1, color.data() + 3, r, 16);
+    std::from_chars(color.data() + 3, color.data() + 5, g, 16);
+    std::from_chars(color.data() + 5, color.data() + 7, b, 16);
+    unsigned int a{};
+    std::from_chars(color.data() + 7, color.data() + 9, a, 16);
+    return SkColorSetARGB(a, r, g, b);
   } else if (ColorMap::NAMED_COLORS.contains(color)) {
     return parseColor(ColorMap::NAMED_COLORS[color]);
   }
@@ -175,14 +182,14 @@ struct DrawItem {
 struct DrawText : public DrawItem {
 
   std::string m_text;
-  std::string m_color;
+  SkColor m_color;
   SkFont m_font;
   SkFontMetrics m_fontMetrics;
 
   DrawType getType() override { return DrawType::TEXT; }
   DrawText(const std::string &text, const std::string &color, SkFont font,
            float x1, float y1)
-      : m_text{text}, m_color{color}, m_font{std::move(font)} {
+      : m_text{text}, m_color{parseColor(color)}, m_font{std::move(font)} {
     float txtWidth{
         m_font.measureText(text.c_str(), text.size(), SkTextEncoding::kUTF8)};
     [[maybe_unused]] float lineSkip = m_font.getMetrics(&m_fontMetrics);
@@ -194,8 +201,9 @@ struct DrawText : public DrawItem {
 };
 
 struct DrawRect : public DrawItem {
-  std::string m_color;
-  DrawRect(SkRect l_rect, const std::string &color) : m_color{color} {
+  SkColor m_color;
+  DrawRect(SkRect l_rect, const std::string &color)
+      : m_color{parseColor(color)} {
     rect = std::move(l_rect);
   }
   DrawType getType() override { return DrawType::RECT; }
@@ -204,9 +212,9 @@ struct DrawRect : public DrawItem {
 
 struct DrawRRect : public DrawItem {
   SkRRect rrect{};
-  std::string m_color;
+  SkColor m_color;
   DrawRRect(SkRect l_rect, float radius, const std::string &color)
-      : m_color{color} {
+      : m_color{parseColor(color)} {
     rect = std::move(l_rect);
     rrect = SkRRect::MakeRectXY(rect, radius, radius);
   }
@@ -215,12 +223,12 @@ struct DrawRRect : public DrawItem {
 };
 
 struct DrawOutline : public DrawItem {
-  std::string m_color;
+  SkColor m_color;
   float m_thickness;
 
   DrawOutline(SkRect l_rect, std::string color, float thickness) {
     rect = std::move(l_rect);
-    m_color = std::move(color);
+    m_color = parseColor(color);
     m_thickness = thickness;
   }
 
@@ -231,11 +239,11 @@ struct DrawOutline : public DrawItem {
 
 struct DrawLine : public DrawItem {
   float m_thickness;
-  std::string m_color;
+  SkColor m_color;
 
   DrawLine(float x1, float y1, float x2, float y2, std::string color,
            float thickness)
-      : m_thickness{thickness}, m_color{std::move(color)} {
+      : m_thickness{thickness}, m_color{parseColor(color)} {
     rect = {SkRect::MakeLTRB(x1, y1, x2, y2)};
   }
 
