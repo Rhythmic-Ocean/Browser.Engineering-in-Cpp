@@ -79,6 +79,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             -Wconversion
     )
 endif()
+
 #
 # # Optional clang-tidy static analysis
 # find_program(CLANG_TIDY_EXE NAMES clang-tidy)

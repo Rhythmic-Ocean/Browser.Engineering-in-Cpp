@@ -33,6 +33,11 @@ void LineLayout::layout(LayoutContext &ctx) {
   m_height = 1.25f * (max_ascent + max_descent);
 }
 
+std::vector<std::unique_ptr<DrawItem>>
+LineLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
+}
+
 std::vector<std::unique_ptr<DrawItem>> LineLayout::paint() { return {}; }
 
 void LineLayout::getExtremes(float &max_ascent, float &max_descent) {
@@ -67,6 +72,11 @@ void TextLayout::layout(LayoutContext &ctx) {
     m_start_x = m_parent->m_start_x;
   }
   m_height = font.getMetrics(&fontMetrics);
+}
+
+std::vector<std::unique_ptr<DrawItem>>
+TextLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
 }
 
 std::vector<std::unique_ptr<DrawItem>> TextLayout::paint() {
@@ -104,6 +114,11 @@ void InputLayout::layout(LayoutContext &ctx) {
     m_start_x = m_parent->m_start_x;
   }
   m_height = font.getMetrics(nullptr);
+}
+
+std::vector<std::unique_ptr<DrawItem>>
+InputLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
 }
 
 std::vector<std::unique_ptr<DrawItem>> InputLayout::paint() {

@@ -24,9 +24,7 @@ void DrawText::execute(SkCanvas *canvas) {
   paint.setColor(m_color);
 
   float baseline = rect.top() - m_fontMetrics.fAscent;
-
-  canvas->drawSimpleText(m_text.data(), m_text.size(), SkTextEncoding::kUTF8,
-                         rect.left(), baseline, m_font, paint);
+  canvas->drawString(m_text.c_str(), rect.left(), baseline, m_font, paint);
 }
 
 void DrawRect::execute(SkCanvas *canvas) {
@@ -59,6 +57,51 @@ void DrawLine::execute(SkCanvas *canvas) {
   paint.setStyle(SkPaint::kStroke_Style);
 
   canvas->drawPath(pathBuilder.detach(), paint);
+}
+
+// void printVec(std::vector<std::unique_ptr<DrawItem>> &displayVec) {
+//   for (auto &vec : displayVec) {
+//     auto type = vec->getType();
+//     switch (type) {
+//     case DrawType::LINE:
+//       std::cout << "line" << std::endl;
+//       break;
+//     case DrawType::OUTLINE:
+//       std::cout << "outline" << std::endl;
+//       break;
+//     case DrawType::OPAC:
+//       std::cout << "opacity" << std::endl;
+//       break;
+//     case DrawType::RECT:
+//       std::cout << "rect" << std::endl;
+//       break;
+//     case DrawType::TEXT:
+//       std::cout << "text" << std::endl;
+//       break;
+//     case DrawType::RRECT:
+//       std::cout << "rrect" << std::endl;
+//       break;
+//     default:
+//       std::cout << "smthing else" << std::endl;
+//       break;
+//     }
+//   }
+// }
+
+void Opacity::execute(SkCanvas *canvas) {
+  if (m_opacity >= 1.0f) {
+    for (auto &cmd : m_children) {
+      cmd->execute(canvas);
+    }
+    return;
+  }
+  SkPaint paint = SkPaint();
+  paint.setAlphaf(m_opacity);
+  canvas->saveLayer(nullptr, &paint);
+  for (size_t i{}; i < m_children.size(); ++i) {
+    m_children[i]->execute(canvas);
+  }
+  canvas->restore();
 }
 
 //--NOTE: Layout's member function definitions
@@ -220,6 +263,11 @@ void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
   return;
 }
 
+std::vector<std::unique_ptr<DrawItem>>
+BlockLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
+}
+
 std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
   std::vector<std::unique_ptr<DrawItem>> cmds{};
   std::string bg_color = "transparent";
@@ -245,6 +293,11 @@ void DocumentLayout::pprint() {
   m_children[0]->pprint();
 }
 
+std::vector<std::unique_ptr<DrawItem>>
+DocumentLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
+}
+
 void BlockLayout::pprint() {
   if (layout_mode() == LayoutType::BLOCK) {
     std::cout << "BLOCK " << m_node->m_text << std::endl;
@@ -266,9 +319,4 @@ void BlockLayout::new_line() {
   }
   auto new_line = std::make_unique<LineLayout>(m_node, this, lastLine);
   m_children.push_back(std::move(new_line));
-}
-
-SkRect BlockLayout::self_rect() {
-  return SkRect{m_start_x, m_start_y, m_start_x + m_width,
-                m_start_y + m_height};
 }

@@ -47,7 +47,8 @@ private:
   inline static float m_max_y;
   std::vector<std::unique_ptr<Layout::DrawItem>> m_displayItems{};
 
-  void paint_tree(Layout::Layout *layoutNode);
+  void paint_tree(Layout::Layout *layoutNode,
+                  std::vector<std::unique_ptr<Layout::DrawItem>> &displayItems);
   void style(Item *node, Parser::StyleSheet &rules);
   std::vector<std::string_view> get_css_links(const std::vector<Item *> &list);
   std::vector<std::string_view> get_js_links(const std::vector<Item *> &list);

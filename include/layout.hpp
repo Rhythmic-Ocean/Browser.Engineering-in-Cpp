@@ -11,6 +11,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <array>
 #include <cstdint>
+#include <exception>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkColor.h>
 #include <include/core/SkColorType.h>
@@ -150,7 +151,7 @@ struct PositionedText {
   PositionedText &operator=(PositionedText &&) = default;
 };
 
-enum class DrawType { RECT, TEXT, OUTLINE, LINE };
+enum class DrawType { RECT, TEXT, OUTLINE, LINE, OPAC, RRECT };
 
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
@@ -199,7 +200,7 @@ struct DrawRRect : public DrawItem {
     rect = std::move(l_rect);
     rrect = SkRRect::MakeRectXY(rect, radius, radius);
   }
-  DrawType getType() override { return DrawType::RECT; }
+  DrawType getType() override { return DrawType::RRECT; }
   void execute(SkCanvas *canvas) override;
 };
 
@@ -232,6 +233,22 @@ struct DrawLine : public DrawItem {
   void execute(SkCanvas *canvas) override;
 };
 
+class Opacity : public DrawItem {
+  float m_opacity{};
+  std::vector<std::unique_ptr<DrawItem>> m_children;
+
+public:
+  Opacity(float opacity, std::vector<std::unique_ptr<DrawItem>> children)
+      : m_opacity{opacity}, m_children{std::move(children)} {
+    rect = SkRect::MakeEmpty();
+    for (auto &cmd : m_children) {
+      rect.join(cmd->rect);
+    }
+  }
+  DrawType getType() override { return DrawType::OPAC; }
+  void execute(SkCanvas *canvas) override;
+};
+
 class Layout;
 class DocumentLayout;
 class BlockLayout;
@@ -259,6 +276,9 @@ public:
   virtual std::vector<std::unique_ptr<DrawItem>> paint() = 0;
   virtual bool should_paint() { return true; }
   virtual LayoutType getType() = 0;
+  virtual std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) = 0;
+  virtual SkRect self_rect() = 0;
   virtual ~Layout() = default;
 };
 
@@ -266,11 +286,17 @@ class DocumentLayout : public Layout {
 
 public:
   DocumentLayout(Item *node) : Layout{node, nullptr, nullptr} {}
-  void layout(LayoutContext &ctx);
-  std::vector<std::unique_ptr<DrawItem>> paint();
-  void pprint();
-  LayoutType getType() { return LayoutType::DOCUMENT; }
+  void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>> paint() override;
+  void pprint() override;
+  std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) override;
+  LayoutType getType() override { return LayoutType::DOCUMENT; }
   ~DocumentLayout() = default;
+  SkRect self_rect() override {
+    return SkRect::MakeLTRB(m_start_x, m_start_y, m_start_x + m_width,
+                            m_start_y + m_height);
+  }
 };
 
 class BlockLayout : public Layout {
@@ -297,7 +323,6 @@ private:
     }
     return true;
   }
-  SkRect self_rect();
 
 public:
   void pprint() override;
@@ -307,8 +332,14 @@ public:
   BlockLayout(Item *node, Layout *parent, Layout *previous)
       : Layout{node, parent, previous} {}
   void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) override;
   std::vector<std::unique_ptr<DrawItem>> paint() override;
   ~BlockLayout() = default;
+  SkRect self_rect() override {
+    return SkRect::MakeLTRB(m_start_x, m_start_y, m_start_x + m_width,
+                            m_start_y + m_height);
+  }
 };
 
 class LineLayout : public Layout {
@@ -317,8 +348,14 @@ public:
   void layout(LayoutContext &ctx) override;
   std::vector<std::unique_ptr<DrawItem>> paint() override;
   LayoutType getType() override { return LayoutType::LINE; }
+  std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) override;
   void getExtremes(float &max_ascent, float &max_descent);
   void pprint() override;
+  SkRect self_rect() override {
+    return SkRect::MakeLTRB(m_start_x, m_start_y, m_start_x + m_width,
+                            m_start_y + m_height);
+  }
 };
 
 class TextLayout : public Layout {
@@ -332,9 +369,15 @@ public:
       : Layout{node, parent, previous_word}, m_text{std::move(text)} {}
 
   void layout(LayoutContext &ctx) override;
+  std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) override;
   std::vector<std::unique_ptr<DrawItem>> paint() override;
   LayoutType getType() override { return LayoutType::TEXT; }
   void pprint() override;
+  SkRect self_rect() override {
+    return SkRect::MakeLTRB(m_start_x, m_start_y, m_start_x + m_width,
+                            m_start_y + m_height);
+  }
 };
 
 // NOTE: Input and TextLayout both live under LineLayout and are treated
@@ -354,7 +397,9 @@ public:
   std::vector<std::unique_ptr<DrawItem>> paint() override;
   LayoutType getType() override { return LayoutType::INPUT; }
   void pprint() override { std::cout << m_text << std::endl; };
-  SkRect self_rect() {
+  std::vector<std::unique_ptr<DrawItem>>
+  paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) override;
+  SkRect self_rect() override {
     return SkRect::MakeLTRB(m_start_x, m_start_y, m_start_x + m_width,
                             m_start_y + m_height);
   }
@@ -370,4 +415,26 @@ inline LineLayout::LineLayout(Item *node, BlockLayout *parent,
                               LineLayout *previous_line)
     : Layout{node, parent, previous_line} {}
 
+inline std::vector<std::unique_ptr<DrawItem>>
+paint_visual_effect(Item *node, std::vector<std::unique_ptr<DrawItem>> cmds,
+                    [[maybe_unused]] SkRect rect) {
+  float opacity = 1.0f;
+  if (node->m_style.contains("opacity")) {
+    try {
+      opacity = std::stof(node->m_style["opacity"]);
+    } catch (std::exception &exc) {
+      std::println(stderr,
+                   "Correpted opacity value for node: {}, bad value was: {}",
+                   node->m_text, node->m_style["opacity"]);
+    }
+  }
+  std::vector<std::unique_ptr<DrawItem>> cmd{};
+  std::unique_ptr<DrawItem> opac =
+      std::make_unique<Opacity>(opacity, std::move(cmds));
+  cmd.push_back(std::move(opac));
+  return cmd;
+}
 } // namespace Layout
+//
+//
+//
