@@ -1,0 +1,71 @@
+\doxysection{browser::\+Tab Class Reference}
+\hypertarget{classbrowser_1_1Tab}{}\label{classbrowser_1_1Tab}\index{browser::Tab@{browser::Tab}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classbrowser_1_1Tab_aaf49121e6bceb49f40340ca837b7368e}\label{classbrowser_1_1Tab_aaf49121e6bceb49f40340ca837b7368e} 
+void {\bfseries render} ()
+\item 
+\Hypertarget{classbrowser_1_1Tab_aeecc5d96665719e547871051125964d4}\label{classbrowser_1_1Tab_aeecc5d96665719e547871051125964d4} 
+void {\bfseries go\+\_\+back} ()
+\item 
+\Hypertarget{classbrowser_1_1Tab_af5131288227068e02079c9e5b991906f}\label{classbrowser_1_1Tab_af5131288227068e02079c9e5b991906f} 
+void {\bfseries click} (float x, float y, SDL\+\_\+\+Window \texorpdfstring{$\ast$}{*}window)
+\item 
+\Hypertarget{classbrowser_1_1Tab_a71cb70794765b799438aa53c793cf123}\label{classbrowser_1_1Tab_a71cb70794765b799438aa53c793cf123} 
+void {\bfseries scroll} (float turn)
+\item 
+\Hypertarget{classbrowser_1_1Tab_a39a8620d895d15d4cc46133837a7ab6a}\label{classbrowser_1_1Tab_a39a8620d895d15d4cc46133837a7ab6a} 
+void {\bfseries raster} (Sk\+Canvas \texorpdfstring{$\ast$}{*}canvas)
+\item 
+\Hypertarget{classbrowser_1_1Tab_a7df091a6a6400bcd2e37d5a46bb81205}\label{classbrowser_1_1Tab_a7df091a6a6400bcd2e37d5a46bb81205} 
+void {\bfseries load} (\doxymbox{\hyperlink{classurl_1_1URL}{url::\+\+URL}} url, std::\+string payload="{}"{})
+\item 
+\Hypertarget{classbrowser_1_1Tab_a7079f0679d71fa5135775e3f836408c4}\label{classbrowser_1_1Tab_a7079f0679d71fa5135775e3f836408c4} 
+{\bfseries Tab} (\doxymbox{\hyperlink{structbrowser_1_1TabContext}{Tab\+Context}} tctx, float l\+\_\+tab\+\_\+height)
+\item 
+\Hypertarget{classbrowser_1_1Tab_a4a5049721e5eddc21282ded55bce18d9}\label{classbrowser_1_1Tab_a4a5049721e5eddc21282ded55bce18d9} 
+void {\bfseries handle\+\_\+special\+\_\+keys} (SDL\+\_\+\+Keycode key)
+\item 
+\Hypertarget{classbrowser_1_1Tab_a61f01b263efaaef725294ed82b62f74e}\label{classbrowser_1_1Tab_a61f01b263efaaef725294ed82b62f74e} 
+void {\bfseries handle\+\_\+input} (std::\+string str)
+\item 
+\Hypertarget{classbrowser_1_1Tab_af0aff5a50564bd68ed19046442637da9}\label{classbrowser_1_1Tab_af0aff5a50564bd68ed19046442637da9} 
+void {\bfseries blur} ()
+\item 
+\Hypertarget{classbrowser_1_1Tab_a4db3547211ed555e21783ce12708dfb2}\label{classbrowser_1_1Tab_a4db3547211ed555e21783ce12708dfb2} 
+bool {\bfseries allowed\+\_\+request} (const \doxymbox{\hyperlink{classurl_1_1URL}{url::\+\+URL}} \&l\+\_\+url)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classbrowser_1_1Tab_a4fd4469009df7ad295ac70b0f1d92d4c}\label{classbrowser_1_1Tab_a4fd4469009df7ad295ac70b0f1d92d4c} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structItem}{Item}} $>$ {\bfseries m\+\_\+root\+Node} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Tab_aad981dfb67b4df7a90104716e478c026}\label{classbrowser_1_1Tab_aad981dfb67b4df7a90104716e478c026} 
+std::\+vector$<$ std::\+string $>$ {\bfseries allowed\+\_\+origins} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Tab_af00c325d792f28474c6b1b1a90fdf8e6}\label{classbrowser_1_1Tab_af00c325d792f28474c6b1b1a90fdf8e6} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}} $>$ {\bfseries m\+\_\+document} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Tab_a6f8495b8fd7c57d4ac3dc55f4d2c3f24}\label{classbrowser_1_1Tab_a6f8495b8fd7c57d4ac3dc55f4d2c3f24} 
+std::\+vector$<$ \doxymbox{\hyperlink{classurl_1_1URL}{url::\+\+URL}} $>$ {\bfseries m\+\_\+history} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Tab_afbe8732d1447a9d16f75a663077ee5c3}\label{classbrowser_1_1Tab_afbe8732d1447a9d16f75a663077ee5c3} 
+int {\bfseries m\+\_\+width} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Tab_a305b78bb0c93616518151e4544c35e23}\label{classbrowser_1_1Tab_a305b78bb0c93616518151e4544c35e23} 
+int {\bfseries m\+\_\+height} \{\}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classbrowser_1_1Tab_a0532669f6a56536b5493d8469c471fc0}\label{classbrowser_1_1Tab_a0532669f6a56536b5493d8469c471fc0} 
+static float {\bfseries m\+\_\+scroll\+\_\+y}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+Browser.\+hpp\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+src/\+Tab.\+cpp\end{DoxyCompactItemize}

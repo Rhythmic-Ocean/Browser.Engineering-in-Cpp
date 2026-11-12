@@ -12,6 +12,7 @@
 #include <array>
 #include <cstdint>
 #include <exception>
+#include <include/core/SkBlendMode.h>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkColor.h>
 #include <include/core/SkColorType.h>
@@ -86,14 +87,19 @@ inline SkColor parseColor(std::string_view color) {
   return parseColor(std::string(color));
 }
 
-//--WARNING: Deleters!!
-struct TextDeleter {
-  void operator()(TTF_Text *text) const {
-    if (text)
-      TTF_DestroyText(text);
-    text = nullptr;
+inline SkBlendMode parseBlendMode(const std::string &blend_mode_str) {
+  if (blend_mode_str == "multiply") {
+    return SkBlendMode::kMultiply;
+  } else if (blend_mode_str == "difference") {
+    return SkBlendMode::kDifference;
+  } else if (blend_mode_str == "destination-in") {
+    return SkBlendMode::kDstIn;
+  } else if (blend_mode_str == "source-over") {
+    return SkBlendMode::kSrcOver;
+  } else {
+    return SkBlendMode::kSrcOver;
   }
-};
+}
 
 class FontCache {
 
@@ -151,7 +157,7 @@ struct PositionedText {
   PositionedText &operator=(PositionedText &&) = default;
 };
 
-enum class DrawType { RECT, TEXT, OUTLINE, LINE, OPAC, RRECT };
+enum class DrawType { RECT, TEXT, OUTLINE, LINE, OPAC, RRECT, BLEND };
 
 //--NOTE: Starting public viewing struct/classes
 struct DrawItem {
@@ -233,13 +239,19 @@ struct DrawLine : public DrawItem {
   void execute(SkCanvas *canvas) override;
 };
 
-class Opacity : public DrawItem {
+class Blend : public DrawItem {
   float m_opacity{};
+  SkBlendMode m_blendMode;
   std::vector<std::unique_ptr<DrawItem>> m_children;
+  bool m_shouldSave;
 
 public:
-  Opacity(float opacity, std::vector<std::unique_ptr<DrawItem>> children)
-      : m_opacity{opacity}, m_children{std::move(children)} {
+  Blend(float opacity, const std::string &blend_mode_str,
+        std::vector<std::unique_ptr<DrawItem>> children)
+      : m_opacity{opacity}, m_blendMode{parseBlendMode(blend_mode_str)},
+        m_children{std::move(children)} {
+    if (m_opacity < 1 || blend_mode_str != "None")
+      m_shouldSave = true;
     rect = SkRect::MakeEmpty();
     for (auto &cmd : m_children) {
       rect.join(cmd->rect);
@@ -419,21 +431,47 @@ inline std::vector<std::unique_ptr<DrawItem>>
 paint_visual_effect(Item *node, std::vector<std::unique_ptr<DrawItem>> cmds,
                     [[maybe_unused]] SkRect rect) {
   float opacity = 1.0f;
+  std::string blend_mode_str = "None";
   if (node->m_style.contains("opacity")) {
     try {
       opacity = std::stof(node->m_style["opacity"]);
     } catch (std::exception &exc) {
       std::println(stderr,
-                   "Correpted opacity value for node: {}, bad value was: {}",
+                   "Corrupted opacity value for node: {}, bad value was: {}",
                    node->m_text, node->m_style["opacity"]);
     }
   }
-  std::vector<std::unique_ptr<DrawItem>> cmd{};
-  std::unique_ptr<DrawItem> opac =
-      std::make_unique<Opacity>(opacity, std::move(cmds));
-  cmd.push_back(std::move(opac));
-  return cmd;
+
+  if (node->m_style.contains("mix-blend-mode")) {
+    blend_mode_str = node->m_style["mix-blend-mode"];
+  }
+
+  /* Special blending happens during clipping, we draw as opaque mask a
+   RRect, and blend it using destination-in composition which basically clips
+   out all the part of the source that has zero opacity*/
+  if (node->m_style.contains("overflow") &&
+      node->m_style["overflow"] == "clip") {
+    float border_radius =
+        (node->m_style.contains("border-radius"))
+            ? std::stof(node->m_style["border-radius"].substr(
+                  0, node->m_style["border-radius"].size() - 2))
+            : 0.0f;
+    if (blend_mode_str == "None")
+      blend_mode_str = "source-over";
+
+    std::vector<std::unique_ptr<DrawItem>> temp;
+    temp.push_back(std::make_unique<DrawRRect>(rect, border_radius, "white"));
+    cmds.push_back(
+        std::make_unique<Blend>(1.0f, "destination-in", std::move(temp)));
+  }
+
+  std::vector<std::unique_ptr<DrawItem>> result;
+  result.push_back(
+      std::make_unique<Blend>(opacity, blend_mode_str, std::move(cmds)));
+
+  return result;
 }
+
 } // namespace Layout
 //
 //

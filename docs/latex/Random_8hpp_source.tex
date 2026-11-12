@@ -1,0 +1,82 @@
+\doxysection{Random.\+hpp}
+\hypertarget{Random_8hpp_source}{}\label{Random_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/Server/Random.hpp@{/home/rhythmic\_ocean/Desktop/Browser/Server/Random.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Source:\ https://www.learncpp.com/cpp-\/tutorial/global-\/random-\/numbers-\/random-\/h/}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <chrono>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <random>}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{comment}{//\ This\ header-\/only\ Random\ namespace\ implements\ a\ self-\/seeding\ Mersenne\ Twister.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{//\ Requires\ C++17\ or\ newer.}}
+\DoxyCodeLine{00008\ \textcolor{comment}{//\ It\ can\ be\ \#included\ into\ as\ many\ code\ files\ as\ needed\ (The\ inline\ keyword}}
+\DoxyCodeLine{00009\ \textcolor{comment}{//\ avoids\ ODR\ violations)\ Freely\ redistributable,\ courtesy\ of\ learncpp.com}}
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ (https://www.learncpp.com/cpp-\/tutorial/global-\/random-\/numbers-\/random-\/h/)}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{namespace\ }Random\ \{}
+\DoxyCodeLine{00012\ \textcolor{comment}{//\ Returns\ a\ seeded\ Mersenne\ Twister}}
+\DoxyCodeLine{00013\ \textcolor{comment}{//\ Note:\ we'd\ prefer\ to\ return\ a\ std::seed\_seq\ (to\ initialize\ a\ std::mt19937),}}
+\DoxyCodeLine{00014\ \textcolor{comment}{//\ but\ std::seed\ can't\ be\ copied,\ so\ it\ can't\ be\ returned\ by\ value.\ Instead,}}
+\DoxyCodeLine{00015\ \textcolor{comment}{//\ we'll\ create\ a\ std::mt19937,\ seed\ it,\ and\ then\ return\ the\ std::mt19937\ (which}}
+\DoxyCodeLine{00016\ \textcolor{comment}{//\ can\ be\ copied).}}
+\DoxyCodeLine{00017\ \textcolor{keyword}{inline}\ std::mt19937\ generate()\ \{}
+\DoxyCodeLine{00018\ \ \ std::random\_device\ rd\{\};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \ \ \textcolor{comment}{//\ Create\ seed\_seq\ with\ clock\ and\ 7\ random\ numbers\ from\ std::random\_device}}
+\DoxyCodeLine{00021\ \ \ std::seed\_seq\ ss\{}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \textcolor{keyword}{static\_cast<}std::seed\_seq::result\_type\textcolor{keyword}{>}(}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \ \ std::chrono::steady\_clock::now().time\_since\_epoch().count()),}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ rd(),}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ rd()\};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \ \ \textcolor{keywordflow}{return}\ std::mt19937\{ss\};}
+\DoxyCodeLine{00033\ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{comment}{//\ Here's\ our\ global\ std::mt19937\ object.}}
+\DoxyCodeLine{00036\ \textcolor{comment}{//\ The\ inline\ keyword\ means\ we\ only\ have\ one\ global\ instance\ for\ our\ whole}}
+\DoxyCodeLine{00037\ \textcolor{comment}{//\ program.}}
+\DoxyCodeLine{00038\ \textcolor{keyword}{inline}\ std::mt19937\ mt\{generate()\};\ \textcolor{comment}{//\ generates\ a\ seeded\ std::mt19937\ and}}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ copies\ it\ into\ our\ global\ object}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{comment}{//\ Generate\ a\ random\ int\ between\ [min,\ max]\ (inclusive)}}
+\DoxyCodeLine{00042\ \textcolor{comment}{//\ *\ also\ handles\ cases\ where\ the\ two\ arguments\ have\ different\ types\ but\ can\ be}}
+\DoxyCodeLine{00043\ \textcolor{comment}{//\ converted\ to\ int}}
+\DoxyCodeLine{00044\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ get(\textcolor{keywordtype}{int}\ min,\ \textcolor{keywordtype}{int}\ max)\ \{}
+\DoxyCodeLine{00045\ \ \ \textcolor{keywordflow}{return}\ std::uniform\_int\_distribution\{min,\ max\}(mt);}
+\DoxyCodeLine{00046\ \}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \textcolor{comment}{//\ The\ following\ function\ templates\ can\ be\ used\ to\ generate\ random\ numbers\ in}}
+\DoxyCodeLine{00049\ \textcolor{comment}{//\ other\ cases}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{comment}{//\ See\ https://www.learncpp.com/cpp-\/tutorial/function-\/template-\/instantiation/}}
+\DoxyCodeLine{00052\ \textcolor{comment}{//\ You\ can\ ignore\ these\ if\ you\ don't\ understand\ them}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{comment}{//\ Generate\ a\ random\ value\ between\ [min,\ max]\ (inclusive)}}
+\DoxyCodeLine{00055\ \textcolor{comment}{//\ *\ min\ and\ max\ must\ have\ the\ same\ type}}
+\DoxyCodeLine{00056\ \textcolor{comment}{//\ *\ return\ value\ has\ same\ type\ as\ min\ and\ max}}
+\DoxyCodeLine{00057\ \textcolor{comment}{//\ *\ Supported\ types:}}
+\DoxyCodeLine{00058\ \textcolor{comment}{//\ *\ \ \ \ short,\ int,\ long,\ long\ long}}
+\DoxyCodeLine{00059\ \textcolor{comment}{//\ *\ \ \ \ unsigned\ short,\ unsigned\ int,\ unsigned\ long,\ or\ unsigned\ long\ long}}
+\DoxyCodeLine{00060\ \textcolor{comment}{//\ Sample\ call:\ Random::get(1L,\ 6L);\ \ \ \ \ \ \ \ \ \ \ \ \ //\ returns\ long}}
+\DoxyCodeLine{00061\ \textcolor{comment}{//\ Sample\ call:\ Random::get(1u,\ 6u);\ \ \ \ \ \ \ \ \ \ \ \ \ //\ returns\ unsigned\ int}}
+\DoxyCodeLine{00062\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>\ T\ get(T\ min,\ T\ max)\ \{}
+\DoxyCodeLine{00063\ \ \ \textcolor{keywordflow}{return}\ std::uniform\_int\_distribution<T>\{min,\ max\}(mt);}
+\DoxyCodeLine{00064\ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \textcolor{comment}{//\ Generate\ a\ random\ value\ between\ [min,\ max]\ (inclusive)}}
+\DoxyCodeLine{00067\ \textcolor{comment}{//\ *\ min\ and\ max\ can\ have\ different\ types}}
+\DoxyCodeLine{00068\ \textcolor{comment}{//\ *\ return\ type\ must\ be\ explicitly\ specified\ as\ a\ template\ argument}}
+\DoxyCodeLine{00069\ \textcolor{comment}{//\ *\ min\ and\ max\ will\ be\ converted\ to\ the\ return\ type}}
+\DoxyCodeLine{00070\ \textcolor{comment}{//\ Sample\ call:\ Random::get<std::size\_t>(0,\ 6);\ \ //\ returns\ std::size\_t}}
+\DoxyCodeLine{00071\ \textcolor{comment}{//\ Sample\ call:\ Random::get<std::size\_t>(0,\ 6u);\ //\ returns\ std::size\_t}}
+\DoxyCodeLine{00072\ \textcolor{comment}{//\ Sample\ call:\ Random::get<std::int>(0,\ 6u);\ \ \ \ //\ returns\ int}}
+\DoxyCodeLine{00073\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ R,\ \textcolor{keyword}{typename}\ S,\ \textcolor{keyword}{typename}\ T>\ R\ get(S\ min,\ T\ max)\ \{}
+\DoxyCodeLine{00074\ \ \ \textcolor{keywordflow}{return}\ get<R>(\textcolor{keyword}{static\_cast<}R\textcolor{keyword}{>}(min),\ \textcolor{keyword}{static\_cast<}R\textcolor{keyword}{>}(max));}
+\DoxyCodeLine{00075\ \}}
+\DoxyCodeLine{00076\ \}\ \textcolor{comment}{//\ namespace\ Random}}
+
+\end{DoxyCode}

@@ -6,9 +6,9 @@ The original book's implementation is in Python.
 
 > I aim to have NO AI generated code in this repo. NOT ANTI-LLM, it's just for me to learn the language and how browsers work. It's still gonna be very sloppy cuz first C++ project but at least it's gonna be human slop!!
 
-### Current Status (Latest Oct 26)
+### Current Status (Latest Nov 12)
 
-#### Chapter 9 - Completed (Oct 26 2026)
+#### Chapter 11 - Completed (Nov 12 2026)
 
 - Added appropriate Cookie policy aligned with basic Web Security to handle CRS, SOP, CSRF and Cross site scripting cases.
 - Rewrote the UTF-8 based word seperator at src/BlockLayout.cpp to be more robust and handle corrupt unicode characters. (Code hugely inspired from [Flexible and Economical UTF-8 Decoder](https://bjoern.hoehrmann.de/utf-8/decoder/dfa/)

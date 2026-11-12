@@ -1,0 +1,167 @@
+\doxysection{helpers.\+hpp}
+\hypertarget{helpers_8hpp_source}{}\label{helpers_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/helpers.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/helpers.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_error.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_stdinc.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_video.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_ttf.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <climits>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <ostream>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdexcept>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <string\_view>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ BASE\_FONT\_SIZE\ =\ 16.0f;}
+\DoxyCodeLine{00017\ \textcolor{keyword}{typedef}\ \textcolor{keywordtype}{float}\ FontSize;}
+\DoxyCodeLine{00018\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ HSTEP\ =\ 13;}
+\DoxyCodeLine{00019\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ VSTEP\ =\ 14;}
+\DoxyCodeLine{00020\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ SCROLL\_STEP\ =\ 100;}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ WIDTH\ =\ 800.0f;}
+\DoxyCodeLine{00023\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{int}\ HEIGHT\ =\ 600.0f;}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{static}\ std::unordered\_map<const\ char\ *,\ const\ char\ *>\ INHERITED\_PROPERTIES\{}
+\DoxyCodeLine{00026\ \ \ \ \ \{\textcolor{stringliteral}{"{}font-\/size"{}},\ \textcolor{stringliteral}{"{}16px"{}}\},}
+\DoxyCodeLine{00027\ \ \ \ \ \{\textcolor{stringliteral}{"{}font-\/style"{}},\ \textcolor{stringliteral}{"{}normal"{}}\},}
+\DoxyCodeLine{00028\ \ \ \ \ \{\textcolor{stringliteral}{"{}font-\/weight"{}},\ \textcolor{stringliteral}{"{}normal"{}}\},}
+\DoxyCodeLine{00029\ \ \ \ \ \{\textcolor{stringliteral}{"{}color"{}},\ \textcolor{stringliteral}{"{}black"{}}\}\};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structWindowDeleter}{WindowDeleter}}\ \{}
+\DoxyCodeLine{00032\ \ \ \textcolor{keywordtype}{void}\ operator()(SDL\_Window\ *window)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordflow}{if}\ (window)}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ SDL\_DestroyWindow(window);}
+\DoxyCodeLine{00035\ \ \ \ \ window\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00036\ \ \ \}}
+\DoxyCodeLine{00037\ \};}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structRendererDeleter}{RendererDeleter}}\ \{}
+\DoxyCodeLine{00040\ \ \ \textcolor{keywordtype}{void}\ operator()(SDL\_Renderer\ *renderer)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordflow}{if}\ (renderer)}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ SDL\_DestroyRenderer(renderer);}
+\DoxyCodeLine{00043\ \ \ \ \ renderer\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00044\ \ \ \}}
+\DoxyCodeLine{00045\ \};}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structItemProperties}{ItemProperties}}\ \{}
+\DoxyCodeLine{00048\ \ \ \textcolor{keywordtype}{bool}\ breakLine\{\textcolor{keyword}{false}\};}
+\DoxyCodeLine{00049\ \ \ \textcolor{keywordtype}{int}\ lineSpace\{\};}
+\DoxyCodeLine{00050\ \};}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \textcolor{keyword}{enum\ class}\ ItemType\ \{\ TAG,\ TEXT\ \};}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{struct\ }Item\ \{}
+\DoxyCodeLine{00055\ \ \ std::string\ m\_text\{\};}
+\DoxyCodeLine{00056\ \ \ std::vector<std::unique\_ptr<Item>>\ m\_children\{\};}
+\DoxyCodeLine{00057\ \ \ std::unordered\_map<std::string,\ std::string>\ m\_style\{\};}
+\DoxyCodeLine{00058\ \ \ \textcolor{keywordtype}{bool}\ focus\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00059\ \ \ Item\ *m\_parent\{\};}
+\DoxyCodeLine{00060\ \ \ Item(std::string\ \&\&text,\ Item\ *parent)}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ :\ m\_text\{std::move(text)\},\ m\_parent\{parent\}\ \{\}}
+\DoxyCodeLine{00062\ \ \ \textcolor{keyword}{virtual}\ ItemType\ getType()\ \textcolor{keyword}{const}\ =\ 0;}
+\DoxyCodeLine{00063\ \ \ \textcolor{keyword}{virtual}\ std::ostream\ \&printItem(std::ostream\ \&out)\ =\ 0;}
+\DoxyCodeLine{00064\ \ \ \textcolor{keyword}{virtual}\ \string~Item()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00065\ \ \ \textcolor{keyword}{friend}\ std::ostream\ \&operator<<(std::ostream\ \&out,\ Item\ \&item)\ \{}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordflow}{return}\ item.printItem(out);}
+\DoxyCodeLine{00067\ \ \ \}}
+\DoxyCodeLine{00068\ \};}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{keyword}{struct\ }Text\ :\ \textcolor{keyword}{public}\ Item\ \{}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ Text(std::string\ \&\&text,\ Item\ *parent)\ :\ Item\{std::move(text),\ parent\}\ \{\}}
+\DoxyCodeLine{00073\ \ \ ItemType\ getType()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ ItemType::TEXT;\ \}}
+\DoxyCodeLine{00074\ \ \ std::ostream\ \&printItem(std::ostream\ \&out)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00075\ \ \ \ \ out\ <<\ m\_text;}
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordflow}{return}\ out;}
+\DoxyCodeLine{00077\ \ \ \}}
+\DoxyCodeLine{00078\ \};}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \textcolor{keyword}{struct\ }Tag\ :\ \textcolor{keyword}{public}\ Item\ \{}
+\DoxyCodeLine{00081\ \ \ std::unordered\_map<std::string,\ std::string>\ m\_attributes\{\};}
+\DoxyCodeLine{00082\ \ \ Tag(std::string\ \&\&text,\ Item\ *parent,}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ std::unordered\_map<std::string,\ std::string>\ \&\&attributes)}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ :\ Item\{std::move(text),\ parent\},\ m\_attributes\{std::move(attributes)\}\ \{\}}
+\DoxyCodeLine{00085\ \ \ ItemType\ getType()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ ItemType::TAG;\ \}}
+\DoxyCodeLine{00086\ \ \ std::ostream\ \&printItem(std::ostream\ \&out)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00087\ \ \ \ \ out\ <<\ \textcolor{stringliteral}{"{}<"{}}\ +\ m\_text\ +\ \textcolor{stringliteral}{"{}>"{}}\ <<\ std::endl;}
+\DoxyCodeLine{00088\ \ \ \ \ ;}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\ \&attrib\ :\ m\_attributes)\ \{}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ out\ <<\ attrib.first\ <<\ \textcolor{stringliteral}{"{}\ :\ "{}}\ <<\ attrib.second\ <<\ std::endl;}
+\DoxyCodeLine{00091\ \ \ \ \ \}}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordflow}{return}\ out;}
+\DoxyCodeLine{00093\ \ \ \}}
+\DoxyCodeLine{00094\ \};}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structmyFile}{myFile}}\ \{}
+\DoxyCodeLine{00097\ \ \ \textcolor{keywordtype}{void}\ *fontFile;}
+\DoxyCodeLine{00098\ \ \ \textcolor{keywordtype}{size\_t}\ file\_size;}
+\DoxyCodeLine{00099\ \};}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structEngineDeleter}{EngineDeleter}}\ \{}
+\DoxyCodeLine{00102\ \ \ \textcolor{keywordtype}{void}\ operator()(TTF\_TextEngine\ *engine)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{keywordflow}{if}\ (engine)}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ TTF\_DestroyRendererTextEngine(engine);}
+\DoxyCodeLine{00105\ \ \ \ \ engine\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00106\ \ \ \}}
+\DoxyCodeLine{00107\ \};}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00109\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structFileDeleter}{FileDeleter}}\ \{}
+\DoxyCodeLine{00110\ \ \ \textcolor{keywordtype}{void}\ operator()(\doxymbox{\hyperlink{structmyFile}{myFile}}\ *file)\ \{}
+\DoxyCodeLine{00111\ \ \ \ \ SDL\_free(file-\/>fontFile);}
+\DoxyCodeLine{00112\ \ \ \ \ file\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00113\ \ \ \}}
+\DoxyCodeLine{00114\ \};}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structFontDeleter}{FontDeleter}}\ \{}
+\DoxyCodeLine{00117\ \ \ \textcolor{keywordtype}{void}\ operator()(TTF\_Font\ *font)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordflow}{if}\ (font)\ \{}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ TTF\_CloseFont(font);}
+\DoxyCodeLine{00120\ \ \ \ \ \}}
+\DoxyCodeLine{00121\ \ \ \ \ font\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00122\ \ \ \}}
+\DoxyCodeLine{00123\ \};}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \textcolor{keyword}{class\ }NetworkException\ :\ \textcolor{keyword}{public}\ std::runtime\_error\ \{}
+\DoxyCodeLine{00126\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00127\ \ \ \textcolor{keyword}{explicit}\ NetworkException(\textcolor{keyword}{const}\ std::string\ \&message)}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ :\ std::runtime\_error(message)\ \{\}}
+\DoxyCodeLine{00129\ \};}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \textcolor{keyword}{class\ }WindowException\ :\ \textcolor{keyword}{public}\ std::runtime\_error\ \{}
+\DoxyCodeLine{00132\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00133\ \ \ \textcolor{keyword}{explicit}\ WindowException(\textcolor{keyword}{const}\ std::string\ \&message)}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ :\ std::runtime\_error(message)\ \{\}}
+\DoxyCodeLine{00135\ \};}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \textcolor{keyword}{class\ }FontCacheException\ :\ \textcolor{keyword}{public}\ std::runtime\_error\ \{}
+\DoxyCodeLine{00138\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00139\ \ \ \textcolor{keyword}{explicit}\ FontCacheException(\textcolor{keyword}{const}\ std::string\ \&message)}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ :\ std::runtime\_error(message)\ \{\}}
+\DoxyCodeLine{00141\ \};}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \textcolor{keyword}{namespace\ }hlp\ \{}
+\DoxyCodeLine{00144\ std::vector<std::string\_view>\ split(std::string\_view\ str,\ std::string\ delim,}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ nums\ =\ INT\_MAX);}
+\DoxyCodeLine{00146\ std::string\_view\ strip(std::string\_view\ str);}
+\DoxyCodeLine{00147\ std::string\ strip(std::string\ \&\&str);}
+\DoxyCodeLine{00148\ \textcolor{keywordtype}{void}\ casefold(std::string\ \&str);}
+\DoxyCodeLine{00149\ std::string\ casefold(std::string\ \&\&stri);}
+\DoxyCodeLine{00150\ \textcolor{keywordtype}{void}\ print\_tree(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \textcolor{keywordtype}{size\_t}\ indent\ =\ 0);}
+\DoxyCodeLine{00151\ std::string\ get\_default\_CSS();}
+\DoxyCodeLine{00152\ std::string\ get\_default\_JS();}
+\DoxyCodeLine{00153\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ NodeType>}
+\DoxyCodeLine{00154\ std::vector<NodeType\ *>\ tree\_to\_list(NodeType\ *node);}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ NodeType>}
+\DoxyCodeLine{00157\ \textcolor{keywordtype}{void}\ tree\_to\_list(NodeType\ *node,\ std::vector<NodeType\ *>\ \&list);}
+\DoxyCodeLine{00158\ std::array<SDL\_FRect,\ 4>\ getOutline(SDL\_FRect\ rect,\ \textcolor{keywordtype}{float}\ thinkness);}
+\DoxyCodeLine{00159\ \}\ \textcolor{comment}{//\ namespace\ hlp}}
+\DoxyCodeLine{00160\ \textcolor{comment}{//}}
+\DoxyCodeLine{00161\ \textcolor{keyword}{inline}\ std::string\ C\_SDL\_GetStrError()\ \{\ \textcolor{keywordflow}{return}\ SDL\_GetError();\ \}}
+
+\end{DoxyCode}

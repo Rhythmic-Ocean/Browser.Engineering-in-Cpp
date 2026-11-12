@@ -1,0 +1,85 @@
+\doxysection{url.\+hpp}
+\hypertarget{url_8hpp_source}{}\label{url_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/url.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/url.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}client.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_textengine.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_ttf.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <format>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <string\_view>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{namespace\ }url\ \{}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{typedef}\ std::unordered\_map<std::string,\ std::string>\ Headers;}
+\DoxyCodeLine{00015\ \textcolor{keyword}{typedef}\ std::string\ Body;}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{keyword}{class\ }URL\ \{}
+\DoxyCodeLine{00018\ \ \ \doxymbox{\hyperlink{classClient}{Client}}\ m\_client\{\};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ std::string\ m\_url\{\};}
+\DoxyCodeLine{00022\ \ \ std::string\ scheme\{\};}
+\DoxyCodeLine{00023\ \ \ std::string\ host\{\};}
+\DoxyCodeLine{00024\ \ \ std::string\ path\{\};}
+\DoxyCodeLine{00025\ \ \ std::string\ m\_port\{\};}
+\DoxyCodeLine{00026\ \ \ \textcolor{keywordtype}{bool}\ is\_https\{\textcolor{keyword}{true}\};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00029\ \ \ \textcolor{keywordtype}{void}\ parse();}
+\DoxyCodeLine{00030\ \ \ \textcolor{keywordtype}{void}\ get\_response(std::string\ \&response);}
+\DoxyCodeLine{00031\ \ \ \textcolor{keywordtype}{void}\ get\_http\_response(std::string\ \&response);}
+\DoxyCodeLine{00032\ \ \ std::unordered\_map<std::string,\ std::string>}
+\DoxyCodeLine{00033\ \ \ parse\_response(std::vector<std::string\_view>\ response,\ \textcolor{keywordtype}{size\_t}\ \&indx);}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00036\ \ \ URL(\textcolor{keyword}{const}\ std::string\ \&url);}
+\DoxyCodeLine{00037\ \ \ URL()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00038\ \ \ URL(URL\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00039\ \ \ URL\ \&operator=(URL\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00040\ \ \ URL(URL\ \&\&)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00041\ \ \ URL\ \&operator=(URL\ \&\&)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00042\ \ \ \string~URL()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00043\ \ \ std::pair<Headers,\ Body>\ request(\doxymbox{\hyperlink{classurl_1_1URL}{url::URL}}\ \&referral,}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::string\ payload\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00045\ \ \ URL\ resolve(std::string\_view\ url);}
+\DoxyCodeLine{00046\ \ \ std::string\ origin()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \ \ \textcolor{keyword}{friend}\ std::ostream\ \&operator<<(std::ostream\ \&out,\ \textcolor{keyword}{const}\ URL\ \&url);}
+\DoxyCodeLine{00049\ \};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ std::ostream\ \&operator<<(std::ostream\ \&out,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{classurl_1_1URL}{URL}}\ \&url);}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{comment}{//\ INFO:\ CREDIT:}}
+\DoxyCodeLine{00054\ \textcolor{comment}{//\ https://github.com/gofer/percent\_encoding/blob/master/src/percent\_encoding\_encode.cpp}}
+\DoxyCodeLine{00055\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classurl_1_1PercentageEncoding}{PercentageEncoding}}\ \{}
+\DoxyCodeLine{00056\ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ needs\_encoding(\textcolor{keywordtype}{char}\ ch)\ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordflow}{if}\ ((ch\ >=\ \textcolor{charliteral}{'A'}\ \&\&\ ch\ <=\ \textcolor{charliteral}{'Z'})\ ||\ (ch\ >=\ \textcolor{charliteral}{'a'}\ \&\&\ ch\ <=\ \textcolor{charliteral}{'z'})\ ||}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ (ch\ >=\ \textcolor{charliteral}{'0'}\ \&\&\ ch\ <=\ \textcolor{charliteral}{'9'})\ ||\ ch\ ==\ \textcolor{charliteral}{'-\/'}\ ||\ ch\ ==\ \textcolor{charliteral}{'.'}\ ||\ ch\ ==\ \textcolor{charliteral}{'\_'}\ ||}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ ch\ ==\ \textcolor{charliteral}{'\string~'})}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00062\ \ \ \}}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00065\ \ \ \textcolor{keyword}{static}\ std::string\ encode(\textcolor{keyword}{const}\ std::string\ \&str)\ \{}
+\DoxyCodeLine{00066\ \ \ \ \ std::string\ buf\ =\ \textcolor{stringliteral}{"{}"{}};}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\ ch\ :\ str)\ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ch\ ==\ \textcolor{charliteral}{'\ '})\ \{}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ buf\ +=\ \textcolor{stringliteral}{"{}+"{}};}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (needs\_encoding(ch))\ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ rep\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}\textcolor{keyword}{>}(ch));}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ buf\ +=\ \textcolor{stringliteral}{"{}\%"{}}\ +\ std::format(\textcolor{stringliteral}{"{}\{:02X\}"{}},\ rep);}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ buf\ +=\ ch;}
+\DoxyCodeLine{00075\ \ \ \ \ \}}
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordflow}{return}\ buf;}
+\DoxyCodeLine{00077\ \ \ \}}
+\DoxyCodeLine{00078\ \};}
+\DoxyCodeLine{00079\ \}\ \textcolor{comment}{//\ namespace\ url}}
+
+\end{DoxyCode}

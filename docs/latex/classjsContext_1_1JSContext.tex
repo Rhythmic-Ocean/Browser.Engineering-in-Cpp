@@ -1,0 +1,35 @@
+\doxysection{js\+Context::\+JSContext Class Reference}
+\hypertarget{classjsContext_1_1JSContext}{}\label{classjsContext_1_1JSContext}\index{jsContext::JSContext@{jsContext::JSContext}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classjsContext_1_1JSContext_ad57160218f893257a64f219eafde9e81}\label{classjsContext_1_1JSContext_ad57160218f893257a64f219eafde9e81} 
+{\bfseries JSContext} (\doxymbox{\hyperlink{classbrowser_1_1Tab}{browser::\+\+Tab}} \texorpdfstring{$\ast$}{*}tab)
+\item 
+\Hypertarget{classjsContext_1_1JSContext_a9effe9ccf30fc7d6a230cb4760de9a03}\label{classjsContext_1_1JSContext_a9effe9ccf30fc7d6a230cb4760de9a03} 
+void {\bfseries run} (const std::\+string \&code)
+\item 
+\Hypertarget{classjsContext_1_1JSContext_a69da3d9dd31b521eb8670a74afae9784}\label{classjsContext_1_1JSContext_a69da3d9dd31b521eb8670a74afae9784} 
+bool {\bfseries dispatch\+\_\+event} (std::\+string type, \doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}etl)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classjsContext_1_1JSContext_aae42b40db0ca198b19c10e4322736a1c}\label{classjsContext_1_1JSContext_aae42b40db0ca198b19c10e4322736a1c} 
+std::\+unordered\+\_\+map$<$ \doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}, int $>$ {\bfseries node\+\_\+to\+\_\+handler} \{\}
+\item 
+\Hypertarget{classjsContext_1_1JSContext_ad18752ac8a8e277efe9cf45c9e87f9c8}\label{classjsContext_1_1JSContext_ad18752ac8a8e277efe9cf45c9e87f9c8} 
+std::\+unordered\+\_\+map$<$ int, \doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*} $>$ {\bfseries handler\+\_\+to\+\_\+node} \{\}
+\item 
+\Hypertarget{classjsContext_1_1JSContext_a3cf6f41c5e96661bd69e6090eb7a47eb}\label{classjsContext_1_1JSContext_a3cf6f41c5e96661bd69e6090eb7a47eb} 
+\doxymbox{\hyperlink{classbrowser_1_1Tab}{browser::\+\+Tab}} \texorpdfstring{$\ast$}{*} {\bfseries tab} \{\}
+\item 
+\Hypertarget{classjsContext_1_1JSContext_aeaff043d2490ff180c8fd89cb8676614}\label{classjsContext_1_1JSContext_aeaff043d2490ff180c8fd89cb8676614} 
+std::\+unique\+\_\+ptr$<$ duk\+\_\+context, \doxymbox{\hyperlink{structjsContext_1_1DukDeleter}{Duk\+Deleter}} $>$ {\bfseries ctx}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+js\+Context.\+hpp\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+src/\+js\+Context.\+cpp\end{DoxyCompactItemize}

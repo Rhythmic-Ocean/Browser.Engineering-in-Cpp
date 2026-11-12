@@ -1,0 +1,49 @@
+\doxysection{Item Struct Reference}
+\hypertarget{structItem}{}\label{structItem}\index{Item@{Item}}
+Inheritance diagram for Item:\+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{structItem}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{structItem_ac483fc80941c639171fe49f6e9b4696e}\label{structItem_ac483fc80941c639171fe49f6e9b4696e} 
+{\bfseries Item} (std::\+string \&\&text, \doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}parent)
+\item 
+\Hypertarget{structItem_a571d7dc73675c29e2213b9e4d641105b}\label{structItem_a571d7dc73675c29e2213b9e4d641105b} 
+virtual Item\+Type {\bfseries get\+Type} () const =0
+\item 
+\Hypertarget{structItem_a150ad137d4ce8732fae4e6cb885f17ca}\label{structItem_a150ad137d4ce8732fae4e6cb885f17ca} 
+virtual std::\+ostream \& {\bfseries print\+Item} (std::\+ostream \&out)=0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{structItem_a3c52a99a534e3b94609de76c15587d47}\label{structItem_a3c52a99a534e3b94609de76c15587d47} 
+std::\+string {\bfseries m\+\_\+text} \{\}
+\item 
+\Hypertarget{structItem_a45086f4ddc54a2d42856ef8c471df4b0}\label{structItem_a45086f4ddc54a2d42856ef8c471df4b0} 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structItem}{Item}} $>$ $>$ {\bfseries m\+\_\+children} \{\}
+\item 
+\Hypertarget{structItem_a9e1547ef9efc25bdcee48dca71ff5c3c}\label{structItem_a9e1547ef9efc25bdcee48dca71ff5c3c} 
+std::\+unordered\+\_\+map$<$ std::\+string, std::\+string $>$ {\bfseries m\+\_\+style} \{\}
+\item 
+\Hypertarget{structItem_aec6b8246f7925ab89e3896687ce8a45d}\label{structItem_aec6b8246f7925ab89e3896687ce8a45d} 
+bool {\bfseries focus} = false
+\item 
+\Hypertarget{structItem_ae1dde8cb2b4f24e6fe79b693b8e73241}\label{structItem_ae1dde8cb2b4f24e6fe79b693b8e73241} 
+\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+parent} \{\}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{structItem_a616c99e4cc0cf410808460bf4030ccb0}\label{structItem_a616c99e4cc0cf410808460bf4030ccb0} 
+std::\+ostream \& {\bfseries operator$<$$<$} (std::\+ostream \&out, \doxymbox{\hyperlink{structItem}{Item}} \&item)
+\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+helpers.\+hpp\end{DoxyCompactItemize}

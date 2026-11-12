@@ -5,6 +5,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <include/core/SkBlendMode.h>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkFontTypes.h>
 #include <include/core/SkPaint.h>
@@ -88,20 +89,19 @@ void DrawLine::execute(SkCanvas *canvas) {
 //   }
 // }
 
-void Opacity::execute(SkCanvas *canvas) {
-  if (m_opacity >= 1.0f) {
-    for (auto &cmd : m_children) {
-      cmd->execute(canvas);
-    }
-    return;
+void Blend::execute(SkCanvas *canvas) {
+  if (m_shouldSave) {
+    SkPaint paint = SkPaint();
+    paint.setAlphaf(m_opacity);
+    paint.setBlendMode(m_blendMode);
+    canvas->saveLayer(nullptr, &paint);
   }
-  SkPaint paint = SkPaint();
-  paint.setAlphaf(m_opacity);
-  canvas->saveLayer(nullptr, &paint);
   for (size_t i{}; i < m_children.size(); ++i) {
     m_children[i]->execute(canvas);
   }
-  canvas->restore();
+  if (m_shouldSave) {
+    canvas->restore();
+  }
 }
 
 //--NOTE: Layout's member function definitions

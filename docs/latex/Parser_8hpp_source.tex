@@ -1,0 +1,122 @@
+\doxysection{Parser.\+hpp}
+\hypertarget{Parser_8hpp_source}{}\label{Parser_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/Parser.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/Parser.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}helpers.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <array>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <optional>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <string\_view>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{namespace\ }Parser\ \{}
+\DoxyCodeLine{00011\ \textcolor{keyword}{enum\ class}\ SelectorType\ :\ std::uint8\_t\ \{\ TAG,\ DESCENDANT\ \};}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structParser_1_1Selector}{Selector}}\ \{}
+\DoxyCodeLine{00014\ \ \ \textcolor{keywordtype}{int}\ priority\{\};}
+\DoxyCodeLine{00015\ \ \ \textcolor{keyword}{virtual}\ SelectorType\ getType()\ =\ 0;}
+\DoxyCodeLine{00016\ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{bool}\ matches(\doxymbox{\hyperlink{structItem}{Item}}\ *node)\ =\ 0;}
+\DoxyCodeLine{00017\ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{structParser_1_1Selector}{\string~Selector}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00018\ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{struct\ }TagSelector\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structParser_1_1Selector}{Selector}}\ \{}
+\DoxyCodeLine{00021\ \ \ std::string\ tag;}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \textcolor{keywordtype}{bool}\ matches(\doxymbox{\hyperlink{structItem}{Item}}\ *node)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordflow}{return}\ node-\/>getType()\ ==\ ItemType::TAG\ \&\&\ tag\ ==\ node-\/>m\_text;}
+\DoxyCodeLine{00025\ \ \ \}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \ \ SelectorType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ SelectorType::TAG;\ \}}
+\DoxyCodeLine{00028\ \ \ TagSelector(\textcolor{keyword}{const}\ std::string\ \&l\_tag)\ :\ tag\{l\_tag\}\ \{\ priority\ =\ 1;\ \};}
+\DoxyCodeLine{00029\ \};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{comment}{//-\/-\/NOTE:\ Each\ selector\ owns\ it's\ descendent\ under\ unique\ ptr,\ but\ not\ the}}
+\DoxyCodeLine{00032\ \textcolor{comment}{//\ ancenstor}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{keyword}{struct\ }DescendantSelector\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structParser_1_1Selector}{Selector}}\ \{}
+\DoxyCodeLine{00035\ \ \ std::unique\_ptr<Selector>\ ancestor\{\};}
+\DoxyCodeLine{00036\ \ \ std::unique\_ptr<Selector>\ descendant\{\};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ SelectorType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ SelectorType::DESCENDANT;\ \}}
+\DoxyCodeLine{00039\ \ \ \textcolor{keywordtype}{bool}\ matches(\doxymbox{\hyperlink{structItem}{Item}}\ *node)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordflow}{if}\ (!descendant-\/>matches(node))}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordflow}{while}\ (node-\/>m\_parent)\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ancestor-\/>matches(node-\/>m\_parent))}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ node\ =\ node-\/>m\_parent;}
+\DoxyCodeLine{00046\ \ \ \ \ \}}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00048\ \ \ \}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ DescendantSelector(std::unique\_ptr<Selector>\ \&l\_ancestor,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::unique\_ptr<Selector>\ \&l\_descendant)}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ :\ ancestor\{l\_ancestor.release()\},\ descendant\{l\_descendant.release()\}\ \{}
+\DoxyCodeLine{00053\ \ \ \ \ priority\ =\ ancestor-\/>priority\ +\ descendant-\/>priority;}
+\DoxyCodeLine{00054\ \ \ \}}
+\DoxyCodeLine{00055\ \};}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \textcolor{keyword}{using\ }Property\ =\ std::unordered\_map<std::string,\ std::string>;}
+\DoxyCodeLine{00058\ \textcolor{keyword}{struct\ }StyleRule\ \{}
+\DoxyCodeLine{00059\ \ \ std::unique\_ptr<Selector>\ selector;}
+\DoxyCodeLine{00060\ \ \ Property\ property;}
+\DoxyCodeLine{00061\ \ \ StyleRule(std::unique\_ptr<Selector>\ \&l\_selector,\ Property\ \&l\_property)}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ :\ selector\{l\_selector.release()\},\ \textcolor{keyword}{property}\{l\_property\}\ \{\}}
+\DoxyCodeLine{00063\ \};}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \textcolor{keyword}{using\ }StyleSheet\ =\ std::vector<StyleRule>;}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \textcolor{keyword}{class\ }CSSParser\ \{}
+\DoxyCodeLine{00068\ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{static}\ std::string\ VALID\_SYMB\ =\ \textcolor{stringliteral}{"{}\#-\/.\%"{}};}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ std::string\_view\ m\_body\{\};}
+\DoxyCodeLine{00071\ \ \ \textcolor{keywordtype}{size\_t}\ index\{\};}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \textcolor{keywordtype}{void}\ whiteSpace();}
+\DoxyCodeLine{00074\ \ \ std::string\ word();}
+\DoxyCodeLine{00075\ \ \ \textcolor{keywordtype}{void}\ literal(\textcolor{keywordtype}{char}\ literal);}
+\DoxyCodeLine{00076\ \ \ std::pair<std::string,\ std::string>\ pair();}
+\DoxyCodeLine{00077\ \ \ std::optional<char>\ ignore\_until(\textcolor{keyword}{const}\ std::string\ \&literals);}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00080\ \ \ CSSParser(std::string\_view\ body)\ :\ m\_body\{body\}\ \{\}}
+\DoxyCodeLine{00081\ \ \ std::unordered\_map<std::string,\ std::string>\ body();}
+\DoxyCodeLine{00082\ \ \ StyleSheet\ parse();}
+\DoxyCodeLine{00083\ \ \ \doxymbox{\hyperlink{structParser_1_1Selector}{Selector}}\ *selector();}
+\DoxyCodeLine{00084\ \};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \textcolor{keyword}{class\ }HTMLParser\ \{}
+\DoxyCodeLine{00087\ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00088\ \textcolor{comment}{\ \ \ *-\/-\/NOTE:\ std::string\_view\ does\ not\ own\ these\ strings,\ but\ it's\ usually\ only}}
+\DoxyCodeLine{00089\ \textcolor{comment}{\ \ \ *\ dangerous\ when\ they\ live\ in\ the\ stack,\ here\ it's\ in\ the\ compiled\ binary}}
+\DoxyCodeLine{00090\ \textcolor{comment}{\ \ \ *\ so\ doesn't\ matter\ much\ since\ it's\ not\ a\ temporary}}
+\DoxyCodeLine{00091\ \textcolor{comment}{\ \ \ *\ */}}
+\DoxyCodeLine{00092\ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{static}\ std::array<std::string\_view,\ 14>\ SELF\_CLOSING\ =\ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \textcolor{stringliteral}{"{}area"{}},\ \ \textcolor{stringliteral}{"{}base"{}},\ \textcolor{stringliteral}{"{}br"{}},\ \ \ \textcolor{stringliteral}{"{}col"{}},\ \ \ \textcolor{stringliteral}{"{}embed"{}},\ \ \textcolor{stringliteral}{"{}hr"{}},\ \ \ \ \textcolor{stringliteral}{"{}img"{}},}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \textcolor{stringliteral}{"{}input"{}},\ \textcolor{stringliteral}{"{}link"{}},\ \textcolor{stringliteral}{"{}meta"{}},\ \textcolor{stringliteral}{"{}param"{}},\ \textcolor{stringliteral}{"{}source"{}},\ \textcolor{stringliteral}{"{}track"{}},\ \textcolor{stringliteral}{"{}wbr"{}}\};}
+\DoxyCodeLine{00095\ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{static}\ std::array<std::string\_view,\ 3>\ AFTER\_HTML\_TAGS\ =\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \textcolor{stringliteral}{"{}head"{}},\ \textcolor{stringliteral}{"{}body"{}},\ \textcolor{stringliteral}{"{}/html"{}}\};}
+\DoxyCodeLine{00097\ \ \ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{static}\ std::array<std::string\_view,\ 9>\ HEAD\_TAGS\{}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \textcolor{stringliteral}{"{}base"{}},\ \textcolor{stringliteral}{"{}basefont"{}},\ \textcolor{stringliteral}{"{}bgsound"{}},\ \textcolor{stringliteral}{"{}noscript"{}},\ \textcolor{stringliteral}{"{}link"{}},}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \textcolor{stringliteral}{"{}meta"{}},\ \textcolor{stringliteral}{"{}title"{}},\ \ \ \ \textcolor{stringliteral}{"{}style"{}},\ \ \ \textcolor{stringliteral}{"{}script"{}},}
+\DoxyCodeLine{00100\ \ \ \};}
+\DoxyCodeLine{00101\ \ \ std::vector<Item\ *>\ m\_unfinished\{\};}
+\DoxyCodeLine{00102\ \ \ std::string\ \&m\_body;}
+\DoxyCodeLine{00103\ \ \ \textcolor{keywordtype}{void}\ add\_text(std::string\ \&\&text);}
+\DoxyCodeLine{00104\ \ \ \textcolor{keywordtype}{void}\ add\_tag(std::string\ \&\&tag);}
+\DoxyCodeLine{00105\ \ \ \textcolor{keywordtype}{void}\ implcit\_tag(\textcolor{keyword}{const}\ std::string\ \&tag);}
+\DoxyCodeLine{00106\ \ \ std::pair<std::string,\ std::unordered\_map<std::string,\ std::string>>}
+\DoxyCodeLine{00107\ \ \ get\_attributes(std::string\ \&text);}
+\DoxyCodeLine{00108\ \ \ \doxymbox{\hyperlink{structItem}{Item}}\ *finish();}
+\DoxyCodeLine{00109\ \ \ std::vector<std::string>\ attrib\_splitter(std::string\ \&str);}
+\DoxyCodeLine{00110\ \ \ std::vector<std::string>\ parse\_attrib(std::string\ \&str);}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00113\ \ \ HTMLParser(std::string\ \&body);}
+\DoxyCodeLine{00114\ \ \ \doxymbox{\hyperlink{structItem}{Item}}\ *parse();}
+\DoxyCodeLine{00115\ \};}
+\DoxyCodeLine{00116\ \}\ \textcolor{comment}{//\ namespace\ Parser}}
+
+\end{DoxyCode}
