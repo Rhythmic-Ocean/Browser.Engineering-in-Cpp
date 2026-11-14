@@ -1,0 +1,167 @@
+\doxysection{Browser.\+hpp}
+\hypertarget{Browser_8hpp_source}{}\label{Browser_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/Browser.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/Browser.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}Parser.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}helpers.hpp"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}jsContext.hpp"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}layout.hpp"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}url.hpp"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_events.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_render.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_textengine.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_ttf.h>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <include/core/SkAlphaType.h>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ <include/core/SkFontMetrics.h>}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#include\ <include/core/SkSurface.h>}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ <optional>}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{keyword}{namespace\ }browser\ \{}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{enum\ class}\ FOCUS\ \{\ ADDRESS\_BAR,\ CONTENT,\ CHROME,\ NONE\ \};}
+\DoxyCodeLine{00021\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structbrowser_1_1Size}{Size}}\ \{}
+\DoxyCodeLine{00022\ \ \ \textcolor{keywordtype}{int}\ width;}
+\DoxyCodeLine{00023\ \ \ \textcolor{keywordtype}{int}\ height;}
+\DoxyCodeLine{00024\ \};}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structbrowser_1_1TabContext}{TabContext}}\ \{}
+\DoxyCodeLine{00027\ \ \ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout::LayoutContext}}\ lctx\{\};}
+\DoxyCodeLine{00028\ \ \ \doxymbox{\hyperlink{classLayout_1_1FontCache}{Layout::FontCache}}\ *fontCache\{\};}
+\DoxyCodeLine{00029\ \ \ \doxymbox{\hyperlink{structbrowser_1_1Size}{Size}}\ size;}
+\DoxyCodeLine{00030\ \};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keyword}{class\ }Tab\ \{}
+\DoxyCodeLine{00033\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00034\ \ \ std::unique\_ptr<Item>\ m\_rootNode\{\};}
+\DoxyCodeLine{00035\ \ \ std::vector<std::string>\ allowed\_origins\{\};}
+\DoxyCodeLine{00036\ \ \ std::unique\_ptr<Layout::Layout>\ m\_document\{\};}
+\DoxyCodeLine{00037\ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ m\_scroll\_y;}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00040\ \ \ \doxymbox{\hyperlink{classLayout_1_1FontCache}{Layout::FontCache}}\ *m\_fontCache\{\};}
+\DoxyCodeLine{00041\ \ \ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout::LayoutContext}}\ ctx\{\};}
+\DoxyCodeLine{00042\ \ \ Parser::StyleSheet\ m\_rules\{\};}
+\DoxyCodeLine{00043\ \ \ \textcolor{keywordtype}{float}\ tab\_height\{\};}
+\DoxyCodeLine{00044\ \ \ \doxymbox{\hyperlink{structItem}{Item}}\ *m\_focus\{\textcolor{keyword}{nullptr}\};}
+\DoxyCodeLine{00045\ \ \ std::optional<jsContext::JSContext>\ m\_js\{\};}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \textcolor{keyword}{inline}\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ m\_max\_y;}
+\DoxyCodeLine{00048\ \ \ std::vector<std::unique\_ptr<Layout::DrawItem>>\ m\_displayItems\{\};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \textcolor{keywordtype}{void}\ paint\_tree(\doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::Layout}}\ *layoutNode,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::vector<std::unique\_ptr<Layout::DrawItem>>\ \&displayItems);}
+\DoxyCodeLine{00052\ \ \ \textcolor{keywordtype}{void}\ style(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ Parser::StyleSheet\ \&rules);}
+\DoxyCodeLine{00053\ \ \ std::vector<std::string\_view>\ get\_css\_links(\textcolor{keyword}{const}\ std::vector<Item\ *>\ \&list);}
+\DoxyCodeLine{00054\ \ \ std::vector<std::string\_view>\ get\_js\_links(\textcolor{keyword}{const}\ std::vector<Item\ *>\ \&list);}
+\DoxyCodeLine{00055\ \ \ \textcolor{keywordtype}{void}\ scrolldown();}
+\DoxyCodeLine{00056\ \ \ \textcolor{keywordtype}{void}\ submit\_form(\doxymbox{\hyperlink{structTag}{Tag}}\ *tag);}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00059\ \ \ \textcolor{keywordtype}{void}\ render();}
+\DoxyCodeLine{00060\ \ \ \textcolor{keywordtype}{void}\ go\_back();}
+\DoxyCodeLine{00061\ \ \ std::vector<url::URL>\ m\_history\{\};}
+\DoxyCodeLine{00062\ \ \ \textcolor{keywordtype}{void}\ click(\textcolor{keywordtype}{float}\ x,\ \textcolor{keywordtype}{float}\ y,\ SDL\_Window\ *window);}
+\DoxyCodeLine{00063\ \ \ \textcolor{keywordtype}{void}\ scroll(\textcolor{keywordtype}{float}\ turn);}
+\DoxyCodeLine{00064\ \ \ \textcolor{keywordtype}{void}\ raster(SkCanvas\ *canvas);}
+\DoxyCodeLine{00065\ \ \ \textcolor{keywordtype}{int}\ m\_width\{\};}
+\DoxyCodeLine{00066\ \ \ \textcolor{keywordtype}{int}\ m\_height\{\};}
+\DoxyCodeLine{00067\ \ \ \textcolor{keywordtype}{void}\ load(\doxymbox{\hyperlink{classurl_1_1URL}{url::URL}}\ url,\ std::string\ payload\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00068\ \ \ Tab(\doxymbox{\hyperlink{structbrowser_1_1TabContext}{TabContext}}\ tctx,\ \textcolor{keywordtype}{float}\ l\_tab\_height);}
+\DoxyCodeLine{00069\ \ \ \string~Tab()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00070\ \ \ \textcolor{keywordtype}{void}\ handle\_special\_keys(SDL\_Keycode\ key);}
+\DoxyCodeLine{00071\ \ \ \textcolor{keywordtype}{void}\ handle\_input(std::string\ str);}
+\DoxyCodeLine{00072\ \ \ \textcolor{keywordtype}{void}\ blur()\ \{}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_focus\ !=\ \textcolor{keyword}{nullptr})\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ m\_focus-\/>focus\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ m\_focus\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ render();}
+\DoxyCodeLine{00077\ \ \ \ \ \}}
+\DoxyCodeLine{00078\ \ \ \}}
+\DoxyCodeLine{00079\ \ \ \textcolor{keywordtype}{bool}\ allowed\_request(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{classurl_1_1URL}{url::URL}}\ \&l\_url);}
+\DoxyCodeLine{00080\ \};}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classbrowser_1_1Browser}{Browser}};}
+\DoxyCodeLine{00083\ \textcolor{keyword}{class\ }Chrome\ \{}
+\DoxyCodeLine{00084\ \ \ \doxymbox{\hyperlink{classbrowser_1_1Browser}{Browser}}\ *m\_browser;}
+\DoxyCodeLine{00085\ \ \ SkFont\ m\_font\{\};}
+\DoxyCodeLine{00086\ \ \ SkFontMetrics\ m\_fontMetrics\{\};}
+\DoxyCodeLine{00087\ \ \ \textcolor{keywordtype}{float}\ m\_fontHeight\{\};}
+\DoxyCodeLine{00088\ \ \ \textcolor{keywordtype}{float}\ m\_tabbar\_top\{\};}
+\DoxyCodeLine{00089\ \ \ \textcolor{keywordtype}{float}\ m\_tabbar\_bottom\{\};}
+\DoxyCodeLine{00090\ \ \ \textcolor{keywordtype}{float}\ m\_urlbar\_top\{\};}
+\DoxyCodeLine{00091\ \ \ \textcolor{keywordtype}{float}\ m\_urlbar\_bottom\{\};}
+\DoxyCodeLine{00092\ \ \ SkRect\ m\_newTab\_rect\{\};}
+\DoxyCodeLine{00093\ \ \ SkRect\ m\_back\_rect\{\};}
+\DoxyCodeLine{00094\ \ \ SkRect\ m\_address\_rect\{\};}
+\DoxyCodeLine{00095\ \ \ SkRect\ m\_input\_rect\{\};}
+\DoxyCodeLine{00096\ \ \ std::string\ text\_color\ =\ \textcolor{stringliteral}{"{}black"{}};}
+\DoxyCodeLine{00097\ \ \ \textcolor{comment}{//\ actual\ address\ bar\ string}}
+\DoxyCodeLine{00098\ \ \ \textcolor{comment}{//\ TTF\_Version\ that\ would\ be\ set\ to\ reflect\ m\_address\_str\ right\ before}}
+\DoxyCodeLine{00099\ \ \ \textcolor{comment}{//\ rendering}}
+\DoxyCodeLine{00100\ \ \ std::string\ m\_plus;}
+\DoxyCodeLine{00101\ \ \ std::string\ m\_back;}
+\DoxyCodeLine{00102\ \ \ std::vector<std::string>\ m\_labelNames\{\};}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ SkRect\ tab\_rect(\textcolor{keywordtype}{size\_t}\ i);}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00107\ \ \ \textcolor{keywordtype}{float}\ m\_padding\{\};}
+\DoxyCodeLine{00108\ \ \ FOCUS\ m\_focus\{FOCUS::NONE\};}
+\DoxyCodeLine{00109\ \ \ std::string\ m\_address\_str\{\};}
+\DoxyCodeLine{00110\ \ \ \textcolor{keywordtype}{float}\ m\_bottom;}
+\DoxyCodeLine{00111\ \ \ \textcolor{keywordtype}{void}\ click(\textcolor{keywordtype}{float}\ x,\ \textcolor{keywordtype}{float}\ y);}
+\DoxyCodeLine{00112\ \ \ Chrome(\doxymbox{\hyperlink{classbrowser_1_1Browser}{Browser}}\ *l\_browser);}
+\DoxyCodeLine{00113\ \ \ std::vector<std::unique\_ptr<Layout::DrawItem>>\ paint();}
+\DoxyCodeLine{00114\ \ \ \textcolor{keywordtype}{void}\ create\_labelText();}
+\DoxyCodeLine{00115\ \ \ \textcolor{keywordtype}{void}\ handle\_special\_keys(SDL\_Keycode\ key);}
+\DoxyCodeLine{00116\ \ \ \textcolor{keywordtype}{void}\ blur()\ \{\ m\_focus\ =\ FOCUS::NONE;\ \}}
+\DoxyCodeLine{00117\ \};}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \textcolor{keyword}{class\ }Browser\ \{}
+\DoxyCodeLine{00120\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00121\ \ \ std::unique\_ptr<Layout::FontCache>\ m\_fontCache\{\};}
+\DoxyCodeLine{00122\ \ \ std::vector<std::unique\_ptr<Tab>>\ tabs\{\};}
+\DoxyCodeLine{00123\ \ \ \doxymbox{\hyperlink{classbrowser_1_1Tab}{Tab}}\ *active\_tab\{\};}
+\DoxyCodeLine{00124\ \ \ std::string\ m\_title;}
+\DoxyCodeLine{00125\ \ \ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout::LayoutContext}}\ ctx\{\};}
+\DoxyCodeLine{00126\ \ \ std::unique\_ptr<SDL\_Window,\ WindowDeleter>\ m\_window;}
+\DoxyCodeLine{00127\ \ \ \textcolor{keywordtype}{bool}\ is\_Running;}
+\DoxyCodeLine{00128\ \ \ \textcolor{keywordtype}{int}\ m\_width\{\};}
+\DoxyCodeLine{00129\ \ \ \textcolor{keywordtype}{int}\ m\_height\{\};}
+\DoxyCodeLine{00130\ \ \ \textcolor{keywordtype}{void}\ handle\_special\_keys(SDL\_Keycode\ key);}
+\DoxyCodeLine{00131\ \ \ \textcolor{keywordtype}{void}\ handle\_input(\textcolor{keyword}{const}\ SDL\_Event\ \&event);}
+\DoxyCodeLine{00132\ \ \ FOCUS\ m\_focus\{FOCUS::NONE\};}
+\DoxyCodeLine{00133\ \ \ \textcolor{keywordtype}{void}\ raster\_tab();}
+\DoxyCodeLine{00134\ \ \ \textcolor{keywordtype}{void}\ raster\_chrome();}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00137\ \ \ std::unique\_ptr<Chrome>\ m\_chrome\{\textcolor{keyword}{nullptr}\};}
+\DoxyCodeLine{00138\ \ \ sk\_sp<SkSurface>\ rootSurface;}
+\DoxyCodeLine{00139\ \ \ sk\_sp<SkSurface>\ m\_chromeSurface;}
+\DoxyCodeLine{00140\ \ \ sk\_sp<SkSurface>\ m\_tabSurface;}
+\DoxyCodeLine{00141\ \ \ \textcolor{keywordtype}{void}\ init();}
+\DoxyCodeLine{00142\ \ \ \textcolor{keywordtype}{void}\ ctx\_setup();}
+\DoxyCodeLine{00143\ \ \ \textcolor{keywordtype}{void}\ click(SDL\_MouseButtonEvent\ event);}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00146\ \ \ \textcolor{keywordtype}{void}\ draw();}
+\DoxyCodeLine{00147\ \ \ \textcolor{keywordtype}{void}\ start\_event();}
+\DoxyCodeLine{00148\ \ \ \textcolor{keywordtype}{void}\ new\_tab(\doxymbox{\hyperlink{classurl_1_1URL}{url::URL}}\ url);}
+\DoxyCodeLine{00149\ \ \ Browser(std::string\ \&\&title,\ \doxymbox{\hyperlink{structbrowser_1_1Size}{Size}}\ size\ =\ \{WIDTH,\ HEIGHT\})}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ :\ m\_title\{std::move(title)\},\ m\_width\{size.width\},\ m\_height\{size.height\}\ \{}
+\DoxyCodeLine{00151\ \ \ \ \ init();}
+\DoxyCodeLine{00152\ \ \ \ \ ctx\_setup();}
+\DoxyCodeLine{00153\ \ \ \ \ m\_chrome\ =\ std::make\_unique<Chrome>(\textcolor{keyword}{this});}
+\DoxyCodeLine{00154\ \ \ \ \ m\_chromeSurface\ =\ SkSurfaces::Raster(SkImageInfo::Make(}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ m\_width,\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(ceil(m\_chrome-\/>m\_bottom)),}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ SkColorType::kRGBA\_8888\_SkColorType,\ SkAlphaType::kPremul\_SkAlphaType));}
+\DoxyCodeLine{00157\ \ \ \ \ m\_tabSurface\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00158\ \ \ \}}
+\DoxyCodeLine{00159\ \};}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \}\ \textcolor{comment}{//\ namespace\ browser}}
+
+\end{DoxyCode}

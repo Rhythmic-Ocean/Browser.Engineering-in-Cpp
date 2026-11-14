@@ -1,0 +1,68 @@
+\doxysection{browser::\+Browser Class Reference}
+\hypertarget{classbrowser_1_1Browser}{}\label{classbrowser_1_1Browser}\index{browser::Browser@{browser::Browser}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classbrowser_1_1Browser_ac6882cb335a8cc07fe01d11bb1931df6}\label{classbrowser_1_1Browser_ac6882cb335a8cc07fe01d11bb1931df6} 
+void {\bfseries handle\+\_\+special\+\_\+keys} (SDL\+\_\+\+Keycode key)
+\item 
+\Hypertarget{classbrowser_1_1Browser_ac11a53d1190f550fcd7d38a01d6e629b}\label{classbrowser_1_1Browser_ac11a53d1190f550fcd7d38a01d6e629b} 
+void {\bfseries handle\+\_\+input} (const SDL\+\_\+\+Event \&event)
+\item 
+\Hypertarget{classbrowser_1_1Browser_a5ed37e5cd34b32b48c3eb7ab970923da}\label{classbrowser_1_1Browser_a5ed37e5cd34b32b48c3eb7ab970923da} 
+void {\bfseries raster\+\_\+tab} ()
+\item 
+\Hypertarget{classbrowser_1_1Browser_a20681909309fbb4ccc3c5d5ba1060029}\label{classbrowser_1_1Browser_a20681909309fbb4ccc3c5d5ba1060029} 
+void {\bfseries raster\+\_\+chrome} ()
+\item 
+\Hypertarget{classbrowser_1_1Browser_adeb36c7c81a717d2c5ff3a28d6113a61}\label{classbrowser_1_1Browser_adeb36c7c81a717d2c5ff3a28d6113a61} 
+void {\bfseries draw} ()
+\item 
+\Hypertarget{classbrowser_1_1Browser_a65b4c6fc2215b4d0e23656555197f419}\label{classbrowser_1_1Browser_a65b4c6fc2215b4d0e23656555197f419} 
+void {\bfseries start\+\_\+event} ()
+\item 
+\Hypertarget{classbrowser_1_1Browser_af7118e94eb7804ec8ddf6baa2dc381d5}\label{classbrowser_1_1Browser_af7118e94eb7804ec8ddf6baa2dc381d5} 
+void {\bfseries new\+\_\+tab} (\doxymbox{\hyperlink{classurl_1_1URL}{url::\+\+URL}} url)
+\item 
+\Hypertarget{classbrowser_1_1Browser_aca3aa18accaedcfedc0387633c89b916}\label{classbrowser_1_1Browser_aca3aa18accaedcfedc0387633c89b916} 
+{\bfseries Browser} (std::\+string \&\&title, \doxymbox{\hyperlink{structbrowser_1_1Size}{Size}} size=\{WIDTH, HEIGHT\})
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a0186ce08038c6a300554464d97e2e5e1}\label{classbrowser_1_1Browser_a0186ce08038c6a300554464d97e2e5e1} 
+std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{classLayout_1_1FontCache}{Layout::\+\+Font\+Cache}} $>$ {\bfseries m\+\_\+font\+Cache} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a19e9ca82801ee52b499879d53243c3e1}\label{classbrowser_1_1Browser_a19e9ca82801ee52b499879d53243c3e1} 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{classbrowser_1_1Tab}{Tab}} $>$ $>$ {\bfseries tabs} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_ae2d2b19adb00f7a6acd8f2a899e1f1d7}\label{classbrowser_1_1Browser_ae2d2b19adb00f7a6acd8f2a899e1f1d7} 
+\doxymbox{\hyperlink{classbrowser_1_1Tab}{Tab}} \texorpdfstring{$\ast$}{*} {\bfseries active\+\_\+tab} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_acc85ea3231f7797dad54cbe75870ba11}\label{classbrowser_1_1Browser_acc85ea3231f7797dad54cbe75870ba11} 
+std::\+string {\bfseries m\+\_\+title}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a7c61fdbbbd5ef4bfc989ef268b065fc4}\label{classbrowser_1_1Browser_a7c61fdbbbd5ef4bfc989ef268b065fc4} 
+\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout::\+\+Layout\+Context}} {\bfseries ctx} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a8230cdbc30106810b0bb8ff930376708}\label{classbrowser_1_1Browser_a8230cdbc30106810b0bb8ff930376708} 
+std::\+unique\+\_\+ptr$<$ SDL\+\_\+\+Window, \doxymbox{\hyperlink{structWindowDeleter}{Window\+Deleter}} $>$ {\bfseries m\+\_\+window}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a1cfaf01b27c6d984946d3d10d34dda1d}\label{classbrowser_1_1Browser_a1cfaf01b27c6d984946d3d10d34dda1d} 
+bool {\bfseries is\+\_\+\+Running}
+\item 
+\Hypertarget{classbrowser_1_1Browser_af103fae88610e1df3bcbde492899368a}\label{classbrowser_1_1Browser_af103fae88610e1df3bcbde492899368a} 
+int {\bfseries m\+\_\+width} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_a6007f70d04924142cf926d0cb781fe6d}\label{classbrowser_1_1Browser_a6007f70d04924142cf926d0cb781fe6d} 
+int {\bfseries m\+\_\+height} \{\}
+\item 
+\Hypertarget{classbrowser_1_1Browser_aff52348c1d6e19d7f13233c4d13b3b62}\label{classbrowser_1_1Browser_aff52348c1d6e19d7f13233c4d13b3b62} 
+FOCUS {\bfseries m\+\_\+focus} \{FOCUS::\+\+NONE\}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+Browser.\+hpp\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+src/\+Browser.\+cpp\end{DoxyCompactItemize}

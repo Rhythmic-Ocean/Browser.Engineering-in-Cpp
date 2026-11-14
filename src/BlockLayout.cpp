@@ -5,6 +5,13 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3_ttf/SDL_textengine.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <include/core/SkBlendMode.h>
+#include <include/core/SkCanvas.h>
+#include <include/core/SkFontTypes.h>
+#include <include/core/SkPaint.h>
+#include <include/core/SkPath.h>
+#include <include/core/SkPathBuilder.h>
+#include <include/core/SkScalar.h>
 #include <iostream>
 
 using namespace Layout;
@@ -12,57 +19,88 @@ using namespace Layout;
 /*--NOTE: DrawItem's member function definitions
           Each item is rendered individually here
 */
-void DrawText::execute(float scroll_y, SDL_Renderer *renderer) {
-  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  float cur_scroll_y{original.top - scroll_y};
-  if (!TTF_DrawRendererText(m_text, m_left, cur_scroll_y)) {
-    SDL_Log("Failed to draw text at item %s: %s\n", m_text->text,
-            SDL_GetError());
-  }
+void DrawText::execute(SkCanvas *canvas) {
+  SkPaint paint;
+  paint.setAntiAlias(true);
+  paint.setColor(m_color);
+
+  float baseline = rect.top() - m_fontMetrics.fAscent;
+  canvas->drawString(m_text.c_str(), rect.left(), baseline, m_font, paint);
 }
 
-void DrawRect::execute(float scroll_y, SDL_Renderer *renderer) {
-  SDL_FRect rect = {original.left, original.top - scroll_y,
-                    original.right - original.left,
-                    original.bottom - original.top};
-
-  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-
-  if (!SDL_RenderFillRect(renderer, &rect)) {
-    SDL_Log("Failed to render layout rectangle: %s\n", SDL_GetError());
-    throw WindowException("Can't make rectangles!!" +
-                          std::string(SDL_GetError()));
-  }
+void DrawRect::execute(SkCanvas *canvas) {
+  SkPaint paint;
+  paint.setColor(m_color);
+  canvas->drawRect(rect, paint);
 }
 
-void DrawOutline::execute(float scroll_y, SDL_Renderer *renderer) {
-  for (auto &border : borders) {
-    border.y = original.top - scroll_y;
-  }
-  // for bottom border
-  borders[1].y = original.bottom - borders[1].h - scroll_y;
-  inner.y = original.top - scroll_y;
-  SDL_SetRenderDrawColor(renderer, innerColor.r, innerColor.g, innerColor.b,
-                         innerColor.a);
-  if (!SDL_RenderFillRect(renderer, &inner)) {
-    SDL_Log("Failed to render layout outline inner: %s\n", SDL_GetError());
-    throw WindowException("Can't make inners for outline!!");
-  }
-  SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b,
-                         borderColor.a);
-  if (!SDL_RenderFillRects(renderer, borders.data(), 4)) {
-    SDL_Log("Failed to render layout outline borders: %s\n", SDL_GetError());
-    throw WindowException("Can't make borders for outline!!");
-  }
+void DrawRRect::execute(SkCanvas *canvas) {
+  SkPaint paint;
+  paint.setColor(m_color);
+  canvas->drawRRect(rrect, paint);
 }
 
-void DrawLine::execute(float scroll_y, SDL_Renderer *renderer) {
-  y1 = original.top - scroll_y;
-  y2 = original.bottom - scroll_y;
-  SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-  if (!SDL_RenderLine(renderer, x1, y1, x2, y2)) {
-    SDL_Log("Failed to render  line: %s\n", SDL_GetError());
-    throw WindowException("Can't make a line!!");
+void DrawOutline::execute(SkCanvas *canvas) {
+  SkPaint paint;
+  paint.setColor(m_color);
+  paint.setStrokeWidth(m_thickness);
+  paint.setStyle(SkPaint::kStroke_Style);
+  canvas->drawRect(rect, paint);
+}
+
+void DrawLine::execute(SkCanvas *canvas) {
+  SkPathBuilder pathBuilder;
+  pathBuilder.moveTo(rect.left(), rect.top())
+      .lineTo(rect.right(), rect.bottom());
+  SkPaint paint;
+  paint.setColor(m_color);
+  paint.setStrokeWidth(m_thickness);
+  paint.setStyle(SkPaint::kStroke_Style);
+
+  canvas->drawPath(pathBuilder.detach(), paint);
+}
+
+// void printVec(std::vector<std::unique_ptr<DrawItem>> &displayVec) {
+//   for (auto &vec : displayVec) {
+//     auto type = vec->getType();
+//     switch (type) {
+//     case DrawType::LINE:
+//       std::cout << "line" << std::endl;
+//       break;
+//     case DrawType::OUTLINE:
+//       std::cout << "outline" << std::endl;
+//       break;
+//     case DrawType::OPAC:
+//       std::cout << "opacity" << std::endl;
+//       break;
+//     case DrawType::RECT:
+//       std::cout << "rect" << std::endl;
+//       break;
+//     case DrawType::TEXT:
+//       std::cout << "text" << std::endl;
+//       break;
+//     case DrawType::RRECT:
+//       std::cout << "rrect" << std::endl;
+//       break;
+//     default:
+//       std::cout << "smthing else" << std::endl;
+//       break;
+//     }
+//   }
+// }
+
+void Blend::execute(SkCanvas *canvas) {
+  if (m_shouldSave) {
+    SkPaint paint = SkPaint();
+    paint.setAlphaf(m_opacity);
+    paint.setBlendMode(m_blendMode);
+    canvas->saveLayer(nullptr, &paint);
+  }
+  for (size_t i{}; i < m_children.size(); ++i) {
+    m_children[i]->execute(canvas);
+  }
+  if (m_shouldSave) {
+    canvas->restore();
   }
 }
 
@@ -161,11 +199,9 @@ void BlockLayout::input(Item *node, LayoutContext &ctx) {
 
   auto &weight = m_node->m_style["font-weight"];
   auto &size = m_node->m_style["font-size"];
-  auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
-                                       FontCache::get_size(size));
-  int iWidth;
-  TTF_GetStringSize(font, " ", 1, &iWidth, nullptr);
-  m_cursor_x += w + static_cast<float>(iWidth);
+  auto font = ctx.fontCache->get_font(FontCache::get_weight(weight), size);
+  float fWidth = FontCache::getUTF8Width(font, " ");
+  m_cursor_x += w + fWidth;
   return;
 }
 
@@ -195,40 +231,13 @@ void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
   [[maybe_unused]] auto &style = node->m_style["font-style"];
   auto &size = node->m_style["font-size"];
 
-  // creating the TTF_Text and coloring it
-  auto *font = ctx.fontCache->get_font(FontCache::get_weight(weight),
-                                       FontCache::get_size(size));
-  auto *txt{TTF_CreateText(ctx.textEngine, font, word.c_str(), word.size())};
-  auto *space{TTF_CreateText(ctx.textEngine, font, " ", 1)};
-  if (!txt || !space) {
-    SDL_Log("Couldn't create text: %s. Error: %s\n", word.c_str(),
-            SDL_GetError());
-    throw WindowException("Couldn't create text: " + word +
-                          ". Error: " + std::string(SDL_GetError()));
-  }
+  auto font = ctx.fontCache->get_font(FontCache::get_weight(weight), size);
 
   // Getting the word's dimensions
-  int iHeight{};
-  int iWidth{};
-
-  if (!TTF_GetTextSize(txt, &iWidth, &iHeight)) {
-    SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
-            SDL_GetError());
-    throw WindowException("Couldn't calculate string size of: " + word +
-                          ". Error: " + std::string(SDL_GetError()));
-  }
-  float width = static_cast<float>(iWidth);
-  [[maybe_unused]] float height = static_cast<float>(iHeight);
+  float width = FontCache::getUTF8Width(font, word);
 
   // Getting the space's dimensions
-  if (!TTF_GetTextSize(space, &iWidth, &iHeight)) {
-    SDL_Log("Couldn't calculate text size of: %s. Error: %s\n", word.c_str(),
-            SDL_GetError());
-    throw WindowException("Couldn't calculate string size of: " + word +
-                          ". Error: " + std::string(SDL_GetError()));
-  }
-  float Swidth = static_cast<float>(iWidth);
-  [[maybe_unused]] float Sheight = static_cast<float>(iHeight);
+  float Swidth = FontCache::getUTF8Width(font, " ");
   // If cursor moves past this block's width change line
   if (m_cursor_x + width > m_width) {
     new_line();
@@ -254,13 +263,27 @@ void BlockLayout::make_word(Item *node, std::string word, LayoutContext &ctx) {
   return;
 }
 
+std::vector<std::unique_ptr<DrawItem>>
+BlockLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
+}
+
 std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
   std::vector<std::unique_ptr<DrawItem>> cmds{};
   std::string bg_color = "transparent";
-  if (m_node->m_style.contains("background-color")) {
+
+  if (m_node->m_style.contains("background-color"))
     bg_color = m_node->m_style["background-color"];
+  else if (m_node->m_style.contains("background"))
+    bg_color = m_node->m_style["background"];
+
+  if (bg_color != "transparent") {
+    float radius = (m_node->m_style.contains("border-radius"))
+                       ? std::stof(m_node->m_style["border-radius"].substr(
+                             0, m_node->m_style["border-radius"].size() - 2))
+                       : 0.0f;
     cmds.emplace_back(
-        std::make_unique<DrawRect>(self_rect(), parse_color(bg_color)));
+        std::make_unique<DrawRRect>(self_rect(), radius, bg_color));
   }
   return cmds;
 }
@@ -268,6 +291,11 @@ std::vector<std::unique_ptr<DrawItem>> BlockLayout::paint() {
 void DocumentLayout::pprint() {
   std::cout << "NOTHING" << std::endl;
   m_children[0]->pprint();
+}
+
+std::vector<std::unique_ptr<DrawItem>>
+DocumentLayout::paint_effects(std::vector<std::unique_ptr<DrawItem>> cmds) {
+  return paint_visual_effect(m_node, std::move(cmds), self_rect());
 }
 
 void BlockLayout::pprint() {
@@ -292,11 +320,3 @@ void BlockLayout::new_line() {
   auto new_line = std::make_unique<LineLayout>(m_node, this, lastLine);
   m_children.push_back(std::move(new_line));
 }
-
-Rect BlockLayout::self_rect() {
-  return Rect{m_start_x, m_start_y, m_start_x + m_width, m_start_y + m_height};
-}
-
-bool Rect::contains_point(float x, float y) {
-  return x >= left && x < right && y >= top && y < bottom;
-};

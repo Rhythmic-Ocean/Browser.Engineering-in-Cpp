@@ -1,0 +1,48 @@
+\doxysection{js\+Context.\+hpp}
+\hypertarget{jsContext_8hpp_source}{}\label{jsContext_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/jsContext.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/jsContext.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}duktape.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}helpers.hpp"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{namespace\ }browser\ \{}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classbrowser_1_1Tab}{Tab}};}
+\DoxyCodeLine{00010\ \}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{keyword}{namespace\ }jsContext\ \{}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structjsContext_1_1DukDeleter}{DukDeleter}}\ \{}
+\DoxyCodeLine{00015\ \ \ \textcolor{keywordtype}{void}\ operator()(duk\_context\ *ctx)\textcolor{keyword}{\ const\ }\{}
+\DoxyCodeLine{00016\ \ \ \ \ \textcolor{keywordflow}{if}\ (ctx)\ \{}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ duk\_destroy\_heap(ctx);}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ ctx\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00019\ \ \ \ \ \}}
+\DoxyCodeLine{00020\ \ \ \}}
+\DoxyCodeLine{00021\ \};}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{keyword}{class\ }JSException\ :\ \textcolor{keyword}{public}\ std::runtime\_error\ \{}
+\DoxyCodeLine{00024\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00025\ \ \ \textcolor{keyword}{explicit}\ JSException(\textcolor{keyword}{const}\ std::string\ \&message)}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ :\ std::runtime\_error(message)\ \{\}}
+\DoxyCodeLine{00027\ \};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{class\ }JSContext\ \{}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00032\ \ \ std::unordered\_map<Item\ *,\ int>\ node\_to\_handler\{\};}
+\DoxyCodeLine{00033\ \ \ std::unordered\_map<int,\ Item\ *>\ handler\_to\_node\{\};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \doxymbox{\hyperlink{classbrowser_1_1Tab}{browser::Tab}}\ *tab\{\};}
+\DoxyCodeLine{00036\ \ \ std::unique\_ptr<duk\_context,\ DukDeleter>\ ctx;}
+\DoxyCodeLine{00037\ \ \ JSContext(\doxymbox{\hyperlink{classbrowser_1_1Tab}{browser::Tab}}\ *tab);}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \textcolor{keywordtype}{void}\ run(\textcolor{keyword}{const}\ std::string\ \&code);}
+\DoxyCodeLine{00040\ \ \ \textcolor{keywordtype}{bool}\ dispatch\_event(std::string\ type,\ \doxymbox{\hyperlink{structItem}{Item}}\ *etl);}
+\DoxyCodeLine{00041\ \};}
+\DoxyCodeLine{00042\ \}\ \textcolor{comment}{//\ namespace\ jsContext}}
+
+\end{DoxyCode}

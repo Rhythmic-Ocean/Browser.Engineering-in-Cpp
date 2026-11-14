@@ -1,0 +1,127 @@
+\doxysection{Layout::\+Line\+Layout Class Reference}
+\hypertarget{classLayout_1_1LineLayout}{}\label{classLayout_1_1LineLayout}\index{Layout::LineLayout@{Layout::LineLayout}}
+Inheritance diagram for Layout::\+Line\+Layout:\+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classLayout_1_1LineLayout}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classLayout_1_1LineLayout_aea22e036b9c31f70fff811831fdcf147}\label{classLayout_1_1LineLayout_aea22e036b9c31f70fff811831fdcf147} 
+{\bfseries Line\+Layout} (\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}node, \doxymbox{\hyperlink{classLayout_1_1BlockLayout}{Block\+Layout}} \texorpdfstring{$\ast$}{*}parent, Line\+Layout \texorpdfstring{$\ast$}{*}previous\+\_\+line)
+\item 
+void \doxymbox{\hyperlink{classLayout_1_1LineLayout_a6f6b76ce8c3f1b27ec025e4c2ce54d54}{layout}} (\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout\+Context}} \&ctx) override
+\item 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ \doxymbox{\hyperlink{classLayout_1_1LineLayout_a8e776304510c6dbc8c22b682e3f83323}{paint}} () override
+\item 
+Layout\+Type \doxymbox{\hyperlink{classLayout_1_1LineLayout_a0e4109dedb9efa301de1cd4fdc8ed729}{get\+Type}} () override
+\item 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ \doxymbox{\hyperlink{classLayout_1_1LineLayout_a8e423c304c8e3f0ca90c5865953771cb}{paint\+\_\+effects}} (std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ cmds) override
+\item 
+\Hypertarget{classLayout_1_1LineLayout_a3bc54eb9f0c92815c1e80db15a4dcbee}\label{classLayout_1_1LineLayout_a3bc54eb9f0c92815c1e80db15a4dcbee} 
+void {\bfseries get\+Extremes} (float \&max\+\_\+ascent, float \&max\+\_\+descent)
+\item 
+void \doxymbox{\hyperlink{classLayout_1_1LineLayout_ac0838f69fa3e43bd81941b4cae7ff465}{pprint}} () override
+\item 
+Sk\+Rect \doxymbox{\hyperlink{classLayout_1_1LineLayout_a97a5e96801c2d7e517e985df8171b052}{self\+\_\+rect}} () override
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions inherited from \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}}
+\begin{DoxyCompactItemize}
+\item 
+{\bfseries Layout} (\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}node, Layout \texorpdfstring{$\ast$}{*}parent, Layout \texorpdfstring{$\ast$}{*}previous)
+\item 
+virtual bool {\bfseries should\+\_\+paint} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Additional Inherited Members}
+\doxysubsection*{Public Attributes inherited from \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}}
+\begin{DoxyCompactItemize}
+\item 
+float {\bfseries m\+\_\+start\+\_\+x} \{\}
+\item 
+float {\bfseries m\+\_\+start\+\_\+y} \{\}
+\item 
+float {\bfseries m\+\_\+width} \{\}
+\item 
+float {\bfseries m\+\_\+height} \{\}
+\item 
+\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+node} \{nullptr\}
+\item 
+Layout \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+parent} \{nullptr\}
+\item 
+Layout \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+previous} \{nullptr\}
+\item 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ Layout $>$ $>$ {\bfseries m\+\_\+children} \{\}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{classLayout_1_1LineLayout_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classLayout_1_1LineLayout_a0e4109dedb9efa301de1cd4fdc8ed729}\index{Layout::LineLayout@{Layout::LineLayout}!getType@{getType}}
+\index{getType@{getType}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{getType()}{getType()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_a0e4109dedb9efa301de1cd4fdc8ed729} 
+Layout\+Type Layout::\+\+Line\+Layout::\+get\+Type (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+\Hypertarget{classLayout_1_1LineLayout_a6f6b76ce8c3f1b27ec025e4c2ce54d54}\index{Layout::LineLayout@{Layout::LineLayout}!layout@{layout}}
+\index{layout@{layout}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{layout()}{layout()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_a6f6b76ce8c3f1b27ec025e4c2ce54d54} 
+void Line\+Layout::\+layout (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout\+Context}} \&}]{ctx}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+\Hypertarget{classLayout_1_1LineLayout_a8e776304510c6dbc8c22b682e3f83323}\index{Layout::LineLayout@{Layout::LineLayout}!paint@{paint}}
+\index{paint@{paint}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{paint()}{paint()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_a8e776304510c6dbc8c22b682e3f83323} 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ Line\+Layout::\+paint (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+\Hypertarget{classLayout_1_1LineLayout_a8e423c304c8e3f0ca90c5865953771cb}\index{Layout::LineLayout@{Layout::LineLayout}!paint\_effects@{paint\_effects}}
+\index{paint\_effects@{paint\_effects}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{paint\_effects()}{paint\_effects()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_a8e423c304c8e3f0ca90c5865953771cb} 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ Line\+Layout::\+paint\+\_\+effects (\begin{DoxyParamCaption}\item[{std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$}]{cmds}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+\Hypertarget{classLayout_1_1LineLayout_ac0838f69fa3e43bd81941b4cae7ff465}\index{Layout::LineLayout@{Layout::LineLayout}!pprint@{pprint}}
+\index{pprint@{pprint}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{pprint()}{pprint()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_ac0838f69fa3e43bd81941b4cae7ff465} 
+void Line\+Layout::\+pprint (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+\Hypertarget{classLayout_1_1LineLayout_a97a5e96801c2d7e517e985df8171b052}\index{Layout::LineLayout@{Layout::LineLayout}!self\_rect@{self\_rect}}
+\index{self\_rect@{self\_rect}!Layout::LineLayout@{Layout::LineLayout}}
+\doxysubsubsection{\texorpdfstring{self\_rect()}{self\_rect()}}
+{\footnotesize\ttfamily \label{classLayout_1_1LineLayout_a97a5e96801c2d7e517e985df8171b052} 
+Sk\+Rect Layout::\+\+Line\+Layout::\+self\+\_\+rect (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout::\+\+Layout}}.
+
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+layout.\+hpp\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+src/\+Inline\+Layout.\+cpp\end{DoxyCompactItemize}

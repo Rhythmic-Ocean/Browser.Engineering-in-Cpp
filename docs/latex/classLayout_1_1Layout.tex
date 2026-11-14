@@ -1,0 +1,67 @@
+\doxysection{Layout::\+Layout Class Reference}
+\hypertarget{classLayout_1_1Layout}{}\label{classLayout_1_1Layout}\index{Layout::Layout@{Layout::Layout}}
+Inheritance diagram for Layout::\+Layout:\+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=1.417722cm]{classLayout_1_1Layout}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classLayout_1_1Layout_a5aedc83ce4f32c84ac4bbb4e9c9e0849}\label{classLayout_1_1Layout_a5aedc83ce4f32c84ac4bbb4e9c9e0849} 
+{\bfseries Layout} (\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*}node, Layout \texorpdfstring{$\ast$}{*}parent, Layout \texorpdfstring{$\ast$}{*}previous)
+\item 
+\Hypertarget{classLayout_1_1Layout_a7f394acfd1629063bad1ee26182d57c0}\label{classLayout_1_1Layout_a7f394acfd1629063bad1ee26182d57c0} 
+virtual void {\bfseries layout} (\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{Layout\+Context}} \&ctx)=0
+\item 
+\Hypertarget{classLayout_1_1Layout_ae5b42bec27b702e38b08c8fa34c695ab}\label{classLayout_1_1Layout_ae5b42bec27b702e38b08c8fa34c695ab} 
+virtual void {\bfseries pprint} ()=0
+\item 
+\Hypertarget{classLayout_1_1Layout_a536e45937738628800bfa1c31c3692ec}\label{classLayout_1_1Layout_a536e45937738628800bfa1c31c3692ec} 
+virtual std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ {\bfseries paint} ()=0
+\item 
+\Hypertarget{classLayout_1_1Layout_a83e1ec70f2d7cd52ca8be7a20d12e31e}\label{classLayout_1_1Layout_a83e1ec70f2d7cd52ca8be7a20d12e31e} 
+virtual bool {\bfseries should\+\_\+paint} ()
+\item 
+\Hypertarget{classLayout_1_1Layout_aae82dbc2f738d93d4b4726aaebf1b431}\label{classLayout_1_1Layout_aae82dbc2f738d93d4b4726aaebf1b431} 
+virtual Layout\+Type {\bfseries get\+Type} ()=0
+\item 
+\Hypertarget{classLayout_1_1Layout_a7d5644a70697fc254fa578a6499b9ea6}\label{classLayout_1_1Layout_a7d5644a70697fc254fa578a6499b9ea6} 
+virtual std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ {\bfseries paint\+\_\+effects} (std::\+vector$<$ std::\+unique\+\_\+ptr$<$ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{Draw\+Item}} $>$ $>$ cmds)=0
+\item 
+\Hypertarget{classLayout_1_1Layout_afe42fa5ebeeedb509ce527ee0fd63bf7}\label{classLayout_1_1Layout_afe42fa5ebeeedb509ce527ee0fd63bf7} 
+virtual Sk\+Rect {\bfseries self\+\_\+rect} ()=0
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classLayout_1_1Layout_a3660b468dcca5351d0fc9467d9f4496f}\label{classLayout_1_1Layout_a3660b468dcca5351d0fc9467d9f4496f} 
+float {\bfseries m\+\_\+start\+\_\+x} \{\}
+\item 
+\Hypertarget{classLayout_1_1Layout_a57221ab143b04326f5e9eb763e37ab0b}\label{classLayout_1_1Layout_a57221ab143b04326f5e9eb763e37ab0b} 
+float {\bfseries m\+\_\+start\+\_\+y} \{\}
+\item 
+\Hypertarget{classLayout_1_1Layout_a376345b000542abcaca513f936afae2e}\label{classLayout_1_1Layout_a376345b000542abcaca513f936afae2e} 
+float {\bfseries m\+\_\+width} \{\}
+\item 
+\Hypertarget{classLayout_1_1Layout_a86b5fc6ef54695f437cdf86d98139a18}\label{classLayout_1_1Layout_a86b5fc6ef54695f437cdf86d98139a18} 
+float {\bfseries m\+\_\+height} \{\}
+\item 
+\Hypertarget{classLayout_1_1Layout_ae740c26de60e8661ca803a64b267ba00}\label{classLayout_1_1Layout_ae740c26de60e8661ca803a64b267ba00} 
+\doxymbox{\hyperlink{structItem}{Item}} \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+node} \{nullptr\}
+\item 
+\Hypertarget{classLayout_1_1Layout_a26f18539000e6917fa25eacc00b34ef3}\label{classLayout_1_1Layout_a26f18539000e6917fa25eacc00b34ef3} 
+Layout \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+parent} \{nullptr\}
+\item 
+\Hypertarget{classLayout_1_1Layout_a9fab83a2c40e6846ae6f1c87ae9e3b0a}\label{classLayout_1_1Layout_a9fab83a2c40e6846ae6f1c87ae9e3b0a} 
+Layout \texorpdfstring{$\ast$}{*} {\bfseries m\+\_\+previous} \{nullptr\}
+\item 
+\Hypertarget{classLayout_1_1Layout_af677302c1e1e0916b2d5b7c773cfa6a3}\label{classLayout_1_1Layout_af677302c1e1e0916b2d5b7c773cfa6a3} 
+std::\+vector$<$ std::\+unique\+\_\+ptr$<$ Layout $>$ $>$ {\bfseries m\+\_\+children} \{\}
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+/\+home/\+rhythmic\+\_\+ocean/\+\+Desktop/\+\+Browser/\+include/\+layout.\+hpp\end{DoxyCompactItemize}

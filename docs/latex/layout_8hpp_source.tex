@@ -1,0 +1,480 @@
+\doxysection{layout.\+hpp}
+\hypertarget{layout_8hpp_source}{}\label{layout_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/layout.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/layout.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}colorMap.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}helpers.hpp"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <SDL3/SDL.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_oldnames.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_pixels.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_rect.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <SDL3/SDL\_render.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_textengine.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <SDL3\_ttf/SDL\_ttf.h>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <array>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#include\ <exception>}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#include\ <include/core/SkBlendMode.h>}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ <include/core/SkCanvas.h>}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ <include/core/SkColor.h>}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ <include/core/SkColorType.h>}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ <include/core/SkFont.h>}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ <include/core/SkFontMetrics.h>}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ <include/core/SkFontMgr.h>}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ <include/core/SkFontScanner.h>}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ <include/core/SkFontStyle.h>}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ <include/core/SkFontTypes.h>}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ <include/core/SkRRect.h>}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <include/core/SkRect.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ <include/core/SkScalar.h>}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ <include/core/SkTypeface.h>}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ <include/ports/SkFontConfigInterface.h>}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ <include/ports/SkFontMgr\_FontConfigInterface.h>}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ <include/ports/SkFontMgr\_fontconfig.h>}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ <include/ports/SkFontScanner\_FreeType.h>}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#include\ <print>}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ <string\_view>}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#include\ <utility>}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{keyword}{using\ namespace\ }std::string\_view\_literals;}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \textcolor{keyword}{namespace\ }Layout\ \{}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ HSTEP\ =\ 13.0f;}
+\DoxyCodeLine{00046\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ VSTEP\ =\ 13.0f;}
+\DoxyCodeLine{00047\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keywordtype}{float}\ INPUT\_WIDTH\_PX\ =\ 200.0f;}
+\DoxyCodeLine{00048\ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{auto}\ BLOCK\_ELEMENTS\ =\ std::to\_array<std::string\_view>(}
+\DoxyCodeLine{00049\ \ \ \ \ \{\textcolor{stringliteral}{"{}html"{}}sv,\ \ \ \ \textcolor{stringliteral}{"{}body"{}}sv,\ \ \ \textcolor{stringliteral}{"{}article"{}}sv,\ \textcolor{stringliteral}{"{}section"{}}sv,\ \ \ \ \textcolor{stringliteral}{"{}nav"{}}sv,}
+\DoxyCodeLine{00050\ \ \ \ \ \ \textcolor{stringliteral}{"{}aside"{}}sv,\ \ \ \textcolor{stringliteral}{"{}h1"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}h2"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}h3"{}}sv,\ \ \ \ \ \ \ \ \ \textcolor{stringliteral}{"{}h4"{}}sv,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \textcolor{stringliteral}{"{}h5"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}h6"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}hgroup"{}}sv,\ \ \textcolor{stringliteral}{"{}header"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}footer"{}}sv,}
+\DoxyCodeLine{00052\ \ \ \ \ \ \textcolor{stringliteral}{"{}address"{}}sv,\ \textcolor{stringliteral}{"{}p"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}hr"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}pre"{}}sv,\ \ \ \ \ \ \ \ \textcolor{stringliteral}{"{}blockquote"{}}sv,}
+\DoxyCodeLine{00053\ \ \ \ \ \ \textcolor{stringliteral}{"{}ol"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}ul"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}menu"{}}sv,\ \ \ \ \textcolor{stringliteral}{"{}li"{}}sv,\ \ \ \ \ \ \ \ \ \textcolor{stringliteral}{"{}dl"{}}sv,}
+\DoxyCodeLine{00054\ \ \ \ \ \ \textcolor{stringliteral}{"{}dt"{}}sv,\ \ \ \ \ \ \textcolor{stringliteral}{"{}dd"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}figure"{}}sv,\ \ \textcolor{stringliteral}{"{}figcaption"{}}sv,\ \textcolor{stringliteral}{"{}main"{}}sv,}
+\DoxyCodeLine{00055\ \ \ \ \ \ \textcolor{stringliteral}{"{}div"{}}sv,\ \ \ \ \ \textcolor{stringliteral}{"{}table"{}}sv,\ \ \textcolor{stringliteral}{"{}form"{}}sv,\ \ \ \ \textcolor{stringliteral}{"{}fieldset"{}}sv,\ \ \ \textcolor{stringliteral}{"{}legend"{}}sv,}
+\DoxyCodeLine{00056\ \ \ \ \ \ \textcolor{stringliteral}{"{}details"{}}sv,\ \textcolor{stringliteral}{"{}summary"{}}sv\});}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{keyword}{enum\ class}\ FontWeight\ :\ std::int32\_t\ \{}
+\DoxyCodeLine{00059\ \ \ BOLD,}
+\DoxyCodeLine{00060\ \ \ ITALICS,}
+\DoxyCodeLine{00061\ \ \ BOLD\_ITALICS,}
+\DoxyCodeLine{00062\ \ \ REGULAR,}
+\DoxyCodeLine{00063\ \ \ COUNT}
+\DoxyCodeLine{00064\ \};}
+\DoxyCodeLine{00065\ \textcolor{keyword}{enum\ class}\ LayoutType\ \{\ DOCUMENT,\ BLOCK,\ INLINE,\ LINE,\ TEXT,\ INPUT\ \};}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \textcolor{keyword}{inline}\ SkColor\ parseColor(\textcolor{keyword}{const}\ std::string\ \&color)\ \{}
+\DoxyCodeLine{00068\ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ r\{\},\ g\{\},\ b\{\};}
+\DoxyCodeLine{00069\ \ \ \textcolor{keywordflow}{if}\ (color.starts\_with(\textcolor{charliteral}{'\#'})\ \&\&\ color.size()\ ==\ 7)\ \{}
+\DoxyCodeLine{00070\ \ \ \ \ std::from\_chars(color.data()\ +\ 1,\ color.data()\ +\ 3,\ r,\ 16);}
+\DoxyCodeLine{00071\ \ \ \ \ std::from\_chars(color.data()\ +\ 3,\ color.data()\ +\ 5,\ g,\ 16);}
+\DoxyCodeLine{00072\ \ \ \ \ std::from\_chars(color.data()\ +\ 5,\ color.data()\ +\ 7,\ b,\ 16);}
+\DoxyCodeLine{00073\ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (color.starts\_with(\textcolor{charliteral}{'\#'})\ \&\&\ color.size()\ ==\ 9)\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ std::from\_chars(color.data()\ +\ 1,\ color.data()\ +\ 3,\ r,\ 16);}
+\DoxyCodeLine{00075\ \ \ \ \ std::from\_chars(color.data()\ +\ 3,\ color.data()\ +\ 5,\ g,\ 16);}
+\DoxyCodeLine{00076\ \ \ \ \ std::from\_chars(color.data()\ +\ 5,\ color.data()\ +\ 7,\ b,\ 16);}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ a\{\};}
+\DoxyCodeLine{00078\ \ \ \ \ std::from\_chars(color.data()\ +\ 7,\ color.data()\ +\ 9,\ a,\ 16);}
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keywordflow}{return}\ SkColorSetARGB(a,\ r,\ g,\ b);}
+\DoxyCodeLine{00080\ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (ColorMap::NAMED\_COLORS.contains(color))\ \{}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordflow}{return}\ parseColor(ColorMap::NAMED\_COLORS[color]);}
+\DoxyCodeLine{00082\ \ \ \}}
+\DoxyCodeLine{00083\ \ \ \textcolor{keywordflow}{return}\ SkColorSetRGB(r,\ g,\ b);}
+\DoxyCodeLine{00084\ \}}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \textcolor{keyword}{inline}\ SkColor\ parseColor(std::string\_view\ color)\ \{}
+\DoxyCodeLine{00087\ \ \ \textcolor{keywordflow}{return}\ parseColor(std::string(color));}
+\DoxyCodeLine{00088\ \}}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \textcolor{keyword}{inline}\ SkBlendMode\ parseBlendMode(\textcolor{keyword}{const}\ std::string\ \&blend\_mode\_str)\ \{}
+\DoxyCodeLine{00091\ \ \ \textcolor{keywordflow}{if}\ (blend\_mode\_str\ ==\ \textcolor{stringliteral}{"{}multiply"{}})\ \{}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordflow}{return}\ SkBlendMode::kMultiply;}
+\DoxyCodeLine{00093\ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (blend\_mode\_str\ ==\ \textcolor{stringliteral}{"{}difference"{}})\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{keywordflow}{return}\ SkBlendMode::kDifference;}
+\DoxyCodeLine{00095\ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (blend\_mode\_str\ ==\ \textcolor{stringliteral}{"{}destination-\/in"{}})\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keywordflow}{return}\ SkBlendMode::kDstIn;}
+\DoxyCodeLine{00097\ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (blend\_mode\_str\ ==\ \textcolor{stringliteral}{"{}source-\/over"{}})\ \{}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordflow}{return}\ SkBlendMode::kSrcOver;}
+\DoxyCodeLine{00099\ \ \ \}\ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keywordflow}{return}\ SkBlendMode::kSrcOver;}
+\DoxyCodeLine{00101\ \ \ \}}
+\DoxyCodeLine{00102\ \}}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \textcolor{keyword}{class\ }FontCache\ \{}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \ \ \textcolor{keyword}{typedef}\ sk\_sp<SkTypeface>\ Font;}
+\DoxyCodeLine{00107\ \ \ sk\_sp<SkFontMgr>\ m\_fontMgr;}
+\DoxyCodeLine{00108\ \ \ std::unordered\_map<std::string,\ Font>\ m\_fontMap\{\};}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00111\ \ \ \textcolor{keyword}{static}\ SkFontStyle\ get\_weight(\textcolor{keyword}{const}\ std::string\ \&str)\ \{}
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keywordflow}{if}\ (str\ ==\ \textcolor{stringliteral}{"{}bold"{}})}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ SkFontStyle::Bold();}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (str\ ==\ \textcolor{stringliteral}{"{}italics"{}})}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ SkFontStyle::Italic();}
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (str\ ==\ \textcolor{stringliteral}{"{}bold-\/italics"{}})\ \{}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ SkFontStyle::BoldItalic();}
+\DoxyCodeLine{00118\ \ \ \ \ \}}
+\DoxyCodeLine{00119\ \ \ \ \ \textcolor{keywordflow}{return}\ SkFontStyle::Normal();}
+\DoxyCodeLine{00120\ \ \ \}}
+\DoxyCodeLine{00121\ \ \ SkFont\ get\_font(SkFontStyle\ style,\ SkScalar\ size,}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::string\ \&family\ =\ \textcolor{stringliteral}{"{}Arial"{}});}
+\DoxyCodeLine{00123\ \ \ SkFont\ get\_font(SkFontStyle\ style,\ \textcolor{keyword}{const}\ std::string\ \&size,}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ std::string\ \&family\ =\ \textcolor{stringliteral}{"{}Arial"{}});}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ getUTF8Width(\textcolor{keyword}{const}\ SkFont\ \&font,\ \textcolor{keyword}{const}\ std::string\ \&str)\ \{}
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{keywordflow}{return}\ font.measureText(str.c\_str(),\ str.size(),\ SkTextEncoding::kUTF8);}
+\DoxyCodeLine{00128\ \ \ \}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \ \ FontCache()\ \{}
+\DoxyCodeLine{00131\ \ \ \ \ m\_fontMgr\ =}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ SkFontMgr\_New\_FontConfig(\textcolor{keyword}{nullptr},\ SkFontScanner\_Make\_FreeType());}
+\DoxyCodeLine{00133\ \ \ \}}
+\DoxyCodeLine{00134\ \ \ FontCache(FontCache\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00135\ \ \ FontCache\ \&operator=(FontCache\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00136\ \ \ FontCache(FontCache\ \&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00137\ \ \ FontCache\ \&operator=(FontCache\ \&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00138\ \ \ \string~FontCache()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00139\ \};}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00141\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \{}
+\DoxyCodeLine{00142\ \ \ \doxymbox{\hyperlink{classLayout_1_1FontCache}{FontCache}}\ *fontCache;}
+\DoxyCodeLine{00143\ \ \ \textcolor{keywordtype}{float}\ windowWidth\{\};}
+\DoxyCodeLine{00144\ \ \ \textcolor{keywordtype}{float}\ windowHeight\{\};}
+\DoxyCodeLine{00145\ \};}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \textcolor{keyword}{struct\ }PositionedText\ \{}
+\DoxyCodeLine{00148\ \ \ std::string\ text;}
+\DoxyCodeLine{00149\ \ \ \textcolor{keywordtype}{float}\ start\_x\{\};}
+\DoxyCodeLine{00150\ \ \ \textcolor{keywordtype}{float}\ start\_y\{\};}
+\DoxyCodeLine{00151\ \ \ PositionedText(std::string\ txt,\ \textcolor{keywordtype}{float}\ x,\ \textcolor{keywordtype}{float}\ y)\ :\ start\_x\{x\},\ start\_y\{y\}\ \{}
+\DoxyCodeLine{00152\ \ \ \ \ text\ =\ std::move(txt);}
+\DoxyCodeLine{00153\ \ \ \}}
+\DoxyCodeLine{00154\ \ \ PositionedText()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \ \ PositionedText(PositionedText\ \&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00157\ \ \ PositionedText\ \&operator=(PositionedText\ \&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00158\ \};}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \textcolor{keyword}{enum\ class}\ DrawType\ \{\ RECT,\ TEXT,\ OUTLINE,\ LINE,\ OPAC,\ RRECT,\ BLEND\ \};}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00162\ \textcolor{comment}{//-\/-\/NOTE:\ Starting\ public\ viewing\ struct/classes}}
+\DoxyCodeLine{00163\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00164\ \ \ SkRect\ rect\{\};}
+\DoxyCodeLine{00165\ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ =\ 0;}
+\DoxyCodeLine{00166\ \ \ \textcolor{keyword}{virtual}\ DrawType\ getType()\ =\ 0;}
+\DoxyCodeLine{00167\ \ \ \textcolor{keyword}{virtual}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{\string~DrawItem}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00168\ \};}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \textcolor{keyword}{struct\ }DrawText\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \ \ std::string\ m\_text;}
+\DoxyCodeLine{00173\ \ \ SkColor\ m\_color;}
+\DoxyCodeLine{00174\ \ \ SkFont\ m\_font;}
+\DoxyCodeLine{00175\ \ \ SkFontMetrics\ m\_fontMetrics;}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::TEXT;\ \}}
+\DoxyCodeLine{00178\ \ \ DrawText(\textcolor{keyword}{const}\ std::string\ \&text,\ \textcolor{keyword}{const}\ std::string\ \&color,\ SkFont\ font,}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ x1,\ \textcolor{keywordtype}{float}\ y1)}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ :\ m\_text\{text\},\ m\_color\{parseColor(color)\},\ m\_font\{std::move(font)\}\ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \textcolor{keywordtype}{float}\ txtWidth\{}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ m\_font.measureText(text.c\_str(),\ text.size(),\ SkTextEncoding::kUTF8)\};}
+\DoxyCodeLine{00183\ \ \ \ \ [[maybe\_unused]]\ \textcolor{keywordtype}{float}\ lineSkip\ =\ m\_font.getMetrics(\&m\_fontMetrics);}
+\DoxyCodeLine{00184\ \ \ \ \ rect\ =}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ SkRect::MakeLTRB(x1,\ y1,\ x1\ +\ txtWidth,}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ y1\ -\/\ m\_fontMetrics.fAscent\ +\ m\_fontMetrics.fDescent);}
+\DoxyCodeLine{00187\ \ \ \}}
+\DoxyCodeLine{00188\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00189\ \};}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \textcolor{keyword}{struct\ }DrawRect\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00192\ \ \ SkColor\ m\_color;}
+\DoxyCodeLine{00193\ \ \ DrawRect(SkRect\ l\_rect,\ \textcolor{keyword}{const}\ std::string\ \&color)}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ :\ m\_color\{parseColor(color)\}\ \{}
+\DoxyCodeLine{00195\ \ \ \ \ rect\ =\ std::move(l\_rect);}
+\DoxyCodeLine{00196\ \ \ \}}
+\DoxyCodeLine{00197\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::RECT;\ \}}
+\DoxyCodeLine{00198\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00199\ \};}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \textcolor{keyword}{struct\ }DrawRRect\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00202\ \ \ SkRRect\ rrect\{\};}
+\DoxyCodeLine{00203\ \ \ SkColor\ m\_color;}
+\DoxyCodeLine{00204\ \ \ DrawRRect(SkRect\ l\_rect,\ \textcolor{keywordtype}{float}\ radius,\ \textcolor{keyword}{const}\ std::string\ \&color)}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ :\ m\_color\{parseColor(color)\}\ \{}
+\DoxyCodeLine{00206\ \ \ \ \ rect\ =\ std::move(l\_rect);}
+\DoxyCodeLine{00207\ \ \ \ \ rrect\ =\ SkRRect::MakeRectXY(rect,\ radius,\ radius);}
+\DoxyCodeLine{00208\ \ \ \}}
+\DoxyCodeLine{00209\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::RRECT;\ \}}
+\DoxyCodeLine{00210\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00211\ \};}
+\DoxyCodeLine{00212\ }
+\DoxyCodeLine{00213\ \textcolor{keyword}{struct\ }DrawOutline\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00214\ \ \ SkColor\ m\_color;}
+\DoxyCodeLine{00215\ \ \ \textcolor{keywordtype}{float}\ m\_thickness;}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ DrawOutline(SkRect\ l\_rect,\ std::string\ color,\ \textcolor{keywordtype}{float}\ thickness)\ \{}
+\DoxyCodeLine{00218\ \ \ \ \ rect\ =\ std::move(l\_rect);}
+\DoxyCodeLine{00219\ \ \ \ \ m\_color\ =\ parseColor(color);}
+\DoxyCodeLine{00220\ \ \ \ \ m\_thickness\ =\ thickness;}
+\DoxyCodeLine{00221\ \ \ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::OUTLINE;\ \}}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00226\ \};}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \textcolor{keyword}{struct\ }DrawLine\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00229\ \ \ \textcolor{keywordtype}{float}\ m\_thickness;}
+\DoxyCodeLine{00230\ \ \ SkColor\ m\_color;}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \ \ DrawLine(\textcolor{keywordtype}{float}\ x1,\ \textcolor{keywordtype}{float}\ y1,\ \textcolor{keywordtype}{float}\ x2,\ \textcolor{keywordtype}{float}\ y2,\ std::string\ color,}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ thickness)}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ :\ m\_thickness\{thickness\},\ m\_color\{parseColor(color)\}\ \{}
+\DoxyCodeLine{00235\ \ \ \ \ rect\ =\ \{SkRect::MakeLTRB(x1,\ y1,\ x2,\ y2)\};}
+\DoxyCodeLine{00236\ \ \ \}}
+\DoxyCodeLine{00237\ }
+\DoxyCodeLine{00238\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::LINE;\ \}}
+\DoxyCodeLine{00239\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00240\ \};}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \textcolor{keyword}{class\ }Blend\ :\ \textcolor{keyword}{public}\ \doxymbox{\hyperlink{structLayout_1_1DrawItem}{DrawItem}}\ \{}
+\DoxyCodeLine{00243\ \ \ \textcolor{keywordtype}{float}\ m\_opacity\{\};}
+\DoxyCodeLine{00244\ \ \ SkBlendMode\ m\_blendMode;}
+\DoxyCodeLine{00245\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ m\_children;}
+\DoxyCodeLine{00246\ \ \ \textcolor{keywordtype}{bool}\ m\_shouldSave;}
+\DoxyCodeLine{00247\ }
+\DoxyCodeLine{00248\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00249\ \ \ Blend(\textcolor{keywordtype}{float}\ opacity,\ \textcolor{keyword}{const}\ std::string\ \&blend\_mode\_str,}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ std::vector<std::unique\_ptr<DrawItem>>\ children)}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ :\ m\_opacity\{opacity\},\ m\_blendMode\{parseBlendMode(blend\_mode\_str)\},}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ m\_children\{std::move(children)\}\ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_opacity\ <\ 1\ ||\ blend\_mode\_str\ !=\ \textcolor{stringliteral}{"{}None"{}})}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ m\_shouldSave\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00255\ \ \ \ \ rect\ =\ SkRect::MakeEmpty();}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\ \&cmd\ :\ m\_children)\ \{}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ rect.join(cmd-\/>rect);}
+\DoxyCodeLine{00258\ \ \ \ \ \}}
+\DoxyCodeLine{00259\ \ \ \}}
+\DoxyCodeLine{00260\ \ \ DrawType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ DrawType::OPAC;\ \}}
+\DoxyCodeLine{00261\ \ \ \textcolor{keywordtype}{void}\ execute(SkCanvas\ *canvas)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00262\ \};}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1Layout}{Layout}};}
+\DoxyCodeLine{00265\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1DocumentLayout}{DocumentLayout}};}
+\DoxyCodeLine{00266\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1BlockLayout}{BlockLayout}};}
+\DoxyCodeLine{00267\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1LineLayout}{LineLayout}};}
+\DoxyCodeLine{00268\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1TextLayout}{TextLayout}};}
+\DoxyCodeLine{00269\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classLayout_1_1InputLayout}{InputLayout}};}
+\DoxyCodeLine{00270\ }
+\DoxyCodeLine{00271\ \textcolor{keyword}{class\ }Layout\ \{}
+\DoxyCodeLine{00272\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00273\ \ \ \textcolor{keywordtype}{float}\ m\_start\_x\{\};}
+\DoxyCodeLine{00274\ \ \ \textcolor{keywordtype}{float}\ m\_start\_y\{\};}
+\DoxyCodeLine{00275\ \ \ \textcolor{keywordtype}{float}\ m\_width\{\};}
+\DoxyCodeLine{00276\ \ \ \textcolor{keywordtype}{float}\ m\_height\{\};}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \doxymbox{\hyperlink{structItem}{Item}}\ *m\_node\{\textcolor{keyword}{nullptr}\};}
+\DoxyCodeLine{00279\ \ \ Layout\ *m\_parent\{\textcolor{keyword}{nullptr}\};}
+\DoxyCodeLine{00280\ \ \ Layout\ *m\_previous\{\textcolor{keyword}{nullptr}\};}
+\DoxyCodeLine{00281\ \ \ std::vector<std::unique\_ptr<Layout>>\ m\_children\{\};}
+\DoxyCodeLine{00282\ }
+\DoxyCodeLine{00283\ \ \ Layout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ Layout\ *parent,\ Layout\ *previous)}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ :\ m\_node\{node\},\ m\_parent\{parent\},\ m\_previous\{previous\}\ \{\}}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ =\ 0;}
+\DoxyCodeLine{00287\ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ pprint()\ =\ 0;}
+\DoxyCodeLine{00288\ \ \ \textcolor{keyword}{virtual}\ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ =\ 0;}
+\DoxyCodeLine{00289\ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{bool}\ should\_paint()\ \{\ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};\ \}}
+\DoxyCodeLine{00290\ \ \ \textcolor{keyword}{virtual}\ LayoutType\ getType()\ =\ 0;}
+\DoxyCodeLine{00291\ \ \ \textcolor{keyword}{virtual}\ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00292\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ =\ 0;}
+\DoxyCodeLine{00293\ \ \ \textcolor{keyword}{virtual}\ SkRect\ self\_rect()\ =\ 0;}
+\DoxyCodeLine{00294\ \ \ \textcolor{keyword}{virtual}\ \string~Layout()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00295\ \};}
+\DoxyCodeLine{00296\ }
+\DoxyCodeLine{00297\ \textcolor{keyword}{class\ }DocumentLayout\ :\ \textcolor{keyword}{public}\ Layout\ \{}
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00299\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00300\ \ \ DocumentLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node)\ :\ Layout\{node,\ \textcolor{keyword}{nullptr},\ \textcolor{keyword}{nullptr}\}\ \{\}}
+\DoxyCodeLine{00301\ \ \ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00302\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00303\ \ \ \textcolor{keywordtype}{void}\ pprint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00304\ \ \ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00305\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00306\ \ \ LayoutType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ LayoutType::DOCUMENT;\ \}}
+\DoxyCodeLine{00307\ \ \ \string~DocumentLayout()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00308\ \ \ SkRect\ self\_rect()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00309\ \ \ \ \ \textcolor{keywordflow}{return}\ SkRect::MakeLTRB(m\_start\_x,\ m\_start\_y,\ m\_start\_x\ +\ m\_width,}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_start\_y\ +\ m\_height);}
+\DoxyCodeLine{00311\ \ \ \}}
+\DoxyCodeLine{00312\ \};}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00314\ \textcolor{keyword}{class\ }BlockLayout\ :\ \textcolor{keyword}{public}\ Layout\ \{}
+\DoxyCodeLine{00315\ \ \ \textcolor{comment}{//-\/-\/INFO:\ BlockLayout\ owns\ the\ TTF\_Text,\ NOT\ DrawText!!!}}
+\DoxyCodeLine{00316\ }
+\DoxyCodeLine{00317\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00318\ \ \ \textcolor{keywordtype}{float}\ m\_cursor\_x\{\};}
+\DoxyCodeLine{00319\ \ \ \textcolor{keywordtype}{float}\ m\_cursor\_y\{\};}
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00321\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00322\ \ \ \textcolor{keywordtype}{void}\ word(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx);}
+\DoxyCodeLine{00323\ \ \ \textcolor{keywordtype}{void}\ input(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx);}
+\DoxyCodeLine{00324\ \ \ \textcolor{keywordtype}{void}\ make\_word(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ std::string\ str,\ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx);}
+\DoxyCodeLine{00325\ \ \ \textcolor{keywordtype}{void}\ recurse(\doxymbox{\hyperlink{structItem}{Item}}\ *root,\ \doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx);}
+\DoxyCodeLine{00326\ \ \ \textcolor{keywordtype}{void}\ flush();}
+\DoxyCodeLine{00327\ \ \ \textcolor{keywordtype}{void}\ new\_line();}
+\DoxyCodeLine{00328\ \ \ \textcolor{keywordtype}{bool}\ should\_paint()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00329\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_node-\/>getType()\ ==\ ItemType::TEXT)}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_node-\/>getType()\ ==\ ItemType::TAG)\ \{}
+\DoxyCodeLine{00332\ }
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_node-\/>m\_text\ ==\ \textcolor{stringliteral}{"{}input"{}}\ ||\ m\_node-\/>m\_text\ ==\ \textcolor{stringliteral}{"{}button"{}})}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00335\ \ \ \ \ \}}
+\DoxyCodeLine{00336\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00337\ \ \ \}}
+\DoxyCodeLine{00338\ }
+\DoxyCodeLine{00339\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00340\ \ \ \textcolor{keywordtype}{void}\ pprint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00341\ \ \ LayoutType\ layout\_mode();}
+\DoxyCodeLine{00342\ \ \ \textcolor{comment}{//-\/-\/WARNING:\ getType()\ is\ different\ form\ layout\_mode()!!}}
+\DoxyCodeLine{00343\ \ \ LayoutType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ LayoutType::BLOCK;\ \}}
+\DoxyCodeLine{00344\ \ \ BlockLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ Layout\ *parent,\ Layout\ *previous)}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ :\ Layout\{node,\ parent,\ previous\}\ \{\}}
+\DoxyCodeLine{00346\ \ \ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00347\ \ \ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00348\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00349\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00350\ \ \ \string~BlockLayout()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00351\ \ \ SkRect\ self\_rect()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keywordflow}{return}\ SkRect::MakeLTRB(m\_start\_x,\ m\_start\_y,\ m\_start\_x\ +\ m\_width,}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_start\_y\ +\ m\_height);}
+\DoxyCodeLine{00354\ \ \ \}}
+\DoxyCodeLine{00355\ \};}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \textcolor{keyword}{class\ }LineLayout\ :\ \textcolor{keyword}{public}\ Layout\ \{}
+\DoxyCodeLine{00358\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00359\ \ \ LineLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \doxymbox{\hyperlink{classLayout_1_1BlockLayout}{BlockLayout}}\ *parent,\ LineLayout\ *previous\_line);}
+\DoxyCodeLine{00360\ \ \ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00361\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00362\ \ \ LayoutType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ LayoutType::LINE;\ \}}
+\DoxyCodeLine{00363\ \ \ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00364\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00365\ \ \ \textcolor{keywordtype}{void}\ getExtremes(\textcolor{keywordtype}{float}\ \&max\_ascent,\ \textcolor{keywordtype}{float}\ \&max\_descent);}
+\DoxyCodeLine{00366\ \ \ \textcolor{keywordtype}{void}\ pprint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00367\ \ \ SkRect\ self\_rect()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordflow}{return}\ SkRect::MakeLTRB(m\_start\_x,\ m\_start\_y,\ m\_start\_x\ +\ m\_width,}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_start\_y\ +\ m\_height);}
+\DoxyCodeLine{00370\ \ \ \}}
+\DoxyCodeLine{00371\ \};}
+\DoxyCodeLine{00372\ }
+\DoxyCodeLine{00373\ \textcolor{keyword}{class\ }TextLayout\ :\ \textcolor{keyword}{public}\ Layout\ \{}
+\DoxyCodeLine{00374\ \ \ std::string\ m\_text\{\};}
+\DoxyCodeLine{00375\ }
+\DoxyCodeLine{00376\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00377\ \ \ SkFont\ font\{\};}
+\DoxyCodeLine{00378\ \ \ SkFontMetrics\ fontMetrics\{\};}
+\DoxyCodeLine{00379\ \ \ TextLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ std::string\ text,\ \doxymbox{\hyperlink{classLayout_1_1LineLayout}{LineLayout}}\ *parent,}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ TextLayout\ *previous\_word)}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ :\ Layout\{node,\ parent,\ previous\_word\},\ m\_text\{std::move(text)\}\ \{\}}
+\DoxyCodeLine{00382\ }
+\DoxyCodeLine{00383\ \ \ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00384\ \ \ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00385\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00386\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00387\ \ \ LayoutType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ LayoutType::TEXT;\ \}}
+\DoxyCodeLine{00388\ \ \ \textcolor{keywordtype}{void}\ pprint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00389\ \ \ SkRect\ self\_rect()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00390\ \ \ \ \ \textcolor{keywordflow}{return}\ SkRect::MakeLTRB(m\_start\_x,\ m\_start\_y,\ m\_start\_x\ +\ m\_width,}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_start\_y\ +\ m\_height);}
+\DoxyCodeLine{00392\ \ \ \}}
+\DoxyCodeLine{00393\ \};}
+\DoxyCodeLine{00394\ }
+\DoxyCodeLine{00395\ \textcolor{comment}{//\ NOTE:\ Input\ and\ TextLayout\ both\ live\ under\ LineLayout\ and\ are\ treated}}
+\DoxyCodeLine{00396\ \textcolor{comment}{//\ essentially\ the\ same\ way!\ Both\ their\ heights\ are\ calculate\ at}}
+\DoxyCodeLine{00397\ \textcolor{comment}{//\ LineLayout::layout()\ using\ TextLayout's\ text\ height\ and\ InputLayout's}}
+\DoxyCodeLine{00398\ \textcolor{comment}{//\ underlying\ text's\ height\ (which\ is\ inherited\ from\ Browser.css)}}
+\DoxyCodeLine{00399\ }
+\DoxyCodeLine{00400\ \textcolor{keyword}{class\ }InputLayout\ :\ \textcolor{keyword}{public}\ Layout\ \{}
+\DoxyCodeLine{00401\ \ \ std::string\ m\_text\{\};}
+\DoxyCodeLine{00402\ \ \ std::string\ m\_displayText\{\};}
+\DoxyCodeLine{00403\ }
+\DoxyCodeLine{00404\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00405\ \ \ SkFont\ font\{\};}
+\DoxyCodeLine{00406\ \ \ InputLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \doxymbox{\hyperlink{classLayout_1_1LineLayout}{LineLayout}}\ *parent,\ \doxymbox{\hyperlink{classLayout_1_1TextLayout}{TextLayout}}\ *previous\_word)}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ :\ Layout\{node,\ parent,\ previous\_word\}\ \{\}}
+\DoxyCodeLine{00408\ \ \ \textcolor{keywordtype}{void}\ layout(\doxymbox{\hyperlink{structLayout_1_1LayoutContext}{LayoutContext}}\ \&ctx)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00409\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ paint()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00410\ \ \ LayoutType\ getType()\textcolor{keyword}{\ override\ }\{\ \textcolor{keywordflow}{return}\ LayoutType::INPUT;\ \}}
+\DoxyCodeLine{00411\ \ \ \textcolor{keywordtype}{void}\ pprint()\textcolor{keyword}{\ override\ }\{\ std::cout\ <<\ m\_text\ <<\ std::endl;\ \};}
+\DoxyCodeLine{00412\ \ \ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00413\ \ \ paint\_effects(std::vector<std::unique\_ptr<DrawItem>>\ cmds)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00414\ \ \ SkRect\ self\_rect()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00415\ \ \ \ \ \textcolor{keywordflow}{return}\ SkRect::MakeLTRB(m\_start\_x,\ m\_start\_y,\ m\_start\_x\ +\ m\_width,}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_start\_y\ +\ m\_height);}
+\DoxyCodeLine{00417\ \ \ \}}
+\DoxyCodeLine{00418\ \};}
+\DoxyCodeLine{00419\ }
+\DoxyCodeLine{00420\ \textcolor{keyword}{class\ }LayoutException\ :\ \textcolor{keyword}{public}\ std::runtime\_error\ \{}
+\DoxyCodeLine{00421\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00422\ \ \ \textcolor{keyword}{explicit}\ LayoutException(\textcolor{keyword}{const}\ std::string\ \&message)}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ :\ std::runtime\_error(message)\ \{\}}
+\DoxyCodeLine{00424\ \};}
+\DoxyCodeLine{00425\ }
+\DoxyCodeLine{00426\ \textcolor{keyword}{inline}\ LineLayout::LineLayout(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ \doxymbox{\hyperlink{classLayout_1_1BlockLayout}{BlockLayout}}\ *parent,}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{classLayout_1_1LineLayout}{LineLayout}}\ *previous\_line)}
+\DoxyCodeLine{00428\ \ \ \ \ :\ \doxymbox{\hyperlink{classLayout_1_1Layout}{Layout}}\{node,\ parent,\ previous\_line\}\ \{\}}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00430\ \textcolor{keyword}{inline}\ std::vector<std::unique\_ptr<DrawItem>>}
+\DoxyCodeLine{00431\ paint\_visual\_effect(\doxymbox{\hyperlink{structItem}{Item}}\ *node,\ std::vector<std::unique\_ptr<DrawItem>>\ cmds,}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ [[maybe\_unused]]\ SkRect\ rect)\ \{}
+\DoxyCodeLine{00433\ \ \ \textcolor{keywordtype}{float}\ opacity\ =\ 1.0f;}
+\DoxyCodeLine{00434\ \ \ std::string\ blend\_mode\_str\ =\ \textcolor{stringliteral}{"{}None"{}};}
+\DoxyCodeLine{00435\ \ \ \textcolor{keywordflow}{if}\ (node-\/>m\_style.contains(\textcolor{stringliteral}{"{}opacity"{}}))\ \{}
+\DoxyCodeLine{00436\ \ \ \ \ \textcolor{keywordflow}{try}\ \{}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ opacity\ =\ std::stof(node-\/>m\_style[\textcolor{stringliteral}{"{}opacity"{}}]);}
+\DoxyCodeLine{00438\ \ \ \ \ \}\ \textcolor{keywordflow}{catch}\ (std::exception\ \&exc)\ \{}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ std::println(stderr,}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{stringliteral}{"{}Corrupted\ opacity\ value\ for\ node:\ \{\},\ bad\ value\ was:\ \{\}"{}},}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ node-\/>m\_text,\ node-\/>m\_style[\textcolor{stringliteral}{"{}opacity"{}}]);}
+\DoxyCodeLine{00442\ \ \ \ \ \}}
+\DoxyCodeLine{00443\ \ \ \}}
+\DoxyCodeLine{00444\ }
+\DoxyCodeLine{00445\ \ \ \textcolor{keywordflow}{if}\ (node-\/>m\_style.contains(\textcolor{stringliteral}{"{}mix-\/blend-\/mode"{}}))\ \{}
+\DoxyCodeLine{00446\ \ \ \ \ blend\_mode\_str\ =\ node-\/>m\_style[\textcolor{stringliteral}{"{}mix-\/blend-\/mode"{}}];}
+\DoxyCodeLine{00447\ \ \ \}}
+\DoxyCodeLine{00448\ }
+\DoxyCodeLine{00449\ \ \ \textcolor{keywordflow}{if}\ (node-\/>m\_style.contains(\textcolor{stringliteral}{"{}overflow"{}})\ \&\&}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ node-\/>m\_style[\textcolor{stringliteral}{"{}overflow"{}}]\ ==\ \textcolor{stringliteral}{"{}clip"{}})\ \{}
+\DoxyCodeLine{00451\ \ \ \ \ \textcolor{keywordtype}{float}\ border\_radius\ =}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ (node-\/>m\_style.contains(\textcolor{stringliteral}{"{}border-\/radius"{}}))}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ ?\ std::stof(node-\/>m\_style[\textcolor{stringliteral}{"{}border-\/radius"{}}].substr(}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 0,\ node-\/>m\_style[\textcolor{stringliteral}{"{}border-\/radius"{}}].size()\ -\/\ 2))}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \ \ \ \ :\ 0.0f;}
+\DoxyCodeLine{00456\ \ \ \ \ \textcolor{keywordflow}{if}\ (blend\_mode\_str\ ==\ \textcolor{stringliteral}{"{}None"{}})}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ blend\_mode\_str\ =\ \textcolor{stringliteral}{"{}source-\/over"{}};}
+\DoxyCodeLine{00458\ }
+\DoxyCodeLine{00459\ \ \ \ \ std::vector<std::unique\_ptr<DrawItem>>\ temp;}
+\DoxyCodeLine{00460\ \ \ \ \ temp.push\_back(std::make\_unique<DrawRRect>(rect,\ border\_radius,\ \textcolor{stringliteral}{"{}white"{}}));}
+\DoxyCodeLine{00461\ \ \ \ \ cmds.push\_back(}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ std::make\_unique<Blend>(1.0f,\ \textcolor{stringliteral}{"{}destination-\/in"{}},\ std::move(temp)));}
+\DoxyCodeLine{00463\ \ \ \}}
+\DoxyCodeLine{00464\ }
+\DoxyCodeLine{00465\ \ \ std::vector<std::unique\_ptr<DrawItem>>\ result;}
+\DoxyCodeLine{00466\ \ \ result.push\_back(}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ std::make\_unique<Blend>(opacity,\ blend\_mode\_str,\ std::move(cmds)));}
+\DoxyCodeLine{00468\ }
+\DoxyCodeLine{00469\ \ \ \textcolor{keywordflow}{return}\ result;}
+\DoxyCodeLine{00470\ \}}
+\DoxyCodeLine{00471\ \}\ \textcolor{comment}{//\ namespace\ Layout}}
+\DoxyCodeLine{00472\ \textcolor{comment}{//}}
+\DoxyCodeLine{00473\ \textcolor{comment}{//}}
+\DoxyCodeLine{00474\ \textcolor{comment}{//}}
+
+\end{DoxyCode}

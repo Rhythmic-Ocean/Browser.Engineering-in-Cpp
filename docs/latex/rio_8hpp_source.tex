@@ -1,0 +1,23 @@
+\doxysection{rio.\+hpp}
+\hypertarget{rio_8hpp_source}{}\label{rio_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/rio.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/rio.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//-\/-\/WARNING:\ Buffered\ RIO\ functions\ are\ deprecated,\ they\ were\ for\ pre-\/SSL\ config}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <openssl/ssl.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <span>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <sys/types.h>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#define\ RIO\_BUFSIZE\ 8192}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{namespace\ }rio\ \{}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ [[nodiscard]]\ ssize\_t\ readn(SSL\ *ssl,\ std::span<char>\ usrbuf);}
+\DoxyCodeLine{00014\ [[nodiscard]]\ ssize\_t\ writen(SSL\ *ssl,\ std::span<const\ char>\ usrbuf);}
+\DoxyCodeLine{00015\ [[nodiscard]]\ ssize\_t\ http\_readn(\textcolor{keywordtype}{int}\ client\_fd,\ std::span<char>\ usrbuf);}
+\DoxyCodeLine{00016\ [[nodiscard]]\ ssize\_t\ http\_writen(\textcolor{keywordtype}{int}\ client\_fd,\ std::span<const\ char>\ usrbuf);}
+\DoxyCodeLine{00017\ \}\ \textcolor{comment}{//\ namespace\ rio}}
+
+\end{DoxyCode}

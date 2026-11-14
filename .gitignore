@@ -1,5 +1,6 @@
 build/
 Session.vim
+test/
 compile_flags.txt
 main
 .cache/

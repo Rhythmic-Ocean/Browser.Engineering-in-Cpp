@@ -1,0 +1,53 @@
+\doxysection{riolib.\+hpp}
+\hypertarget{riolib_8hpp_source}{}\label{riolib_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/Server/riolib.hpp@{/home/rhythmic\_ocean/Desktop/Browser/Server/riolib.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ <asm-\/generic/errno-\/base.h>}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <span>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <stddef.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <unistd.h>}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#define\ RIO\_BUFSIZE\ 8192}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{structrio__t}{rio\_t}}\ \{}
+\DoxyCodeLine{00010\ \ \ \textcolor{keywordtype}{int}\ rio\_fd;\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ file\ descriptor\ of\ the\ file\ we\ are\ doing\ reading\ for}}
+\DoxyCodeLine{00011\ \ \ ssize\_t\ rio\_cnt;\ \ \ \ \textcolor{comment}{//\ number\ of\ bytes\ that's\ left\ to\ be\ read\ from\ buffer}}
+\DoxyCodeLine{00012\ \ \ ssize\_t\ rio\_bufptr;\ \textcolor{comment}{//\ index\ for\ next\ unread\ byte}}
+\DoxyCodeLine{00013\ \ \ std::array<char,\ RIO\_BUFSIZE>\ rio\_buffer;\ \textcolor{comment}{//\ buffer\ that\ stores\ whatever\ we}}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ from\ the\ file\ from\ rio\_read}}
+\DoxyCodeLine{00015\ \}\ \doxymbox{\hyperlink{structrio__t}{rio\_t}};}
+\DoxyCodeLine{00016\ \textcolor{keyword}{namespace\ }riolib\ \{}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ ssize\_t\ rio\_readlineb(\doxymbox{\hyperlink{structrio__t}{rio\_t}}\ *rp,\ std::string\ \&usrbuf);}
+\DoxyCodeLine{00019\ \textcolor{keywordtype}{void}\ rio\_readinitb(\doxymbox{\hyperlink{structrio__t}{rio\_t}}\ *rp,\ \textcolor{keywordtype}{int}\ fd);}
+\DoxyCodeLine{00020\ ssize\_t\ rio\_readnp(\doxymbox{\hyperlink{structrio__t}{rio\_t}}\ *rp,\ std::span<char>\ usrbuf);}
+\DoxyCodeLine{00021\ ssize\_t\ rio\_readn(\textcolor{keywordtype}{int}\ fd,\ std::span<char>\ usrbuf);}
+\DoxyCodeLine{00022\ ssize\_t\ rio\_writen(\textcolor{keywordtype}{int}\ fd,\ std::span<char>\ usrbuf);}
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{int}\ open\_listenfd(std::span<char>\ port\_str);}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{classriolib_1_1PercentageDecoding}{PercentageDecoding}}\ \{}
+\DoxyCodeLine{00026\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00027\ \ \ \textcolor{keyword}{static}\ std::string\ decode(\textcolor{keyword}{const}\ std::string\ \&str)\ \{}
+\DoxyCodeLine{00028\ \ \ \ \ std::string\ buf\ =\ \textcolor{stringliteral}{"{}"{}};}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\{\};\ i\ <\ str.size();\ ++i)\ \{}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (str[i]\ ==\ \textcolor{charliteral}{'+'})\ \{}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ buf\ +=\ \textcolor{stringliteral}{"{}\ "{}};}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (str[i]\ ==\ \textcolor{charliteral}{'\%'})\ \{}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ +\ 2\ <\ str.size())\ \{}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \ \ std::string\ hex(\&str[i]\ +\ 1,\ 2);}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \ \ i\ +=\ 2;}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ x1\ =\ std::stoi(hex,\ \textcolor{keyword}{nullptr},\ 16);}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \ \ buf\ +=\ x1;}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ buf\ +=\ str[i];}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00043\ \ \ \ \ \}}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordflow}{return}\ buf;}
+\DoxyCodeLine{00045\ \ \ \}}
+\DoxyCodeLine{00046\ \};}
+\DoxyCodeLine{00047\ \}\ \textcolor{comment}{//\ namespace\ riolib}}
+
+\end{DoxyCode}

@@ -1,0 +1,38 @@
+\doxysection{client.\+hpp}
+\hypertarget{client_8hpp_source}{}\label{client_8hpp_source}\index{/home/rhythmic\_ocean/Desktop/Browser/include/client.hpp@{/home/rhythmic\_ocean/Desktop/Browser/include/client.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <netdb.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <openssl/crypto.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <openssl/ssl.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <string\_view>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }Client\ \{}
+\DoxyCodeLine{00010\ \ \ std::unique\_ptr<SSL,\ \textcolor{keyword}{decltype}(\&SSL\_free)>\ ssl\{\textcolor{keyword}{nullptr},\ SSL\_free\};}
+\DoxyCodeLine{00011\ \ \ std::string\ m\_hostname\{\};}
+\DoxyCodeLine{00012\ \ \ std::string\ m\_port\{\};}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \textcolor{keyword}{static}\ SSL\_CTX\ *get\_ctx();}
+\DoxyCodeLine{00015\ \ \ \textcolor{keywordtype}{int}\ create\_sock();}
+\DoxyCodeLine{00016\ \ \ \textcolor{keywordtype}{void}\ set\_bio(\textcolor{keywordtype}{int}\ sock);}
+\DoxyCodeLine{00017\ \ \ \textcolor{keywordtype}{void}\ tls\_handshake();}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \ \ \textcolor{comment}{//\ http\ handlers}}
+\DoxyCodeLine{00020\ \ \ \textcolor{keywordtype}{void}\ open\_clientfd();}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00023\ \ \ [[maybe\_unused]]\ \textcolor{keywordtype}{int}\ client\_fd;\ \textcolor{comment}{//\ if\ it's\ http}}
+\DoxyCodeLine{00024\ \ \ Client(std::string\_view\ hostname\ =\ \textcolor{stringliteral}{"{}www.google.com"{}},}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \ std::string\_view\ port\ =\ \textcolor{stringliteral}{"{}https"{}},\ \textcolor{keywordtype}{bool}\ ishttps\ =\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00026\ \ \ Client(\textcolor{keyword}{const}\ Client\ \&client)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00027\ \ \ Client\ \&operator=(\textcolor{keyword}{const}\ Client\ \&client)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00028\ \ \ Client(Client\ \&\&other)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00029\ \ \ Client\ \&operator=(Client\ \&\&other)\ \textcolor{keyword}{noexcept}\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00030\ \ \ \string~Client()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00031\ \ \ SSL\ *get\_ssl\_client()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ ssl.get();\ \}}
+\DoxyCodeLine{00032\ \};}
+
+\end{DoxyCode}

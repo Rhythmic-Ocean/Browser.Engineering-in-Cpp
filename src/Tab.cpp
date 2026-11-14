@@ -20,21 +20,55 @@ using namespace browser;
 Tab::Tab(TabContext tctx, float l_tab_height) {
   tab_height = l_tab_height;
   ctx = std::move(tctx.lctx);
-  m_engine = tctx.textEngine;
   m_fontCache = tctx.fontCache;
   m_height = tctx.size.height;
   m_width = tctx.size.width;
 }
 
-void Tab::paint_tree(Layout::Layout *layoutNode) {
+// void printVec(std::vector<std::unique_ptr<Layout::DrawItem>> &displayVec) {
+//   for (auto &vec : displayVec) {
+//     auto type = vec->getType();
+//     switch (type) {
+//     case Layout::DrawType::LINE:
+//       std::cout << "line" << std::endl;
+//       break;
+//     case Layout::DrawType::OUTLINE:
+//       std::cout << "outline" << std::endl;
+//       break;
+//     case Layout::DrawType::OPAC:
+//       std::cout << "opacity" << std::endl;
+//       break;
+//     case Layout::DrawType::RECT:
+//       std::cout << "rect" << std::endl;
+//       break;
+//     case Layout::DrawType::TEXT:
+//       std::cout << "text" << std::endl;
+//       break;
+//     case Layout::DrawType::RRECT:
+//       std::cout << "rrect" << std::endl;
+//       break;
+//     default:
+//       std::cout << "smthing else" << std::endl;
+//       break;
+//     }
+//   }
+// }
+
+void Tab::paint_tree(
+    Layout::Layout *layoutNode,
+    std::vector<std::unique_ptr<Layout::DrawItem>> &displayItems) {
+  std::vector<std::unique_ptr<Layout::DrawItem>> displayVec{};
   if (layoutNode->should_paint()) {
-    auto displayVec = layoutNode->paint();
-    for (auto &item : displayVec) {
-      m_displayItems.push_back(std::move(item));
-    }
+    displayVec = layoutNode->paint();
   }
   for (auto &child : layoutNode->m_children) {
-    paint_tree(child.get());
+    paint_tree(child.get(), displayVec);
+  }
+  if (layoutNode->should_paint()) {
+    displayVec = layoutNode->paint_effects(std::move(displayVec));
+  }
+  for (auto &item : displayVec) {
+    displayItems.push_back(std::move(item));
   }
 }
 
@@ -108,7 +142,8 @@ void Tab::load(url::URL url, std::string payload) {
   return;
 }
 
-// Responsible for styling the DOM, laying it out and collecting displayItems
+// Responsible for styling the DOM, laying it out and collecting
+// displayItems
 void Tab::render() {
   auto cascade_priority = [](Parser::StyleRule &rule1,
                              Parser::StyleRule &rule2) {
@@ -120,19 +155,15 @@ void Tab::render() {
   m_document = std::make_unique<Layout::DocumentLayout>(m_rootNode.get());
   m_document->layout(ctx);
   m_displayItems.clear();
-  paint_tree(m_document.get());
+  paint_tree(m_document.get(), m_displayItems);
 }
 
-// NOTE: offset accounts for all the chrome items on the top and forces all
-// DrawItems to be drawm below it
-void Tab::draw(SDL_Renderer *renderer, float offset) {
+// NOTE: offset accounts for all the chrome items on the top and forces
+// all DrawItems to be drawm below it
+void Tab::raster(SkCanvas *canvas) {
   for (size_t i{}; i < m_displayItems.size(); ++i) {
     auto &cmd = m_displayItems[i];
-    if (cmd->original.top > m_scroll_y + tab_height)
-      break; // if u below the screen just stop
-    if (cmd->original.bottom < m_scroll_y)
-      continue;
-    cmd->execute(m_scroll_y - offset, renderer);
+    cmd->execute(canvas);
   }
 }
 
@@ -252,8 +283,8 @@ void Tab::click(float x, float y, SDL_Window *window) {
         tag->m_attributes["value"] = "";
         render();
       }
-      // when button's clicked we bubble up the DOM until we get the form and
-      // the action it wants us to perfrom
+      // when button's clicked we bubble up the DOM until we get the form
+      // and the action it wants us to perfrom
       else if (tag->m_text == "button") {
         if (m_js->dispatch_event("click", elt))
           return;
@@ -275,8 +306,8 @@ void Tab::click(float x, float y, SDL_Window *window) {
   }
 }
 
-// NOTE: Book has it named scrolldown but since we support both up and down I
-// just made it scroll
+// NOTE: Book has it named scrolldown but since we support both up and
+// down I just made it scroll
 void Tab::scroll(float turn) {
   m_max_y = std::max(m_document->m_height + 2.0f * static_cast<float>(VSTEP) -
                          tab_height,
