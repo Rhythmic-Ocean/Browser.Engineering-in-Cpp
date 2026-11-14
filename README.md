@@ -10,10 +10,22 @@ The original book's implementation is in Python.
 
 #### Chapter 11 - Completed (Nov 12 2026)
 
-- Added appropriate Cookie policy aligned with basic Web Security to handle CRS, SOP, CSRF and Cross site scripting cases.
-- Rewrote the UTF-8 based word seperator at src/BlockLayout.cpp to be more robust and handle corrupt unicode characters. (Code hugely inspired from [Flexible and Economical UTF-8 Decoder](https://bjoern.hoehrmann.de/utf-8/decoder/dfa/)
+- All rasterizations are now done on Skia's surfaces and then copied to SDL's windows instead of being directly rendered in SDL.
+- Chrome and Tabs are rastered seperatly based on actions performed there and then composited into the main surface and then presented into SDL window.
+- Colours have their alpha values represented on the rendered frame with different CSS specific blending mode available for pixel compositing
+- Clipping and masking implemented with destination in compositing
 
-- Nothing much to Demo this time T_T
+- Skia rendered Browser
+  ![Output.txt](assets/image/chp11-complete-1.png)
+
+- Alpha working chapter example:
+  ![Output.txt](assets/image/chp11-complete-2.png)
+
+- Text clipping:
+  ![Output.txt](assets/image/chp11-complete-3.png)
+
+- Difference blending:
+  ![Output.txt](assets/image/chp11-complete-4.png)
 
 ### Requirements for anybody wanting to run it
 
@@ -24,8 +36,11 @@ The original book's implementation is in Python.
 - OpenSSL 3.5.7
 - SDL3 and SDL3_ttf
 - GCC >= 16.2.1
+- Freetype2 >= 26.6.2
+- Fontconfig >= 2.17.0
 
 > NOTE: Duktape engine has been included with CMAKE and is under externals/
+> NOTE: Skia is statically linked and requires freetype2 and Fontconfig to be dynamically linked for that to work. You can edit CMakeLists.txt itself if u wanna change how skia is linked
 
 ### Steps
 
@@ -41,7 +56,7 @@ The original book's implementation is in Python.
 
 ```
  cd Server
- g++ -std=c++20 -o server riolib.cpp server.cpp
+ g++ -std=c++23 -o server riolib.cpp server.cpp
  ./server 8000
 ```
 
@@ -56,10 +71,11 @@ The original book's implementation is in Python.
 
 - The Browser will automatically take you to your localhost:8000, if you wanna navigate external websites (only <https://browser.engineering/> even works somewhat right now, anything else could most likely just crash the browser), just edit the link in the URL tab
 
-### Next Step: Chapter 11
+### Next Step: Chapter 12
 
 ### Credits (Other Places I got some code from)
 
+- Extremly helpful Skia-SDL combo examples, but most examples involve GPU rendering: [Skia-C-Examples](https://github.com/HinTak/skia-c-examples)
 - The multi-byte utf-8 based word seperator algorithm uses the DFA entirely copied from this text: [Flexible and Economical UTF-8 Decoder](https://bjoern.hoehrmann.de/utf-8/decoder/dfa/), I modified it a bit for my needs at include/UnicodeDecoder.hpp
 - [Duktape](https://duktape.org/) and their example programs at their [Github](https://github.com/svaarala/duktape) were really helpful!
 - The minimal Server inside Server/ is modified from the TINY Server Implementation in [CS:APP book](https://csapp.cs.cmu.edu/3e/students.html) Chapter 11: Network Programming
