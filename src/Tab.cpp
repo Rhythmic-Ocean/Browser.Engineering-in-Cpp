@@ -1,6 +1,8 @@
 #include "Browser.hpp"
 #include "Parser.hpp"
+#include "Tasks.hpp"
 #include "helpers.hpp"
+#include "jsContext.hpp"
 #include "layout.hpp"
 #include "url.hpp"
 #include <SDL3/SDL_events.h>
@@ -11,6 +13,7 @@
 #include <duk_config.h>
 #include <exception>
 #include <iterator>
+#include <memory>
 #include <print>
 #include <ranges>
 #include <string>
@@ -23,6 +26,7 @@ Tab::Tab(TabContext tctx, float l_tab_height) {
   m_fontCache = tctx.fontCache;
   m_height = tctx.size.height;
   m_width = tctx.size.width;
+  m_taskRunner = std::make_unique<task::TaskRunner>(*this);
 }
 
 // void printVec(std::vector<std::unique_ptr<Layout::DrawItem>> &displayVec) {
@@ -119,7 +123,12 @@ void Tab::load(url::URL url, std::string payload) {
     } catch (std::exception &exc) {
       continue;
     }
-    m_js->run(body);
+    task::Task<void (jsContext::JSContext::*)(const std::string &),
+               jsContext::JSContext &, std::string>
+        jsTask{&jsContext::JSContext::run, *m_js, std::move(body)};
+    auto wrap = std::make_unique<task::TaskWrapper_<decltype(jsTask)>>(
+        std::move(jsTask));
+    m_taskRunner->schedule_task(std::move(wrap));
   }
 
   auto default_css = hlp::get_default_CSS();

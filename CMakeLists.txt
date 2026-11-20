@@ -29,6 +29,7 @@ set(_SOURCE_DIR
     src/CSSParser.cpp
     src/Tab.cpp
     src/jsContext.cpp
+    src/Tasks.cpp
 )
 
 add_executable(${PROJECT_NAME} ${_SOURCE_DIR})

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Parser.hpp"
+#include "Tasks.hpp"
 #include "helpers.hpp"
 #include "jsContext.hpp"
 #include "layout.hpp"
@@ -35,6 +36,7 @@ public:
   std::vector<std::string> allowed_origins{};
   std::unique_ptr<Layout::Layout> m_document{};
   inline static float m_scroll_y;
+  std::unique_ptr<task::TaskRunner> m_taskRunner{};
 
 private:
   Layout::FontCache *m_fontCache{};

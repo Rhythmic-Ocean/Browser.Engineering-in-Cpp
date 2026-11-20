@@ -21,6 +21,7 @@ int main() {
     b.new_tab(std::move(url));
     while (b.is_Running) {
       b.start_event();
+      b.active_tab->m_taskRunner->run();
     }
   }
   TTF_Quit();
